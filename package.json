@@ -5,7 +5,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "setup-db": "ts-node scripts/setup-db.ts"
+    "setup-db": "ts-node scripts/setup-db.ts",
+    "rebuild-db": "node scripts/rebuild-db.js",
+    "migrate": "ts-node scripts/migrate-schema.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
