@@ -46,7 +46,7 @@ export default function MarkdownEditor({
     ] as const,
     status: ['lines', 'words', 'cursor'] as const,
     autofocus: true,
-    autoDownloadFontAwesome: false,
+    autoDownloadFontAwesome: true,
     renderingConfig: {
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
