@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { useTheme } from '../../lib/ThemeContext'
+import { useState, useEffect } from 'react'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string
@@ -49,6 +50,31 @@ export default function FilePage({
   createdAt: string
 }) {
   const { colors, theme, toggleTheme } = useTheme()
+  const [copied, setCopied] = useState(false)
+  const [currentUrl, setCurrentUrl] = useState('')
+
+  useEffect(() => {
+    setCurrentUrl(window.location.href)
+  }, [])
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(currentUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = currentUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
   
   return (
     <div style={{ 
@@ -60,7 +86,7 @@ export default function FilePage({
       minHeight: '100vh',
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
-      {/* Header with theme toggle */}
+      {/* Header with theme toggle and copy link */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -79,24 +105,81 @@ export default function FilePage({
             <span>Created: {new Date(createdAt).toLocaleDateString()}</span>
           </div>
         </div>
-        <button
-          onClick={toggleTheme}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            backgroundColor: colors.buttonBackground,
-            color: colors.buttonText,
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={handleCopyLink}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              backgroundColor: copied ? '#28a745' : colors.buttonBackground,
+              color: colors.buttonText,
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'background-color 0.2s ease'
+            }}
+          >
+            {copied ? '✅' : '📋'} {copied ? 'Copied!' : 'Copy Link'}
+          </button>
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              backgroundColor: colors.buttonBackground,
+              color: colors.buttonText,
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
+          </button>
+        </div>
       </div>
+      
+      {/* Shareable URL Display */}
+      <div style={{ 
+        marginBottom: 20,
+        padding: '15px',
+        backgroundColor: colors.cardBackground,
+        border: `1px solid ${colors.border}`,
+        borderRadius: '8px',
+        fontSize: '14px'
+      }}>
+        <div style={{ 
+          color: colors.secondary, 
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Share this link:
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '10px',
+          wordBreak: 'break-all'
+        }}>
+          <code style={{ 
+            flex: 1,
+            padding: '8px 12px',
+            backgroundColor: colors.codeBackground,
+            borderRadius: '4px',
+            fontSize: '13px',
+            color: colors.text,
+            border: `1px solid ${colors.border}`
+          }}>
+            {currentUrl}
+          </code>
+        </div>
+      </div>
+      
       <div 
         style={{ 
           lineHeight: '1.6',
