@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { IncomingForm } from 'formidable'
 import { promises as fs } from 'fs'
 import path from 'path'
+import cloudinary from '../../lib/cloudinary'
+import { insertFile } from '../../lib/dbSchema'
 
 export const config = {
   api: {
@@ -34,6 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const filePath = file.filepath
     const fileExtension = path.extname(file.originalFilename || '').toLowerCase()
+    const fileName = file.originalFilename || 'uploaded-file'
     
     let content = ''
 
@@ -59,7 +62,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Clean up the temporary file
     await fs.unlink(filePath)
 
-    res.status(200).json({ content })
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:text/plain;base64,${Buffer.from(content).toString('base64')}`,
+      {
+        resource_type: 'raw',
+        public_id: `mdshare/${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        format: fileExtension.substring(1),
+        overwrite: true,
+      }
+    )
+
+    // Store metadata in Neon database
+    const fileData = await insertFile(
+      fileName,
+      uploadResult.secure_url,
+      fileExtension.substring(1),
+      content.length
+    )
+
+    res.status(200).json({ 
+      content,
+      id: fileData.id,
+      title: fileData.title,
+      url: fileData.cloudinary_url
+    })
   } catch (error) {
     console.error('File conversion error:', error)
     res.status(500).json({ 
