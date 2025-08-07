@@ -1,3 +1,4 @@
+//curentlty this is unused
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = 'https://fduzlslvxoyokjtzwpqi.supabase.co'
