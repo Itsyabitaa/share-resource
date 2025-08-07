@@ -8,6 +8,9 @@ import 'easymde/dist/easymde.min.css'
 
 export default function Home() {
   const [text, setText] = useState('')
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [showAuthor, setShowAuthor] = useState(false)
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
@@ -50,6 +53,10 @@ export default function Home() {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      // Include author information if available
+      if (showAuthor && author) {
+        formData.append('author', author)
+      }
 
       const res = await fetch('/api/convert', {
         method: 'POST',
@@ -79,7 +86,11 @@ export default function Home() {
       const res = await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ 
+          content: text,
+          title: title || 'Untitled Document',
+          author: showAuthor ? author : undefined
+        }),
       })
       
       const data = await res.json()
@@ -209,12 +220,160 @@ export default function Home() {
               ✅ Selected: {uploadedFile.name}
             </div>
           )}
+          
+          {/* Author field for upload mode */}
+          <div style={{ 
+            marginTop: '20px', 
+            textAlign: 'left',
+            padding: '20px',
+            backgroundColor: colors.inputBackground,
+            borderRadius: '8px',
+            border: `1px solid ${colors.border}`
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px',
+              marginBottom: '10px'
+            }}>
+              <input
+                type="checkbox"
+                id="show-author-upload"
+                checked={showAuthor}
+                onChange={(e) => setShowAuthor(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              <label 
+                htmlFor="show-author-upload" 
+                style={{ 
+                  color: colors.text,
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Add author acknowledgment
+              </label>
+            </div>
+            
+            {showAuthor && (
+              <input
+                type="text"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                placeholder="Enter your name or handle..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: '16px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '5px',
+                  backgroundColor: colors.inputBackground,
+                  color: colors.text,
+                  outline: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colors.primary
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colors.border
+                }}
+              />
+            )}
+          </div>
         </div>
       )}
 
       {/* Editor Mode */}
       {mode === 'editor' && (
         <div style={{ marginBottom: 20 }}>
+          {/* Title and Author Fields */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 15 }}>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '5px', 
+                color: colors.text,
+                fontWeight: '500'
+              }}>
+                Title *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter document title..."
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  fontSize: '16px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '5px',
+                  backgroundColor: colors.inputBackground,
+                  color: colors.text,
+                  outline: 'none'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colors.primary
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colors.border
+                }}
+              />
+            </div>
+            
+            <div style={{ marginBottom: 15 }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                marginBottom: '5px'
+              }}>
+                <input
+                  type="checkbox"
+                  id="show-author"
+                  checked={showAuthor}
+                  onChange={(e) => setShowAuthor(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label 
+                  htmlFor="show-author" 
+                  style={{ 
+                    color: colors.text,
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Add author acknowledgment
+                </label>
+              </div>
+              
+              {showAuthor && (
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Enter your name or handle..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    fontSize: '16px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '5px',
+                    backgroundColor: colors.inputBackground,
+                    color: colors.text,
+                    outline: 'none'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = colors.primary
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = colors.border
+                  }}
+                />
+              )}
+            </div>
+          </div>
+          
           <style jsx>{`
             .editor-container :global(.CodeMirror) {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
