@@ -170,7 +170,7 @@ export default function Home() {
         }}>
           <input
             type="file"
-            accept=".txt,.doc,.docx,.pdf,.md"
+            accept=".txt,.doc,.docx,.md"
             onChange={handleFileUpload}
             style={{ display: 'none' }}
             id="file-upload"
@@ -180,7 +180,7 @@ export default function Home() {
               {isConverting ? '🔄 Converting...' : '📁 Click to upload a file'}
             </div>
             <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '15px' }}>
-              Supported formats: TXT, DOC, DOCX, PDF, MD
+              Supported formats: TXT, DOC, DOCX, MD
             </div>
             <div style={{ 
               padding: '10px 20px', 
