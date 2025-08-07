@@ -13,6 +13,8 @@ export default function Home() {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [showAuthor, setShowAuthor] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
+  const [hashtags, setHashtags] = useState<string[]>([])
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
@@ -35,7 +37,7 @@ export default function Home() {
   }
 
   const onShare = async () => {
-    await handleSave(text, title, showAuthor, author, router)
+    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router)
   }
 
   return (
@@ -72,10 +74,14 @@ export default function Home() {
           title={title}
           author={author}
           showAuthor={showAuthor}
+          isPublic={isPublic}
+          hashtags={hashtags}
           onTextChange={setText}
           onTitleChange={setTitle}
           onAuthorChange={setAuthor}
           onShowAuthorChange={setShowAuthor}
+          onIsPublicChange={setIsPublic}
+          onHashtagsChange={setHashtags}
         />
       )}
 
