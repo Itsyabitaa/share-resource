@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next'
-import { supabase } from '../../lib/supabaseClient'
+import { getFileById } from '../../lib/dbSchema'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -7,11 +7,47 @@ import { useTheme } from '../../lib/ThemeContext'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string
-  const { data } = await supabase.from('files').select().eq('id', id).single()
-  return { props: { content: data?.content || '' } }
+  
+  try {
+    const fileData = await getFileById(id)
+    
+    if (!fileData) {
+      return {
+        notFound: true
+      }
+    }
+
+    // Fetch content from Cloudinary URL
+    const response = await fetch(fileData.cloudinary_url)
+    const content = await response.text()
+
+    return { 
+      props: { 
+        content,
+        title: fileData.title,
+        fileType: fileData.file_type,
+        createdAt: fileData.created_at.toISOString()
+      } 
+    }
+  } catch (error) {
+    console.error('Error fetching file:', error)
+    return {
+      notFound: true
+    }
+  }
 }
 
-export default function FilePage({ content }: { content: string }) {
+export default function FilePage({ 
+  content, 
+  title, 
+  fileType, 
+  createdAt 
+}: { 
+  content: string
+  title: string
+  fileType: string
+  createdAt: string
+}) {
   const { colors, theme, toggleTheme } = useTheme()
   
   return (
@@ -31,7 +67,18 @@ export default function FilePage({ content }: { content: string }) {
         alignItems: 'center', 
         marginBottom: 30 
       }}>
-        <h1 style={{ color: colors.text }}>Shared File</h1>
+        <div>
+          <h1 style={{ color: colors.text, marginBottom: '8px' }}>{title}</h1>
+          <div style={{ 
+            fontSize: '14px', 
+            color: colors.secondary,
+            display: 'flex',
+            gap: '20px'
+          }}>
+            <span>Type: {fileType.toUpperCase()}</span>
+            <span>Created: {new Date(createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
         <button
           onClick={toggleTheme}
           style={{
