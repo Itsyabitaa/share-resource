@@ -10,10 +10,14 @@ interface MarkdownEditorProps {
   title: string
   author: string
   showAuthor: boolean
+  isPublic: boolean
+  hashtags: string[]
   onTextChange: (value: string) => void
   onTitleChange: (value: string) => void
   onAuthorChange: (value: string) => void
   onShowAuthorChange: (checked: boolean) => void
+  onIsPublicChange: (checked: boolean) => void
+  onHashtagsChange: (hashtags: string[]) => void
 }
 
 export default function MarkdownEditor({
@@ -21,10 +25,14 @@ export default function MarkdownEditor({
   title,
   author,
   showAuthor,
+  isPublic,
+  hashtags,
   onTextChange,
   onTitleChange,
   onAuthorChange,
-  onShowAuthorChange
+  onShowAuthorChange,
+  onIsPublicChange,
+  onHashtagsChange
 }: MarkdownEditorProps) {
   const { colors } = useTheme()
 
@@ -141,6 +149,76 @@ export default function MarkdownEditor({
             />
           )}
         </div>
+
+        {/* Public/Private Toggle */}
+        <div style={{ marginBottom: 15 }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px',
+            marginBottom: '5px'
+          }}>
+            <input
+              type="checkbox"
+              id="is-public"
+              checked={isPublic}
+              onChange={(e) => onIsPublicChange(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+            <label 
+              htmlFor="is-public" 
+              style={{ 
+                color: colors.text,
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Make this document public (appears in explore)
+            </label>
+          </div>
+        </div>
+
+        {/* Hashtags Input */}
+        {isPublic && (
+          <div style={{ marginBottom: 15 }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '5px', 
+              color: colors.text,
+              fontWeight: '500'
+            }}>
+              Hashtags (comma separated)
+            </label>
+            <input
+              type="text"
+              value={hashtags.join(', ')}
+              onChange={(e) => {
+                const hashtagList = e.target.value
+                  .split(',')
+                  .map(tag => tag.trim())
+                  .filter(tag => tag.length > 0)
+                onHashtagsChange(hashtagList)
+              }}
+              placeholder="technology, ai, tutorial..."
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: '16px',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '5px',
+                backgroundColor: colors.inputBackground,
+                color: colors.text,
+                outline: 'none'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = colors.primary
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = colors.border
+              }}
+            />
+          </div>
+        )}
       </div>
       
       <style jsx>{`
