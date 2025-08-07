@@ -1,8 +1,11 @@
 import React from 'react'
 import { useTheme } from '../lib/ThemeContext'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 
 export default function Header() {
   const { theme, toggleTheme, colors } = useTheme()
+  const router = useRouter()
 
   return (
     <div style={{ 
@@ -11,7 +14,31 @@ export default function Header() {
       alignItems: 'center', 
       marginBottom: 30 
     }}>
-      <h1 style={{ color: colors.text }}>Create & Share Markdown</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <h1 style={{ color: colors.text }}>Create & Share Markdown</h1>
+        <nav style={{ display: 'flex', gap: '15px' }}>
+          <Link href="/" style={{
+            color: router.pathname === '/' ? colors.primary : colors.text,
+            textDecoration: 'none',
+            fontWeight: router.pathname === '/' ? '600' : '400',
+            padding: '8px 12px',
+            borderRadius: '5px',
+            transition: 'all 0.2s ease'
+          }}>
+            Create
+          </Link>
+          <Link href="/explore" style={{
+            color: router.pathname === '/explore' ? colors.primary : colors.text,
+            textDecoration: 'none',
+            fontWeight: router.pathname === '/explore' ? '600' : '400',
+            padding: '8px 12px',
+            borderRadius: '5px',
+            transition: 'all 0.2s ease'
+          }}>
+            Explore
+          </Link>
+        </nav>
+      </div>
       <button
         onClick={toggleTheme}
         style={{
