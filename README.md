@@ -15,6 +15,9 @@ A modern markdown sharing application with hybrid storage using **Neon PostgreSQ
 - 📝 **Markdown Editor** with live preview
 - 📁 **File Upload** (TXT, DOC, DOCX, MD)
 - 🔗 **Shareable URLs** for documents
+- 🌐 **Explore Page** with search and hashtags
+- 🏷️ **Hashtag System** for document categorization
+- 🔍 **Search Functionality** by title and author
 - 🎨 **Beautiful UI** with responsive design
 - ⚡ **Fast Performance** with hybrid storage
 
@@ -36,6 +39,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 ### 2. **Database Setup**
 ```bash
 npm run setup-db
+npm run migrate
 ```
 
 ### 3. **Install Dependencies**
@@ -54,9 +58,12 @@ npm run dev
 CREATE TABLE files (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
+  author VARCHAR(255),
   cloudinary_url TEXT NOT NULL,
   file_type VARCHAR(10) NOT NULL,
   file_size INTEGER,
+  is_public BOOLEAN DEFAULT false,
+  hashtags TEXT[],
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -67,6 +74,15 @@ CREATE TABLE files (
 1. **Upload**: File → Cloudinary → Store URL in Neon DB
 2. **View**: Fetch URL from Neon → Get content from Cloudinary
 3. **Share**: Generate link with Neon DB ID
+4. **Explore**: Search public documents by title, author, or hashtags
+
+## 🌐 Explore Page Features
+
+- **Search**: Find documents by title or author
+- **Hashtag Filtering**: Click on popular hashtags to filter results
+- **Public Documents**: Only documents marked as public appear in explore
+- **Responsive Grid**: Beautiful card layout for document previews
+- **Real-time Updates**: Search and filter results update instantly
 
 ## 🎯 Benefits
 
