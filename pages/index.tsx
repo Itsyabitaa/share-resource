@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/router'
+import { useTheme } from '../lib/ThemeContext'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
 import 'easymde/dist/easymde.min.css'
@@ -11,6 +12,7 @@ export default function Home() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
   const router = useRouter()
+  const { theme, toggleTheme, colors } = useTheme()
 
   // SimpleMDE configuration options
   const mdeOptions = {
@@ -86,8 +88,41 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
-      <h1>Create & Share Markdown</h1>
+    <div style={{ 
+      maxWidth: 800, 
+      margin: '0 auto', 
+      padding: 20,
+      backgroundColor: colors.background,
+      color: colors.text,
+      minHeight: '100vh',
+      transition: 'background-color 0.3s ease, color 0.3s ease'
+    }}>
+      {/* Header with theme toggle */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 30 
+      }}>
+        <h1 style={{ color: colors.text }}>Create & Share Markdown</h1>
+        <button
+          onClick={toggleTheme}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            backgroundColor: colors.buttonBackground,
+            color: colors.buttonText,
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
+        </button>
+      </div>
       
       {/* Mode Selection */}
       <div style={{ marginBottom: 20, display: 'flex', gap: 10 }}>
@@ -96,11 +131,12 @@ export default function Home() {
           style={{
             padding: '10px 20px',
             fontSize: '14px',
-            backgroundColor: mode === 'editor' ? '#0070f3' : '#f0f0f0',
-            color: mode === 'editor' ? 'white' : '#333',
-            border: 'none',
+            backgroundColor: mode === 'editor' ? colors.buttonBackground : colors.cardBackground,
+            color: mode === 'editor' ? colors.buttonText : colors.text,
+            border: `1px solid ${colors.border}`,
             borderRadius: '5px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
           }}
         >
           Text Editor
@@ -110,11 +146,12 @@ export default function Home() {
           style={{
             padding: '10px 20px',
             fontSize: '14px',
-            backgroundColor: mode === 'upload' ? '#0070f3' : '#f0f0f0',
-            color: mode === 'upload' ? 'white' : '#333',
-            border: 'none',
+            backgroundColor: mode === 'upload' ? colors.buttonBackground : colors.cardBackground,
+            color: mode === 'upload' ? colors.buttonText : colors.text,
+            border: `1px solid ${colors.border}`,
             borderRadius: '5px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
           }}
         >
           Upload File
@@ -126,10 +163,10 @@ export default function Home() {
         <div style={{ 
           marginBottom: 20, 
           padding: '30px', 
-          border: '2px dashed #0070f3', 
+          border: `2px dashed ${colors.primary}`, 
           borderRadius: '10px',
           textAlign: 'center',
-          backgroundColor: '#f8f9fa'
+          backgroundColor: colors.cardBackground
         }}>
           <input
             type="file"
@@ -139,16 +176,16 @@ export default function Home() {
             id="file-upload"
           />
           <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
-            <div style={{ fontSize: '20px', marginBottom: '10px', color: '#0070f3' }}>
+            <div style={{ fontSize: '20px', marginBottom: '10px', color: colors.primary }}>
               {isConverting ? '🔄 Converting...' : '📁 Click to upload a file'}
             </div>
-            <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+            <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '15px' }}>
               Supported formats: TXT, DOC, DOCX, PDF, MD
             </div>
             <div style={{ 
               padding: '10px 20px', 
-              backgroundColor: '#0070f3', 
-              color: 'white', 
+              backgroundColor: colors.buttonBackground, 
+              color: colors.buttonText, 
               borderRadius: '5px',
               display: 'inline-block'
             }}>
@@ -156,7 +193,7 @@ export default function Home() {
             </div>
           </label>
           {uploadedFile && (
-            <div style={{ marginTop: '15px', fontSize: '14px', color: '#0070f3' }}>
+            <div style={{ marginTop: '15px', fontSize: '14px', color: colors.primary }}>
               ✅ Selected: {uploadedFile.name}
             </div>
           )}
@@ -181,11 +218,18 @@ export default function Home() {
           style={{ 
             padding: '10px 20px', 
             fontSize: '16px', 
-            backgroundColor: '#0070f3', 
-            color: 'white', 
+            backgroundColor: colors.buttonBackground, 
+            color: colors.buttonText, 
             border: 'none', 
             borderRadius: '5px', 
-            cursor: 'pointer' 
+            cursor: 'pointer',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.buttonHover
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = colors.buttonBackground
           }}
         >
           Share
