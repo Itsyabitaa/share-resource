@@ -8,11 +8,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.4",
+    "@types/formidable": "^3.4.5",
+    "formidable": "^3.5.4",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
     "react-markdown": "^9.0.0",
     "react-simplemde-editor": "^5.2.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
