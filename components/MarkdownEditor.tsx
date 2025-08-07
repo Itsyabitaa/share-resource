@@ -33,8 +33,8 @@ export default function MarkdownEditor({
     onTextChange(value)
   }, [onTextChange])
 
-  // SimpleMDE configuration options
-  const mdeOptions = {
+  // Memoize options to prevent unnecessary re-renders
+  const mdeOptions = React.useMemo(() => ({
     spellChecker: false,
     placeholder: 'Write your markdown here...',
     toolbar: [
@@ -45,14 +45,13 @@ export default function MarkdownEditor({
       'guide'
     ] as const,
     status: ['lines', 'words', 'cursor'] as const,
-    autofocus: true,
     autoDownloadFontAwesome: true,
     renderingConfig: {
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
     minHeight: '300px'
-  }
+  }), [])
 
   return (
     <div style={{ marginBottom: 20 }}>
@@ -164,7 +163,6 @@ export default function MarkdownEditor({
       `}</style>
       <div className="editor-container">
         <SimpleMDE 
-          key="markdown-editor"
           value={text} 
           onChange={handleTextChange} 
           options={mdeOptions}
