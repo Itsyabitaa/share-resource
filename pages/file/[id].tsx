@@ -26,6 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       props: { 
         content,
         title: fileData.title,
+        author: fileData.author,
         fileType: fileData.file_type,
         createdAt: fileData.created_at
       } 
@@ -41,11 +42,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 export default function FilePage({ 
   content, 
   title, 
+  author, 
   fileType, 
   createdAt 
 }: { 
   content: string
   title: string
+  author?: string
   fileType: string
   createdAt: string
 }) {
@@ -99,9 +102,11 @@ export default function FilePage({
             fontSize: '14px', 
             color: colors.secondary,
             display: 'flex',
-            gap: '20px'
+            gap: '20px',
+            flexWrap: 'wrap'
           }}>
             <span>Type: {fileType.toUpperCase()}</span>
+            {author && <span>By: {author}</span>}
             <span>Created: {new Date(createdAt).toLocaleDateString()}</span>
           </div>
         </div>
