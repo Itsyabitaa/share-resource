@@ -15,7 +15,7 @@ export default function Header() {
       marginBottom: 30 
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <h1 style={{ color: colors.text }}>Create & Share Markdown</h1>
+        <h1 style={{ color: colors.text }}>md-Nest</h1>
         <nav style={{ display: 'flex', gap: '15px' }}>
           <Link href="/" style={{
             color: router.pathname === '/' ? colors.primary : colors.text,
@@ -36,6 +36,16 @@ export default function Header() {
             transition: 'all 0.2s ease'
           }}>
             Explore
+          </Link>
+          <Link href="/about" style={{
+            color: router.pathname === '/about' ? colors.primary : colors.text,
+            textDecoration: 'none',
+            fontWeight: router.pathname === '/about' ? '600' : '400',
+            padding: '8px 12px',
+            borderRadius: '5px',
+            transition: 'all 0.2s ease'
+          }}>
+            About
           </Link>
         </nav>
       </div>
