@@ -44,6 +44,8 @@ export const handleSave = async (
   title: string,
   showAuthor: boolean,
   author: string,
+  isPublic: boolean,
+  hashtags: string[],
   router: any
 ) => {
   try {
@@ -53,7 +55,9 @@ export const handleSave = async (
       body: JSON.stringify({ 
         content: text,
         title: title || 'Untitled Document',
-        author: showAuthor ? author : undefined
+        author: showAuthor ? author : undefined,
+        isPublic,
+        hashtags
       }),
     })
     
