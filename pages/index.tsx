@@ -9,6 +9,20 @@ export default function Home() {
   const [text, setText] = useState('')
   const router = useRouter()
 
+  // SimpleMDE configuration options
+  const mdeOptions = {
+    spellChecker: false,
+    placeholder: 'Write your markdown here...',
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'link', 'image', '|',
+      'preview', 'side-by-side', 'fullscreen', '|',
+      'guide'
+    ] as const,
+    status: ['lines', 'words', 'cursor'] as const
+  }
+
   const handleSave = async () => {
     try {
       const res = await fetch('/api/save', {
@@ -37,8 +51,27 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
       <h1>Create & Share Markdown</h1>
-      <SimpleMDE value={text} onChange={setText} />
-      <button onClick={handleSave} style={{ marginTop: 10 }}>Share</button>
+      <div style={{ marginBottom: 20 }}>
+        <SimpleMDE 
+          value={text} 
+          onChange={setText} 
+          options={mdeOptions}
+        />
+      </div>
+      <button 
+        onClick={handleSave} 
+        style={{ 
+          padding: '10px 20px', 
+          fontSize: '16px', 
+          backgroundColor: '#0070f3', 
+          color: 'white', 
+          border: 'none', 
+          borderRadius: '5px', 
+          cursor: 'pointer' 
+        }}
+      >
+        Share
+      </button>
     </div>
   )
 }
