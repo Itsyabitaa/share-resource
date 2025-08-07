@@ -11,14 +11,22 @@ export async function createTables() {
         cloudinary_url TEXT NOT NULL,
         file_type VARCHAR(10) NOT NULL,
         file_size INTEGER,
+        is_public BOOLEAN DEFAULT false,
+        hashtags TEXT[],
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `
 
-    // Create index for faster queries
+    // Create indexes for faster queries
     await sql`
       CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at DESC)
+    `
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_files_is_public ON files(is_public)
+    `
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_files_hashtags ON files USING GIN(hashtags)
     `
 
     console.log('Database tables created successfully')
@@ -28,12 +36,20 @@ export async function createTables() {
   }
 }
 
-export async function insertFile(title: string, cloudinaryUrl: string, fileType: string, fileSize?: number, author?: string) {
+export async function insertFile(
+  title: string, 
+  cloudinaryUrl: string, 
+  fileType: string, 
+  fileSize?: number, 
+  author?: string,
+  isPublic: boolean = false,
+  hashtags: string[] = []
+) {
   try {
     const result = await sql`
-      INSERT INTO files (title, author, cloudinary_url, file_type, file_size)
-      VALUES (${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize})
-      RETURNING id, title, author, cloudinary_url, created_at
+      INSERT INTO files (title, author, cloudinary_url, file_type, file_size, is_public, hashtags)
+      VALUES (${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags})
+      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags
     `
     return result[0]
   } catch (error) {
@@ -71,6 +87,61 @@ export async function getAllFiles() {
     return result
   } catch (error) {
     console.error('Error getting all files:', error)
+    throw error
+  }
+}
+
+export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
+  try {
+    let query = sql`
+      SELECT 
+        id,
+        title,
+        author,
+        file_type,
+        file_size,
+        hashtags,
+        created_at::text as created_at
+      FROM files 
+      WHERE is_public = true
+    `
+    
+    if (searchTerm) {
+      query = sql`${query} AND (
+        title ILIKE ${`%${searchTerm}%`} OR 
+        author ILIKE ${`%${searchTerm}%`}
+      )`
+    }
+    
+    if (hashtag) {
+      query = sql`${query} AND ${hashtag} = ANY(hashtags)`
+    }
+    
+    query = sql`${query} ORDER BY created_at DESC`
+    
+    const result = await query
+    return result
+  } catch (error) {
+    console.error('Error getting public files:', error)
+    throw error
+  }
+}
+
+export async function getPopularHashtags() {
+  try {
+    const result = await sql`
+      SELECT 
+        unnest(hashtags) as hashtag,
+        COUNT(*) as count
+      FROM files 
+      WHERE is_public = true AND hashtags IS NOT NULL
+      GROUP BY hashtag
+      ORDER BY count DESC
+      LIMIT 20
+    `
+    return result
+  } catch (error) {
+    console.error('Error getting popular hashtags:', error)
     throw error
   }
 }
