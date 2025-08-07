@@ -1,0 +1,21 @@
+{
+  "name": "mdshare-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.4",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-markdown": "^9.0.0",
+    "react-simplemde-editor": "^5.2.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  }
+}
