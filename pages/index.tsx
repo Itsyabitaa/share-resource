@@ -7,6 +7,9 @@ import 'easymde/dist/easymde.min.css'
 
 export default function Home() {
   const [text, setText] = useState('')
+  const [mode, setMode] = useState<'editor' | 'upload'>('editor')
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [isConverting, setIsConverting] = useState(false)
   const router = useRouter()
 
   // SimpleMDE configuration options
@@ -21,6 +24,40 @@ export default function Home() {
       'guide'
     ] as const,
     status: ['lines', 'words', 'cursor'] as const
+  }
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadedFile(file)
+    setIsConverting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/convert', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error('Convert error:', data)
+        alert(`Error converting file: ${data.error || 'Unknown error'}`)
+        return
+      }
+
+      setText(data.content)
+      setMode('editor')
+      setIsConverting(false)
+    } catch (err) {
+      console.error('Conversion error:', err)
+      alert('Error converting file')
+      setIsConverting(false)
+    }
   }
 
   const handleSave = async () => {
@@ -51,27 +88,109 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
       <h1>Create & Share Markdown</h1>
-      <div style={{ marginBottom: 20 }}>
-        <SimpleMDE 
-          value={text} 
-          onChange={setText} 
-          options={mdeOptions}
-        />
+      
+      {/* Mode Selection */}
+      <div style={{ marginBottom: 20, display: 'flex', gap: 10 }}>
+        <button
+          onClick={() => setMode('editor')}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            backgroundColor: mode === 'editor' ? '#0070f3' : '#f0f0f0',
+            color: mode === 'editor' ? 'white' : '#333',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Text Editor
+        </button>
+        <button
+          onClick={() => setMode('upload')}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            backgroundColor: mode === 'upload' ? '#0070f3' : '#f0f0f0',
+            color: mode === 'upload' ? 'white' : '#333',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Upload File
+        </button>
       </div>
-      <button 
-        onClick={handleSave} 
-        style={{ 
-          padding: '10px 20px', 
-          fontSize: '16px', 
-          backgroundColor: '#0070f3', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '5px', 
-          cursor: 'pointer' 
-        }}
-      >
-        Share
-      </button>
+
+      {/* Upload Mode */}
+      {mode === 'upload' && (
+        <div style={{ 
+          marginBottom: 20, 
+          padding: '30px', 
+          border: '2px dashed #0070f3', 
+          borderRadius: '10px',
+          textAlign: 'center',
+          backgroundColor: '#f8f9fa'
+        }}>
+          <input
+            type="file"
+            accept=".txt,.doc,.docx,.pdf,.md"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+            id="file-upload"
+          />
+          <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
+            <div style={{ fontSize: '20px', marginBottom: '10px', color: '#0070f3' }}>
+              {isConverting ? '🔄 Converting...' : '📁 Click to upload a file'}
+            </div>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+              Supported formats: TXT, DOC, DOCX, PDF, MD
+            </div>
+            <div style={{ 
+              padding: '10px 20px', 
+              backgroundColor: '#0070f3', 
+              color: 'white', 
+              borderRadius: '5px',
+              display: 'inline-block'
+            }}>
+              Choose File
+            </div>
+          </label>
+          {uploadedFile && (
+            <div style={{ marginTop: '15px', fontSize: '14px', color: '#0070f3' }}>
+              ✅ Selected: {uploadedFile.name}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Editor Mode */}
+      {mode === 'editor' && (
+        <div style={{ marginBottom: 20 }}>
+          <SimpleMDE 
+            value={text} 
+            onChange={setText} 
+            options={mdeOptions}
+          />
+        </div>
+      )}
+
+      {/* Share Button */}
+      {text && (
+        <button 
+          onClick={handleSave} 
+          style={{ 
+            padding: '10px 20px', 
+            fontSize: '16px', 
+            backgroundColor: '#0070f3', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '5px', 
+            cursor: 'pointer' 
+          }}
+        >
+          Share
+        </button>
+      )}
     </div>
   )
 }
