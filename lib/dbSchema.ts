@@ -44,7 +44,15 @@ export async function insertFile(title: string, cloudinaryUrl: string, fileType:
 export async function getFileById(id: string) {
   try {
     const result = await sql`
-      SELECT * FROM files WHERE id = ${id}
+      SELECT 
+        id,
+        title,
+        cloudinary_url,
+        file_type,
+        file_size,
+        created_at::text as created_at,
+        updated_at::text as updated_at
+      FROM files WHERE id = ${id}
     `
     return result[0]
   } catch (error) {
