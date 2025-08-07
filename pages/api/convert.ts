@@ -34,6 +34,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'No file uploaded' })
     }
 
+    // Extract author from form fields
+    const author = fields.author?.[0] || undefined
+
     const filePath = file.filepath
     const fileExtension = path.extname(file.originalFilename || '').toLowerCase()
     const fileName = file.originalFilename || 'uploaded-file'
@@ -78,7 +81,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fileName,
       uploadResult.secure_url,
       fileExtension.substring(1),
-      content.length
+      content.length,
+      author
     )
 
     res.status(200).json({ 
