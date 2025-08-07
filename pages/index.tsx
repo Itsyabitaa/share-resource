@@ -1,5 +1,5 @@
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 
@@ -14,6 +14,11 @@ export default function Home() {
   const router = useRouter()
   const { theme, toggleTheme, colors } = useTheme()
 
+  // Stable onChange handler to prevent cursor issues
+  const handleTextChange = useCallback((value: string) => {
+    setText(value)
+  }, [])
+
   // SimpleMDE configuration options
   const mdeOptions = {
     spellChecker: false,
@@ -25,7 +30,14 @@ export default function Home() {
       'preview', 'side-by-side', 'fullscreen', '|',
       'guide'
     ] as const,
-    status: ['lines', 'words', 'cursor'] as const
+    status: ['lines', 'words', 'cursor'] as const,
+    autofocus: true,
+    autoDownloadFontAwesome: false,
+    renderingConfig: {
+      singleLineBreaks: false,
+      codeSyntaxHighlighting: true,
+    },
+    minHeight: '300px'
   }
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,11 +215,32 @@ export default function Home() {
       {/* Editor Mode */}
       {mode === 'editor' && (
         <div style={{ marginBottom: 20 }}>
-          <SimpleMDE 
-            value={text} 
-            onChange={setText} 
-            options={mdeOptions}
-          />
+          <style jsx>{`
+            .editor-container :global(.CodeMirror) {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              font-size: 16px;
+              line-height: 1.6;
+              background-color: ${colors.inputBackground};
+              color: ${colors.text};
+              border: 1px solid ${colors.border};
+              border-radius: 5px;
+            }
+            .editor-container :global(.CodeMirror-cursor) {
+              border-left: 2px solid ${colors.primary};
+            }
+            .editor-container :global(.CodeMirror-focused) {
+              border-color: ${colors.primary};
+              outline: none;
+            }
+          `}</style>
+          <div className="editor-container">
+            <SimpleMDE 
+              key="markdown-editor"
+              value={text} 
+              onChange={handleTextChange} 
+              options={mdeOptions}
+            />
+          </div>
         </div>
       )}
 
