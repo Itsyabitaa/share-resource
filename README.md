@@ -1,58 +1,136 @@
-# MDShare App - Hybrid Storage System
+# Markdown Share App
 
-A modern markdown sharing application with hybrid storage using **Neon PostgreSQL** and **Cloudinary**.
+A modern markdown sharing application built with Next.js, featuring dark/light mode, file uploads, and hybrid storage architecture.
 
-## 🏗️ Architecture
+## Features
 
-### **Hybrid Storage System**
-- **Neon PostgreSQL**: Stores file metadata (title, URLs, timestamps)
-- **Cloudinary**: Stores actual file content (.md, .txt, .doc, .docx)
-- **Benefits**: 10GB free storage, better performance, scalable
+- ✨ **Markdown Editor**: Rich text editor with live preview
+- 🌙 **Dark/Light Mode**: Theme switching with persistence
+- 📁 **File Upload**: Support for TXT, DOC, DOCX, MD files
+- 🔗 **Shareable Links**: Copy and share markdown documents
+- 👤 **Author Attribution**: Optional author acknowledgment
+- 🏷️ **Hashtags**: Tag and categorize documents
+- 🔍 **Explore**: Discover public documents
+- ☁️ **Hybrid Storage**: Neon PostgreSQL + Cloudinary
 
-## 🚀 Features
+## Tech Stack
 
-- ✨ **Dark/Light Mode** with theme persistence
-- 📝 **Markdown Editor** with live preview
-- 📁 **File Upload** (TXT, DOC, DOCX, MD)
-- 🔗 **Shareable URLs** for documents
-- 🌐 **Explore Page** with search and hashtags
-- 🏷️ **Hashtag System** for document categorization
-- 🔍 **Search Functionality** by title and author
-- 🎨 **Beautiful UI** with responsive design
-- ⚡ **Fast Performance** with hybrid storage
+- **Frontend**: Next.js, React, TypeScript
+- **Database**: Neon PostgreSQL
+- **Storage**: Cloudinary
+- **Styling**: CSS-in-JS with theme system
+- **Deployment**: Vercel
 
-## 🛠️ Setup
+## Local Development
 
-### 1. **Environment Variables**
-Create a `.env.local` file:
+### Prerequisites
 
-```bash
-# Neon PostgreSQL Database
-DATABASE_URL=postgresql://username:password@host:port/database
+- Node.js 18+
+- npm or yarn
+- Neon PostgreSQL database
+- Cloudinary account
 
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
+### Setup
 
-### 2. **Database Setup**
-```bash
-npm run setup-db
-npm run migrate
-```
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd mdshare-app
+   ```
 
-### 3. **Install Dependencies**
-```bash
-npm install
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### 4. **Run Development Server**
-```bash
-npm run dev
-```
+3. **Environment Variables**
+   Create `.env.local` file:
+   ```env
+   DATABASE_URL=your_neon_database_url
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+   ```
 
-## 📊 Database Schema
+4. **Setup Database**
+   ```bash
+   npm run setup-db
+   ```
+
+5. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
+
+## Deployment
+
+### Vercel Deployment
+
+#### Option 1: Automatic Deployment (Recommended)
+
+1. **Connect to Vercel**
+   - Push your code to GitHub
+   - Connect your repository to Vercel
+   - Vercel will automatically detect Next.js and deploy
+
+2. **Environment Variables**
+   Add these in Vercel dashboard:
+   - `DATABASE_URL`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+
+3. **Deploy**
+   - Every push to `main` branch triggers automatic deployment
+   - Preview deployments for pull requests
+
+#### Option 2: Manual Deployment
+
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Login to Vercel**
+   ```bash
+   vercel login
+   ```
+
+3. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+### GitHub Actions CI/CD
+
+The repository includes GitHub Actions workflow for automated deployment:
+
+1. **Setup Secrets** in GitHub repository:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+   - `DATABASE_URL`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+
+2. **Get Vercel Tokens**:
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Login
+   vercel login
+   
+   # Get tokens
+   vercel whoami
+   ```
+
+3. **Automatic Deployment**:
+   - Push to `main` branch triggers deployment
+   - Pull requests create preview deployments
+
+## Database Schema
 
 ```sql
 CREATE TABLE files (
@@ -69,25 +147,33 @@ CREATE TABLE files (
 );
 ```
 
-## 🔄 Data Flow
+## Available Scripts
 
-1. **Upload**: File → Cloudinary → Store URL in Neon DB
-2. **View**: Fetch URL from Neon → Get content from Cloudinary
-3. **Share**: Generate link with Neon DB ID
-4. **Explore**: Search public documents by title, author, or hashtags
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run setup-db` - Initialize database tables
+- `npm run rebuild-db` - Rebuild database schema
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
 
-## 🌐 Explore Page Features
+## Environment Variables
 
-- **Search**: Find documents by title or author
-- **Hashtag Filtering**: Click on popular hashtags to filter results
-- **Public Documents**: Only documents marked as public appear in explore
-- **Responsive Grid**: Beautiful card layout for document previews
-- **Real-time Updates**: Search and filter results update instantly
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | Neon PostgreSQL connection string | Yes |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
 
-## 🎯 Benefits
+## Contributing
 
-- **10GB Free Storage** (vs 0.5GB on Supabase)
-- **Better Performance** (separated storage)
-- **Scalable Architecture** (hybrid approach)
-- **Cost Effective** (stays in free tiers)
-- **Easy Migration** (separated concerns)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+MIT License
