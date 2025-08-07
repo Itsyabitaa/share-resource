@@ -26,7 +26,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         content,
         title: fileData.title,
         fileType: fileData.file_type,
-        createdAt: fileData.created_at.toISOString()
+        createdAt: fileData.created_at
       } 
     }
   } catch (error) {
