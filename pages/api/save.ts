@@ -6,7 +6,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') return res.status(405).end()
 
   try {
-    const { content, title = 'Untitled Document', author } = req.body
+    const { 
+      content, 
+      title = 'Untitled Document', 
+      author, 
+      isPublic = false, 
+      hashtags = [] 
+    } = req.body
     
     if (!content) {
       return res.status(400).json({ error: 'Content is required' })
@@ -33,7 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       uploadResult.secure_url,
       'txt',
       content.length,
-      author
+      author,
+      isPublic,
+      hashtags
     )
 
     console.log('File metadata stored in database:', fileData)
