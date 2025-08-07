@@ -52,11 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         content = `# Converted Document\n\n${content}`
         break
         
-      case '.pdf':
-        // For now, just return a placeholder (you might want to add PDF parsing)
-        content = `# PDF Document\n\nThis PDF file has been uploaded. Content extraction is not yet implemented.\n\nFile: ${file.originalFilename}`
-        break
-        
       default:
         return res.status(400).json({ error: 'Unsupported file type' })
     }
