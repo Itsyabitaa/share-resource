@@ -7,6 +7,7 @@ export async function createTables() {
       CREATE TABLE IF NOT EXISTS files (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
+        author VARCHAR(255),
         cloudinary_url TEXT NOT NULL,
         file_type VARCHAR(10) NOT NULL,
         file_size INTEGER,
@@ -27,12 +28,12 @@ export async function createTables() {
   }
 }
 
-export async function insertFile(title: string, cloudinaryUrl: string, fileType: string, fileSize?: number) {
+export async function insertFile(title: string, cloudinaryUrl: string, fileType: string, fileSize?: number, author?: string) {
   try {
     const result = await sql`
-      INSERT INTO files (title, cloudinary_url, file_type, file_size)
-      VALUES (${title}, ${cloudinaryUrl}, ${fileType}, ${fileSize})
-      RETURNING id, title, cloudinary_url, created_at
+      INSERT INTO files (title, author, cloudinary_url, file_type, file_size)
+      VALUES (${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize})
+      RETURNING id, title, author, cloudinary_url, created_at
     `
     return result[0]
   } catch (error) {
@@ -47,6 +48,7 @@ export async function getFileById(id: string) {
       SELECT 
         id,
         title,
+        author,
         cloudinary_url,
         file_type,
         file_size,
