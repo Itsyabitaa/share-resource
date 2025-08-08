@@ -46,13 +46,18 @@ export default function Explore() {
       if (!response.ok) {
         const errorMessage = data.details || data.error || 'Failed to fetch data'
         setDbError(errorMessage)
-        throw new Error(errorMessage)
+        // Don't throw error, just set empty data
+        setFiles([])
+        setHashtags([])
+        return
       }
       
       setFiles(data.files || [])
       setHashtags(data.hashtags || [])
     } catch (error) {
       console.error('Error loading data:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Network error occurred'
+      setDbError(errorMessage)
       // Set empty arrays to show appropriate empty state
       setFiles([])
       setHashtags([])
