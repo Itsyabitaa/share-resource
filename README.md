@@ -1,6 +1,6 @@
-# md-nest
+# MDNest
 
-A modern markdown sharing application built with Next.js, featuring dark/light mode, file uploads, and hybrid storage architecture.
+A modern markdown sharing application built with Next.js, featuring dark/light mode, file uploads, and Prisma ORM.
 
 ## Features
 
@@ -11,169 +11,143 @@ A modern markdown sharing application built with Next.js, featuring dark/light m
 - 👤 **Author Attribution**: Optional author acknowledgment
 - 🏷️ **Hashtags**: Tag and categorize documents
 - 🔍 **Explore**: Discover public documents
-- ☁️ **Hybrid Storage**: Neon PostgreSQL + Cloudinary
+- ☁️ **Hybrid Storage**: PostgreSQL + Cloudinary
+- 🛡️ **Type Safety**: Full TypeScript + Prisma ORM
 
 ## Tech Stack
 
 - **Frontend**: Next.js, React, TypeScript
-- **Database**: Neon PostgreSQL
+- **Database**: PostgreSQL with Prisma ORM
 - **Storage**: Cloudinary
 - **Styling**: CSS-in-JS with theme system
 - **Deployment**: Vercel
 
-## Local Development
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
-- Neon PostgreSQL database
-- Cloudinary account
+- PostgreSQL database (Neon, Supabase, Railway, etc.)
+- Cloudinary account (optional)
 
 ### Setup
 
-1. **Clone the repository**
+1. **Clone and install**
    ```bash
    git clone <your-repo-url>
    cd md-nest
-   ```
-
-2. **Install dependencies**
-   ```bash
    npm install
    ```
 
-3. **Environment Variables**
-   Create `.env.local` file:
+2. **Environment Variables**
+   Create `.env.local`:
    ```env
-   DATABASE_URL=your_neon_database_url
+   DATABASE_URL=your_postgresql_connection_string
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret
    ```
 
-4. **Setup Database**
+3. **Database Setup**
    ```bash
-   npm run setup-db
+   npm run db:generate  # Generate Prisma client
+   npm run db:push      # Push schema to database
    ```
 
-5. **Run Development Server**
+4. **Start Development**
    ```bash
    npm run dev
    ```
 
+## Database Providers
+
+You can use any PostgreSQL provider:
+
+- **Neon**: [console.neon.tech](https://console.neon.tech/)
+- **Supabase**: [supabase.com](https://supabase.com/)
+- **Railway**: [railway.app](https://railway.app/)
+- **PlanetScale**: [planetscale.com](https://planetscale.com/)
+- **AWS RDS**: [aws.amazon.com/rds](https://aws.amazon.com/rds/)
+
+## Prisma Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:push` | Push schema to database |
+| `npm run db:migrate` | Create and apply migrations |
+| `npm run db:studio` | Open Prisma Studio (database GUI) |
+
 ## Deployment
 
-### Vercel Deployment
-
-#### Option 1: Automatic Deployment (Recommended)
+### Vercel (Recommended)
 
 1. **Connect to Vercel**
-   - Push your code to GitHub
-   - Connect your repository to Vercel
-   - Vercel will automatically detect Next.js and deploy
+   - Push code to GitHub
+   - Connect repository to Vercel
+   - Add environment variables in Vercel dashboard
 
 2. **Environment Variables**
-   Add these in Vercel dashboard:
-   - `DATABASE_URL`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
+   ```
+   DATABASE_URL=your_postgresql_connection_string
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+   ```
 
 3. **Deploy**
-   - Every push to `main` branch triggers automatic deployment
+   - Automatic deployments on push to main
    - Preview deployments for pull requests
 
-#### Option 2: Manual Deployment
+### Manual Deployment
 
-1. **Install Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
 
-2. **Login to Vercel**
-   ```bash
-   vercel login
-   ```
+## Project Structure
 
-3. **Deploy**
-   ```bash
-   vercel --prod
-   ```
-
-### GitHub Actions CI/CD
-
-The repository includes GitHub Actions workflow for automated deployment:
-
-1. **Setup Secrets** in GitHub repository:
-   - `VERCEL_TOKEN`
-   - `VERCEL_ORG_ID`
-   - `VERCEL_PROJECT_ID`
-   - `DATABASE_URL`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-
-2. **Get Vercel Tokens**:
-   ```bash
-   # Install Vercel CLI
-   npm i -g vercel
-   
-   # Login
-   vercel login
-   
-   # Get tokens
-   vercel whoami
-   ```
-
-3. **Automatic Deployment**:
-   - Push to `main` branch triggers deployment
-   - Pull requests create preview deployments
+```
+├── components/          # React components
+├── lib/                # Utilities and configurations
+│   ├── prisma.ts       # Prisma client
+│   ├── dbSchema.ts     # Database operations
+│   └── cloudinary.ts   # Cloudinary config
+├── pages/              # Next.js pages and API routes
+├── prisma/             # Database schema
+│   └── schema.prisma   # Prisma schema definition
+└── scripts/            # Database setup scripts
+```
 
 ## Database Schema
 
-```sql
-CREATE TABLE files (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  author VARCHAR(255),
-  cloudinary_url TEXT NOT NULL,
-  file_type VARCHAR(10) NOT NULL,
-  file_size INTEGER,
-  is_public BOOLEAN DEFAULT false,
-  hashtags TEXT[],
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+The main `File` model includes:
+
+```prisma
+model File {
+  id            String   @id @default(cuid())
+  title         String   @db.VarChar(255)
+  author        String?
+  cloudinaryUrl String   @map("cloudinary_url")
+  fileType      String   @map("file_type")
+  fileSize      Int?     @map("file_size")
+  isPublic      Boolean  @default(false) @map("is_public")
+  hashtags      String[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+}
 ```
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run setup-db` - Initialize database tables
-- `npm run rebuild-db` - Rebuild database schema
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript type checking
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | Neon PostgreSQL connection string | Yes |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Yes |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | Yes |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
+4. Run tests: `npm run type-check`
 5. Submit a pull request
 
 ## License
 
-MIT License
+MIT License - see LICENSE file for details
