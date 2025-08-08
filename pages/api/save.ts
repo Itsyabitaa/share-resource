@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `data:text/plain;base64,${Buffer.from(content).toString('base64')}`,
       {
         resource_type: 'raw',
-        public_id: `mdshare/${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                     public_id: `md-nest/${Date.now()}-${Math.random().toString(36).substring(7)}`,
         format: 'txt',
         overwrite: true,
       }
