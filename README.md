@@ -1,4 +1,4 @@
-# Markdown Share App
+# md-nest
 
 A modern markdown sharing application built with Next.js, featuring dark/light mode, file uploads, and hybrid storage architecture.
 
@@ -35,7 +35,7 @@ A modern markdown sharing application built with Next.js, featuring dark/light m
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd mdshare-app
+   cd md-nest
    ```
 
 2. **Install dependencies**
