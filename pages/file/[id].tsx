@@ -18,8 +18,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       }
     }
 
+    // Check if cloudinaryUrl exists
+    if (!fileData.cloudinaryUrl) {
+      console.error('No cloudinaryUrl found for file:', id)
+      return {
+        notFound: true
+      }
+    }
+
     // Fetch content from Cloudinary URL
-    const response = await fetch(fileData.cloudinary_url)
+    const response = await fetch(fileData.cloudinaryUrl)
     const content = await response.text()
 
     return { 
@@ -27,8 +35,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         content,
         title: fileData.title,
         author: fileData.author,
-        fileType: fileData.file_type,
-        createdAt: fileData.created_at
+        fileType: fileData.fileType,
+        createdAt: fileData.createdAt.toISOString()
       } 
     }
   } catch (error) {
