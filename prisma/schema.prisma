@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id            String   @id @default(cuid())
+  title         String   @db.VarChar(255)
+  author        String?
+  cloudinaryUrl String   @map("cloudinary_url")
+  fileType      String   @map("file_type") @db.VarChar(10)
+  fileSize      Int?     @map("file_size")
+  isPublic      Boolean  @default(false) @map("is_public")
+  hashtags      String[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("files")
+  @@index([createdAt(sort: Desc)])
+  @@index([isPublic])
+  @@index([hashtags], type: Gin)
+}
