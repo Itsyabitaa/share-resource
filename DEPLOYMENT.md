@@ -1,222 +1,175 @@
-# Deployment Guide - Vercel CI/CD
+# Deployment Guide
 
-This guide will walk you through setting up automated deployment to Vercel using GitHub Actions.
+This guide covers deploying MDNest to Vercel with automated CI/CD.
 
 ## Prerequisites
 
-1. **GitHub Repository**: Your code should be in a GitHub repository
-2. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
-3. **Neon Database**: Set up your Neon PostgreSQL database
-4. **Cloudinary Account**: Set up your Cloudinary account
+- GitHub repository with your code
+- Vercel account ([vercel.com](https://vercel.com))
+- PostgreSQL database (Neon, Supabase, etc.)
+- Cloudinary account (optional)
 
-## Step 1: Connect Repository to Vercel
+## Quick Deployment
 
-### Option A: Via Vercel Dashboard (Recommended)
+### Option 1: Vercel Dashboard (Recommended)
 
-1. Go to [vercel.com](https://vercel.com) and sign in
-2. Click "New Project"
-3. Import your GitHub repository
-4. Vercel will auto-detect Next.js settings
-5. Add environment variables:
+1. **Connect Repository**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js settings
+
+2. **Environment Variables**
+   Add these in Vercel dashboard:
    ```
-   DATABASE_URL=your_neon_database_url
+   DATABASE_URL=your_postgresql_connection_string
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret
    ```
-6. Deploy
 
-### Option B: Via Vercel CLI
+3. **Deploy**
+   - Automatic deployments on push to main
+   - Preview deployments for pull requests
+
+### Option 2: Vercel CLI
 
 ```bash
-# Install Vercel CLI
 npm i -g vercel
-
-# Login to Vercel
 vercel login
-
-# Deploy
 vercel --prod
 ```
 
-## Step 2: Get Vercel Tokens
+## GitHub Actions CI/CD
 
-You'll need these for GitHub Actions:
+For automated deployments with GitHub Actions:
+
+### Step 1: Get Vercel Tokens
 
 ```bash
-# Install Vercel CLI if not already installed
 npm i -g vercel
-
-# Login
 vercel login
-
-# Get your tokens
-vercel whoami
+vercel whoami  # Get your username and token
+vercel ls      # List projects
+vercel inspect PROJECT_NAME  # Get project details
 ```
 
-This will show:
-- Your Vercel username
-- Your Vercel token (save this)
+### Step 2: Setup GitHub Secrets
 
-## Step 3: Get Project Information
-
-```bash
-# List your projects
-vercel ls
-
-# Get project details (replace PROJECT_NAME)
-vercel inspect PROJECT_NAME
-```
-
-Note down:
-- Project ID
-- Org ID
-
-## Step 4: Setup GitHub Secrets
-
-In your GitHub repository:
-
-1. Go to **Settings** → **Secrets and variables** → **Actions**
-2. Add these secrets:
+In your GitHub repository → Settings → Secrets and variables → Actions:
 
 | Secret Name | Value |
 |-------------|-------|
 | `VERCEL_TOKEN` | Your Vercel token |
 | `VERCEL_ORG_ID` | Your Vercel organization ID |
 | `VERCEL_PROJECT_ID` | Your Vercel project ID |
-| `DATABASE_URL` | Your Neon database URL |
+| `DATABASE_URL` | Your PostgreSQL connection string |
 | `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Your Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Your Cloudinary API secret |
 
-## Step 5: Test Deployment
+### Step 3: Create GitHub Actions Workflow
 
-1. **Push to main branch**:
+Create `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to Vercel
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate Prisma client
+        run: npm run db:generate
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+```
+
+## Environment Variables
+
+### Required
+- `DATABASE_URL` - PostgreSQL connection string
+
+### Optional
+- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Cloudinary API secret
+
+## Database Setup
+
+After deployment, you need to set up your database:
+
+1. **Generate Prisma client** (done in build)
+2. **Push schema to database**:
    ```bash
-   git add .
-   git commit -m "Initial deployment setup"
-   git push origin main
+   # Locally or via Vercel CLI
+   npm run db:push
    ```
-
-2. **Check GitHub Actions**:
-   - Go to your repository → Actions tab
-   - You should see the deployment workflow running
-
-3. **Check Vercel**:
-   - Go to your Vercel dashboard
-   - You should see the deployment in progress
-
-## Step 6: Verify Deployment
-
-1. **Check your live URL** (provided by Vercel)
-2. **Test the application**:
-   - Create a markdown document
-   - Upload a file
-   - Share the link
-   - Test dark/light mode
 
 ## Troubleshooting
 
-### Common Issues
+### Build fails with Prisma error
+- Ensure `DATABASE_URL` is set in Vercel
+- Check database connection string format
+- Verify database is accessible from Vercel's servers
 
-1. **Build Failures**:
-   - Check GitHub Actions logs
-   - Ensure all environment variables are set
-   - Verify database connection
+### Database connection fails in production
+- Check if database allows external connections
+- Verify connection string includes SSL settings
+- Test connection locally first
 
-2. **Environment Variables**:
-   - Double-check all secrets in GitHub
-   - Ensure Vercel has the same environment variables
+### Environment variables not found
+- Double-check variable names in Vercel dashboard
+- Ensure no extra spaces or quotes
+- Redeploy after adding variables
 
-3. **Database Connection**:
-   - Verify Neon database is accessible
-   - Check DATABASE_URL format
+## Performance Optimization
 
-4. **Cloudinary Issues**:
-   - Verify Cloudinary credentials
-   - Check upload permissions
+### Database
+- Use connection pooling in production
+- Add database indexes for better performance
+- Consider read replicas for high traffic
 
-### Debug Commands
-
-```bash
-# Check Vercel status
-vercel ls
-
-# View deployment logs
-vercel logs
-
-# Redeploy
-vercel --prod --force
-```
-
-## Advanced Configuration
-
-### Custom Domain
-
-1. In Vercel dashboard, go to your project
-2. Click "Settings" → "Domains"
-3. Add your custom domain
-4. Update DNS records as instructed
-
-### Environment-Specific Variables
-
-You can set different variables for:
-- Production
-- Preview (staging)
-- Development
-
-In Vercel dashboard → Settings → Environment Variables
-
-### Performance Optimization
-
-1. **Enable Edge Functions** (if needed)
-2. **Configure CDN settings**
-3. **Optimize images** (already configured for Cloudinary)
+### Vercel
+- Enable edge functions for API routes
+- Use Vercel's image optimization
+- Configure caching headers
 
 ## Monitoring
 
-### Vercel Analytics
+- **Vercel Analytics**: Built-in performance monitoring
+- **Database Monitoring**: Use your provider's dashboard
+- **Error Tracking**: Consider Sentry integration
 
-1. Enable Vercel Analytics in dashboard
-2. Monitor performance metrics
-3. Track user behavior
+## Rollback
 
-### Error Tracking
-
-Consider adding error tracking:
-- Sentry
-- LogRocket
-- Bugsnag
-
-## Security
-
-### Environment Variables
-
-- Never commit secrets to Git
-- Use GitHub Secrets for sensitive data
-- Rotate keys regularly
-
-### Database Security
-
-- Use connection pooling
-- Enable SSL for database connections
-- Regular backups
-
-## Cost Optimization
-
-### Vercel Pricing
-
-- **Hobby**: Free tier (good for personal projects)
-- **Pro**: $20/month (for teams)
-- **Enterprise**: Custom pricing
-
-### Database Costs
-
-- **Neon**: Free tier includes 3GB storage
-- **Cloudinary**: Free tier includes 25GB storage
-
-## Support
-
-- **Vercel Documentation**: [vercel.com/docs](https://vercel.com/docs)
-- **GitHub Actions**: [docs.github.com/en/actions](https://docs.github.com/en/actions)
-- **Next.js Deployment**: [nextjs.org/docs/deployment](https://nextjs.org/docs/deployment)
+To rollback to a previous deployment:
+1. Go to Vercel dashboard
+2. Select your project
+3. Go to Deployments tab
+4. Click "Redeploy" on previous deployment
