@@ -89,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       content,
       id: fileData.id,
       title: fileData.title,
-      url: fileData.cloudinary_url
+      url: fileData.cloudinaryUrl
     })
   } catch (error) {
     console.error('File conversion error:', error)
