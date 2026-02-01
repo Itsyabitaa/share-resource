@@ -165,8 +165,7 @@ export default function AboutPage() {
           color: colors.secondary,
           fontSize: '14px'
         }}>
-          <p>Built with ❤️ for the markdown community</p>
-        </footer>
+          </footer>
       </div>
     </div>
   )
