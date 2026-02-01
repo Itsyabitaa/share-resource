@@ -7,6 +7,7 @@
     "start": "next start",
     "setup-db": "ts-node scripts/setup-db.ts",
     "rebuild-db": "node scripts/rebuild-db.js",
+    "migrate-fresh": "node scripts/migrate-fresh.js",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },
