@@ -1,5 +1,7 @@
 import sql from './neonClient'
 
+import { v4 as uuidv4 } from 'uuid'
+
 export async function createTables() {
   try {
     // Create files table for hybrid storage
@@ -37,18 +39,19 @@ export async function createTables() {
 }
 
 export async function insertFile(
-  title: string, 
-  cloudinaryUrl: string, 
-  fileType: string, 
-  fileSize?: number, 
+  title: string,
+  cloudinaryUrl: string,
+  fileType: string,
+  fileSize?: number,
   author?: string,
   isPublic: boolean = false,
   hashtags: string[] = []
 ) {
   try {
+    const id = uuidv4()
     const result = await sql`
-      INSERT INTO files (title, author, cloudinary_url, file_type, file_size, is_public, hashtags)
-      VALUES (${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags})
+      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags)
+      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags})
       RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags
     `
     return result[0]
@@ -105,20 +108,20 @@ export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
       FROM files 
       WHERE is_public = true
     `
-    
+
     if (searchTerm) {
       query = sql`${query} AND (
         title ILIKE ${`%${searchTerm}%`} OR 
         author ILIKE ${`%${searchTerm}%`}
       )`
     }
-    
+
     if (hashtag) {
       query = sql`${query} AND ${hashtag} = ANY(hashtags)`
     }
-    
+
     query = sql`${query} ORDER BY created_at DESC`
-    
+
     const result = await query
     return result
   } catch (error) {
