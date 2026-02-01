@@ -64,7 +64,7 @@ export default function Header() {
           gap: '8px'
         }}
       >
-        {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
+        {theme === 'light' ? '🌙' : '☀️'}
       </button>
     </div>
   )
