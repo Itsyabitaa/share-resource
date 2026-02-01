@@ -52,3 +52,54 @@ body.dark ::-webkit-scrollbar-thumb {
 body.dark ::-webkit-scrollbar-thumb:hover {
   background: #777;
 }
+
+/* Footer styles */
+.footer {
+  margin-top: auto;
+  padding: 2rem 1rem;
+  text-align: center;
+  border-top: 1px solid rgba(128, 128, 128, 0.2);
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+body.dark .footer {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.footer-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.footer-content p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.footer-link {
+  color: #0070f3;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.footer-link:hover {
+  opacity: 0.8;
+  border-bottom-color: #0070f3;
+}
+
+body.dark .footer-link {
+  color: #3291ff;
+}
+
+body.dark .footer-link:hover {
+  border-bottom-color: #3291ff;
+}
+
+.footer-repo {
+  font-size: 0.85rem;
+}
