@@ -1,0 +1,15 @@
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
+
+// Create PostgreSQL connection pool for Better Auth
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+export const auth = betterAuth({
+    database: pool,
+    emailAndPassword: {
+        enabled: true,
+    },
+    trustedOrigins: ["http://localhost:3000"],
+});
