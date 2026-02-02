@@ -50,6 +50,7 @@ async function migrateFresh() {
       CREATE TABLE session (
         id TEXT PRIMARY KEY,
         "expiresAt" TIMESTAMP NOT NULL,
+        token TEXT NOT NULL UNIQUE,
         "ipAddress" TEXT,
         "userAgent" TEXT,
         "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
