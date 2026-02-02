@@ -132,41 +132,6 @@ A modern, full-featured markdown sharing platform with tiered storage, authentic
    ```
    Open [http://localhost:3000](http://localhost:3000)
 
-## 📊 Database Schema
-
-### Files Table
-```sql
-CREATE TABLE files (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  author VARCHAR(255),
-  cloudinary_url TEXT NOT NULL,
-  file_type VARCHAR(10) NOT NULL,
-  file_size INTEGER,
-  is_public BOOLEAN DEFAULT false,
-  hashtags TEXT[],
-  user_id UUID,                              -- Links to user table
-  expires_at TIMESTAMP WITH TIME ZONE,       -- For guest uploads
-  storage_tier VARCHAR(20) DEFAULT 'guest',  -- 'guest' or 'registered'
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-### User Credentials Table
-```sql
-CREATE TABLE user_credentials (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL UNIQUE,
-  neon_database_url TEXT,                    -- Encrypted
-  cloudinary_cloud_name TEXT,                -- Encrypted
-  cloudinary_api_key TEXT,                   -- Encrypted
-  cloudinary_api_secret TEXT,                -- Encrypted
-  use_custom_credentials BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
 
 ## 🔧 Configuration
 
