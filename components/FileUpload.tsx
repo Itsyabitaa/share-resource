@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTheme } from '../lib/ThemeContext'
+import { useSession } from '../lib/auth-client'
 
 interface FileUploadProps {
   uploadedFile: File | null
@@ -21,12 +22,20 @@ export default function FileUpload({
   onAuthorChange
 }: FileUploadProps) {
   const { colors } = useTheme()
+  const { data: session } = useSession()
+
+  // Auto-populate author field when checkbox is checked and user is logged in
+  useEffect(() => {
+    if (showAuthor && session?.user?.name && !author) {
+      onAuthorChange(session.user.name)
+    }
+  }, [showAuthor, session?.user?.name, author, onAuthorChange])
 
   return (
-    <div style={{ 
-      marginBottom: 20, 
-      padding: '30px', 
-      border: `2px dashed ${colors.primary}`, 
+    <div style={{
+      marginBottom: 20,
+      padding: '30px',
+      border: `2px dashed ${colors.primary}`,
       borderRadius: '10px',
       textAlign: 'center',
       backgroundColor: colors.cardBackground
@@ -45,10 +54,10 @@ export default function FileUpload({
         <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '15px' }}>
           Supported formats: TXT, DOC, DOCX, MD
         </div>
-        <div style={{ 
-          padding: '10px 20px', 
-          backgroundColor: colors.buttonBackground, 
-          color: colors.buttonText, 
+        <div style={{
+          padding: '10px 20px',
+          backgroundColor: colors.buttonBackground,
+          color: colors.buttonText,
           borderRadius: '5px',
           display: 'inline-block'
         }}>
@@ -60,19 +69,19 @@ export default function FileUpload({
           ✅ Selected: {uploadedFile.name}
         </div>
       )}
-      
+
       {/* Author field for upload mode */}
-      <div style={{ 
-        marginTop: '20px', 
+      <div style={{
+        marginTop: '20px',
         textAlign: 'left',
         padding: '20px',
         backgroundColor: colors.inputBackground,
         borderRadius: '8px',
         border: `1px solid ${colors.border}`
       }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '10px',
           marginBottom: '10px'
         }}>
@@ -83,9 +92,9 @@ export default function FileUpload({
             onChange={(e) => onShowAuthorChange(e.target.checked)}
             style={{ cursor: 'pointer' }}
           />
-          <label 
-            htmlFor="show-author-upload" 
-            style={{ 
+          <label
+            htmlFor="show-author-upload"
+            style={{
               color: colors.text,
               fontWeight: '500',
               cursor: 'pointer'
@@ -94,7 +103,7 @@ export default function FileUpload({
             Add author acknowledgment
           </label>
         </div>
-        
+
         {showAuthor && (
           <input
             type="text"
