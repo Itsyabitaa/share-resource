@@ -159,6 +159,36 @@ export default function Header() {
                   </div>
 
                   <div style={{ padding: '8px' }}>
+                    <Link href="/settings" onClick={() => setShowProfileMenu(false)}>
+                      <button
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          fontSize: '14px',
+                          backgroundColor: 'transparent',
+                          color: colors.text,
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          marginBottom: '4px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <span>⚙️</span>
+                        Settings
+                      </button>
+                    </Link>
+
                     <button
                       onClick={handleSignOut}
                       style={{
