@@ -237,53 +237,6 @@ npm run lint         # Run ESLint
 npm run type-check   # TypeScript type checking
 ```
 
-## 🌍 Deployment
-
-### Vercel Deployment (Recommended)
-
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Connect to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Vercel auto-detects Next.js
-
-3. **Add Environment Variables**
-   In Vercel Dashboard → Settings → Environment Variables:
-   - `DATABASE_URL`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-   - `BETTER_AUTH_SECRET`
-   - `BETTER_AUTH_URL` (your production URL)
-   - `ENCRYPTION_KEY`
-   - `CLEANUP_CRON_SECRET`
-
-4. **Deploy**
-   - Click "Deploy"
-   - Vercel builds and deploys automatically
-
-5. **Setup Cron Job**
-   - Create `vercel.json` (see Configuration section)
-   - Redeploy
-
-### Manual Deployment
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Login
-vercel login
-
-# Deploy
-vercel --prod
-```
 
 ## 🔐 Security Features
 
