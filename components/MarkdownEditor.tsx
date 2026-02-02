@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useTheme } from '../lib/ThemeContext'
+import { useSession } from '../lib/auth-client'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
 import 'easymde/dist/easymde.min.css'
@@ -35,6 +36,14 @@ export default function MarkdownEditor({
   onHashtagsChange
 }: MarkdownEditorProps) {
   const { colors } = useTheme()
+  const { data: session } = useSession()
+
+  // Auto-populate author field when checkbox is checked and user is logged in
+  useEffect(() => {
+    if (showAuthor && session?.user?.name && !author) {
+      onAuthorChange(session.user.name)
+    }
+  }, [showAuthor, session?.user?.name, author, onAuthorChange])
 
   // Stable onChange handler to prevent cursor issues
   const handleTextChange = useCallback((value: string) => {
@@ -66,9 +75,9 @@ export default function MarkdownEditor({
       {/* Title and Author Fields */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ marginBottom: 15 }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '5px', 
+          <label style={{
+            display: 'block',
+            marginBottom: '5px',
             color: colors.text,
             fontWeight: '500'
           }}>
@@ -97,11 +106,11 @@ export default function MarkdownEditor({
             }}
           />
         </div>
-        
+
         <div style={{ marginBottom: 15 }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
             gap: '10px',
             marginBottom: '5px'
           }}>
@@ -112,9 +121,9 @@ export default function MarkdownEditor({
               onChange={(e) => onShowAuthorChange(e.target.checked)}
               style={{ cursor: 'pointer' }}
             />
-            <label 
-              htmlFor="show-author" 
-              style={{ 
+            <label
+              htmlFor="show-author"
+              style={{
                 color: colors.text,
                 fontWeight: '500',
                 cursor: 'pointer'
@@ -123,7 +132,7 @@ export default function MarkdownEditor({
               Add author acknowledgment
             </label>
           </div>
-          
+
           {showAuthor && (
             <input
               type="text"
@@ -152,9 +161,9 @@ export default function MarkdownEditor({
 
         {/* Public/Private Toggle */}
         <div style={{ marginBottom: 15 }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
             gap: '10px',
             marginBottom: '5px'
           }}>
@@ -165,9 +174,9 @@ export default function MarkdownEditor({
               onChange={(e) => onIsPublicChange(e.target.checked)}
               style={{ cursor: 'pointer' }}
             />
-            <label 
-              htmlFor="is-public" 
-              style={{ 
+            <label
+              htmlFor="is-public"
+              style={{
                 color: colors.text,
                 fontWeight: '500',
                 cursor: 'pointer'
@@ -181,9 +190,9 @@ export default function MarkdownEditor({
         {/* Hashtags Input */}
         {isPublic && (
           <div style={{ marginBottom: 15 }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '5px', 
+            <label style={{
+              display: 'block',
+              marginBottom: '5px',
               color: colors.text,
               fontWeight: '500'
             }}>
@@ -220,7 +229,7 @@ export default function MarkdownEditor({
           </div>
         )}
       </div>
-      
+
       <style jsx>{`
         .editor-container :global(.CodeMirror) {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -240,9 +249,9 @@ export default function MarkdownEditor({
         }
       `}</style>
       <div className="editor-container">
-        <SimpleMDE 
-          value={text} 
-          onChange={handleTextChange} 
+        <SimpleMDE
+          value={text}
+          onChange={handleTextChange}
           options={mdeOptions}
         />
       </div>
