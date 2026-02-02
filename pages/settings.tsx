@@ -14,7 +14,11 @@ export default function Settings() {
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [validating, setValidating] = useState(false)
+    const [savingProfile, setSavingProfile] = useState(false)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+    // Profile state
+    const [profileName, setProfileName] = useState('')
 
     // Form state
     const [useCustomCredentials, setUseCustomCredentials] = useState(false)
@@ -34,9 +38,22 @@ export default function Settings() {
 
     useEffect(() => {
         if (session) {
+            loadProfile()
             loadCredentials()
         }
     }, [session])
+
+    const loadProfile = async () => {
+        try {
+            const response = await fetch('/api/profile')
+            if (response.ok) {
+                const data = await response.json()
+                setProfileName(data.name || '')
+            }
+        } catch (error) {
+            console.error('Failed to load profile:', error)
+        }
+    }
 
     const loadCredentials = async () => {
         setLoading(true)
@@ -51,6 +68,35 @@ export default function Settings() {
             console.error('Failed to load credentials:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        if (!profileName.trim()) {
+            setToast({ message: 'Please enter your name', type: 'error' })
+            return
+        }
+
+        setSavingProfile(true)
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: profileName }),
+            })
+
+            if (response.ok) {
+                setToast({ message: 'Profile updated successfully!', type: 'success' })
+            } else {
+                const data = await response.json()
+                setToast({ message: data.error || 'Failed to update profile', type: 'error' })
+            }
+        } catch (error) {
+            setToast({ message: 'Failed to update profile', type: 'error' })
+        } finally {
+            setSavingProfile(false)
         }
     }
 
@@ -189,10 +235,102 @@ export default function Settings() {
                     color: colors.text,
                     fontSize: '2rem',
                     fontWeight: '700',
+                    marginBottom: '2rem',
+                }}>
+                    Settings
+                </h1>
+
+                {/* Profile Section */}
+                <div style={{
+                    backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+                    padding: '2rem',
+                    borderRadius: '12px',
+                    border: theme === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e5e5',
+                    marginBottom: '2rem',
+                }}>
+                    <h2 style={{
+                        color: colors.text,
+                        fontSize: '1.5rem',
+                        fontWeight: '600',
+                        marginBottom: '1rem',
+                    }}>
+                        Profile
+                    </h2>
+
+                    <div style={{
+                        backgroundColor: theme === 'dark' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        borderLeft: '4px solid #22c55e',
+                        marginBottom: '1.5rem',
+                    }}>
+                        <p style={{ color: colors.text, fontSize: '0.95rem', margin: 0 }}>
+                            <strong>💡 Tip:</strong> Your name will automatically appear in the author acknowledgment field when you create documents.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSaveProfile}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{
+                                color: colors.text,
+                                fontWeight: '500',
+                                marginBottom: '0.5rem',
+                                display: 'block',
+                                fontSize: '0.95rem',
+                            }}>
+                                Display Name
+                            </label>
+                            <input
+                                type="text"
+                                value={profileName}
+                                onChange={(e) => setProfileName(e.target.value)}
+                                placeholder="Enter your name"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.875rem 1rem',
+                                    borderRadius: '8px',
+                                    border: theme === 'dark' ? '2px solid #2a2a2a' : '2px solid #e5e5e5',
+                                    fontSize: '0.95rem',
+                                    backgroundColor: theme === 'dark' ? '#0a0a0a' : '#fafafa',
+                                    color: colors.text,
+                                    outline: 'none',
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={savingProfile}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                backgroundColor: savingProfile
+                                    ? (theme === 'dark' ? '#2a2a2a' : '#e5e5e5')
+                                    : (theme === 'dark' ? '#ffffff' : '#000000'),
+                                color: savingProfile
+                                    ? (theme === 'dark' ? '#666666' : '#999999')
+                                    : (theme === 'dark' ? '#000000' : '#ffffff'),
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
+                                cursor: savingProfile ? 'not-allowed' : 'pointer',
+                                opacity: savingProfile ? 0.6 : 1,
+                            }}
+                        >
+                            {savingProfile ? 'Saving...' : 'Save Profile'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* Storage Settings Section */}
+                <h2 style={{
+                    color: colors.text,
+                    fontSize: '1.5rem',
+                    fontWeight: '600',
                     marginBottom: '1rem',
                 }}>
                     Storage Settings
-                </h1>
+                </h2>
 
                 <div style={{
                     backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
