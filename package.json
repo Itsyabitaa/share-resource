@@ -5,10 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "setup-db": "ts-node scripts/setup-db.ts",
-    "rebuild-db": "node scripts/rebuild-db.js",
     "migrate-fresh": "node scripts/migrate-fresh.js",
-    "migrate-tiered-storage": "ts-node scripts/migrate-tiered-storage.ts",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },
