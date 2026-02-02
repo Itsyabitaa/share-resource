@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 export async function createTables() {
   try {
-    // Create files table for hybrid storage
+    // Create files table for hybrid storage with tiered storage support
     await sql`
       CREATE TABLE IF NOT EXISTS files (
         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -15,6 +15,24 @@ export async function createTables() {
         file_size INTEGER,
         is_public BOOLEAN DEFAULT false,
         hashtags TEXT[],
+        user_id UUID,
+        expires_at TIMESTAMP WITH TIME ZONE,
+        storage_tier VARCHAR(20) DEFAULT 'guest',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `
+
+    // Create user_credentials table for storing user's custom credentials
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_credentials (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        user_id UUID NOT NULL UNIQUE,
+        neon_database_url TEXT,
+        cloudinary_cloud_name TEXT,
+        cloudinary_api_key TEXT,
+        cloudinary_api_secret TEXT,
+        use_custom_credentials BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
@@ -29,6 +47,15 @@ export async function createTables() {
     `
     await sql`
       CREATE INDEX IF NOT EXISTS idx_files_hashtags ON files USING GIN(hashtags)
+    `
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)
+    `
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_files_expires_at ON files(expires_at)
+    `
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_user_credentials_user_id ON user_credentials(user_id)
     `
 
     console.log('Database tables created successfully')
@@ -45,14 +72,17 @@ export async function insertFile(
   fileSize?: number,
   author?: string,
   isPublic: boolean = false,
-  hashtags: string[] = []
+  hashtags: string[] = [],
+  userId?: string,
+  expiresAt?: Date,
+  storageTier: 'guest' | 'registered' = 'guest'
 ) {
   try {
     const id = uuidv4()
     const result = await sql`
-      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags)
-      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags})
-      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags
+      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags, user_id, expires_at, storage_tier)
+      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier})
+      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags, user_id, expires_at, storage_tier
     `
     return result[0]
   } catch (error) {
