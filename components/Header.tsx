@@ -63,6 +63,33 @@ export default function Header() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Dark mode toggle - moved to the left */}
+        <button
+          onClick={toggleTheme}
+          style={{
+            padding: '8px 16px',
+            fontSize: '14px',
+            backgroundColor: colors.buttonBackground,
+            color: colors.buttonText,
+            border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
+            borderRadius: '8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = colors.buttonBackground
+          }}
+        >
+          {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
+        </button>
+
+        {/* Profile or Sign In button - moved to the right */}
         {session?.user ? (
           <div style={{ position: 'relative' }}>
             <button
@@ -246,31 +273,6 @@ export default function Header() {
             </button>
           </Link>
         )}
-
-        <button
-          onClick={toggleTheme}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            backgroundColor: colors.buttonBackground,
-            color: colors.buttonText,
-            border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = colors.buttonBackground
-          }}
-        >
-          {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
-        </button>
       </div>
 
       <style jsx>{`
