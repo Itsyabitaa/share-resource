@@ -7,9 +7,11 @@ interface FileUploadProps {
   isConverting: boolean
   showAuthor: boolean
   author: string
+  autoFormat: boolean
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
   onShowAuthorChange: (checked: boolean) => void
   onAuthorChange: (value: string) => void
+  onAutoFormatChange: (checked: boolean) => void
 }
 
 export default function FileUpload({
@@ -17,9 +19,11 @@ export default function FileUpload({
   isConverting,
   showAuthor,
   author,
+  autoFormat,
   onFileUpload,
   onShowAuthorChange,
-  onAuthorChange
+  onAuthorChange,
+  onAutoFormatChange
 }: FileUploadProps) {
   const { colors } = useTheme()
   const { data: session } = useSession()
@@ -128,6 +132,45 @@ export default function FileUpload({
             }}
           />
         )}
+
+        {/* Auto-format toggle */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginTop: '15px',
+          paddingTop: '15px',
+          borderTop: `1px solid ${colors.border}`
+        }}>
+          <input
+            type="checkbox"
+            id="auto-format-upload"
+            checked={autoFormat}
+            onChange={(e) => onAutoFormatChange(e.target.checked)}
+            style={{ cursor: 'pointer' }}
+          />
+          <label
+            htmlFor="auto-format-upload"
+            style={{
+              color: colors.text,
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Auto-format to markdown
+          </label>
+          <span
+            style={{
+              fontSize: '12px',
+              color: colors.secondary,
+              marginLeft: '5px'
+            }}
+            title="Automatically detect and format headings, lists, code blocks, and links"
+          >
+            ℹ️
+          </span>
+        </div>
       </div>
     </div>
   )
