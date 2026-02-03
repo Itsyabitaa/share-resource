@@ -4,6 +4,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import cloudinary from '../../lib/cloudinary'
 import { insertFile } from '../../lib/dbSchema'
+import { formatToMarkdown, isAlreadyMarkdown } from '../../utils/markdownFormatter'
 
 export const config = {
   api: {
@@ -34,30 +35,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'No file uploaded' })
     }
 
-    // Extract author from form fields
+    // Extract author and autoFormat from form fields
     const author = fields.author?.[0] || undefined
+    const autoFormat = fields.autoFormat?.[0] !== 'false' // Default to true
 
     const filePath = file.filepath
     const fileExtension = path.extname(file.originalFilename || '').toLowerCase()
     const fileName = file.originalFilename || 'uploaded-file'
-    
+
     let content = ''
 
     // Handle different file types
     switch (fileExtension) {
       case '.txt':
-      case '.md':
-        // Read text files directly
+        // Read text files and optionally format to markdown
         content = await fs.readFile(filePath, 'utf-8')
+        if (autoFormat) {
+          content = formatToMarkdown(content)
+        }
         break
-        
+
+      case '.md':
+        // Read markdown files directly, skip formatting if already well-formatted
+        content = await fs.readFile(filePath, 'utf-8')
+        if (autoFormat && !isAlreadyMarkdown(content)) {
+          content = formatToMarkdown(content)
+        }
+        break
+
       case '.doc':
       case '.docx':
         // For now, just read as text (you might want to add proper DOC parsing)
         content = await fs.readFile(filePath, 'utf-8')
-        content = `# Converted Document\n\n${content}`
+        if (autoFormat) {
+          content = formatToMarkdown(content)
+        } else {
+          content = `# Converted Document\n\n${content}`
+        }
         break
-        
+
       default:
         return res.status(400).json({ error: 'Unsupported file type' })
     }
@@ -70,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `data:text/plain;base64,${Buffer.from(content).toString('base64')}`,
       {
         resource_type: 'raw',
-                     public_id: `md-nest/${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        public_id: `md-nest/${Date.now()}-${Math.random().toString(36).substring(7)}`,
         format: fileExtension.substring(1),
         overwrite: true,
       }
@@ -85,7 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       author
     )
 
-    res.status(200).json({ 
+    res.status(200).json({
       content,
       id: fileData.id,
       title: fileData.title,
@@ -93,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     console.error('File conversion error:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'File conversion failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     })
