@@ -212,7 +212,34 @@ export default function FilePage({
         alignItems: 'center',
         marginBottom: 30
       }}>
-        <div>
+        <div style={{ flex: 1 }}>
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            style={{
+              padding: '8px 16px',
+              fontSize: '14px',
+              backgroundColor: colors.buttonBackground,
+              color: colors.buttonText,
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '15px',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.primary
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.buttonBackground
+            }}
+          >
+            ← Back
+          </button>
+
           <h1 style={{ color: colors.text, marginBottom: '8px' }}>{title}</h1>
           <div style={{
             fontSize: '14px',
