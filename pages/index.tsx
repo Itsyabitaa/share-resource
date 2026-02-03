@@ -20,6 +20,7 @@ export default function Home() {
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
+  const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const router = useRouter()
@@ -48,6 +49,7 @@ export default function Home() {
       file,
       showAuthor,
       author,
+      autoFormat,
       setText,
       setMode,
       setIsConverting
@@ -150,9 +152,11 @@ export default function Home() {
           isConverting={isConverting}
           showAuthor={showAuthor}
           author={author}
+          autoFormat={autoFormat}
           onFileUpload={onFileUpload}
           onShowAuthorChange={setShowAuthor}
           onAuthorChange={setAuthor}
+          onAutoFormatChange={setAutoFormat}
         />
       )}
 
