@@ -5,6 +5,7 @@ import { useSession } from '../lib/auth-client'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
 import 'easymde/dist/easymde.min.css'
+import { formatToMarkdown } from '../utils/markdownFormatter'
 
 interface MarkdownEditorProps {
   text: string
@@ -49,6 +50,14 @@ export default function MarkdownEditor({
   const handleTextChange = useCallback((value: string) => {
     onTextChange(value)
   }, [onTextChange])
+
+  // Format text handler
+  const handleFormatText = useCallback(() => {
+    if (text.trim().length > 0) {
+      const formatted = formatToMarkdown(text)
+      onTextChange(formatted)
+    }
+  }, [text, onTextChange])
 
   // Memoize options to prevent unnecessary re-renders
   const mdeOptions = React.useMemo(() => ({
@@ -228,6 +237,47 @@ export default function MarkdownEditor({
             />
           </div>
         )}
+      </div>
+
+      {/* Format Text Button */}
+      <div style={{
+        marginBottom: '15px',
+        display: 'flex',
+        justifyContent: 'flex-end'
+      }}>
+        <button
+          onClick={handleFormatText}
+          disabled={!text || text.trim().length === 0}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: text && text.trim().length > 0 ? colors.buttonBackground : colors.border,
+            color: text && text.trim().length > 0 ? colors.buttonText : colors.secondary,
+            border: 'none',
+            borderRadius: '5px',
+            cursor: text && text.trim().length > 0 ? 'pointer' : 'not-allowed',
+            fontSize: '14px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+            opacity: text && text.trim().length > 0 ? 1 : 0.6
+          }}
+          onMouseEnter={(e) => {
+            if (text && text.trim().length > 0) {
+              e.currentTarget.style.opacity = '0.9'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (text && text.trim().length > 0) {
+              e.currentTarget.style.opacity = '1'
+            }
+          }}
+          title="Automatically format text to markdown (detect headings, lists, code blocks, etc.)"
+        >
+          <span style={{ fontSize: '16px' }}>✨</span>
+          <span>Auto-Format to Markdown</span>
+        </button>
       </div>
 
       <style jsx>{`
