@@ -2,6 +2,7 @@ export const handleFileUpload = async (
   file: File,
   showAuthor: boolean,
   author: string,
+  autoFormat: boolean,
   setText: (text: string) => void,
   setMode: (mode: 'editor' | 'upload') => void,
   setIsConverting: (converting: boolean) => void
@@ -15,6 +16,8 @@ export const handleFileUpload = async (
     if (showAuthor && author) {
       formData.append('author', author)
     }
+    // Include auto-format preference
+    formData.append('autoFormat', String(autoFormat))
 
     const res = await fetch('/api/convert', {
       method: 'POST',
@@ -52,7 +55,7 @@ export const handleSave = async (
     const res = await fetch('/api/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         content: text,
         title: title || 'Untitled Document',
         author: showAuthor ? author : undefined,
@@ -60,15 +63,15 @@ export const handleSave = async (
         hashtags
       }),
     })
-    
+
     const data = await res.json()
-    
+
     if (!res.ok) {
       console.error('Save error:', data)
       alert(`Error saving: ${data.error || data.details || 'Unknown error'}`)
       return
     }
-    
+
     if (data.id) {
       router.push(`/file/${data.id}`)
     }
