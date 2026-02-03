@@ -15,3 +15,15 @@ export const auth = betterAuth({
     },
     trustedOrigins: ["http://localhost:3000"],
 });
+
+// Helper function to get user from request
+export async function getUser(req: any) {
+    try {
+        const session = await auth.api.getSession({
+            headers: req.headers
+        });
+        return session?.user || null;
+    } catch (error) {
+        return null;
+    }
+}

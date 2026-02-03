@@ -1,5 +1,4 @@
 import sql from './neonClient'
-
 import { v4 as uuidv4 } from 'uuid'
 
 export async function createTables() {
@@ -126,33 +125,51 @@ export async function getAllFiles() {
 
 export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
   try {
-    let query = sql`
+    // Build the base query with social stats
+    let queryText = `
       SELECT 
-        id,
-        title,
-        author,
-        file_type,
-        file_size,
-        hashtags,
-        created_at::text as created_at
-      FROM files 
-      WHERE is_public = true
+        f.id,
+        f.title,
+        f.author,
+        f.file_type,
+        f.file_size,
+        f.hashtags,
+        f.created_at::text as created_at,
+        COALESCE(l.like_count, 0)::int as like_count,
+        COALESCE(c.comment_count, 0)::int as comment_count
+      FROM files f
+      LEFT JOIN (
+        SELECT file_id, COUNT(*)::int as like_count
+        FROM likes
+        GROUP BY file_id
+      ) l ON f.id = l.file_id
+      LEFT JOIN (
+        SELECT file_id, COUNT(*)::int as comment_count
+        FROM comments
+        GROUP BY file_id
+      ) c ON f.id = c.file_id
+      WHERE f.is_public = true
     `
 
+    const params: any[] = []
+
     if (searchTerm) {
-      query = sql`${query} AND (
-        title ILIKE ${`%${searchTerm}%`} OR 
-        author ILIKE ${`%${searchTerm}%`}
-      )`
+      params.push(`%${searchTerm}%`)
+      queryText += ` AND (f.title ILIKE $${params.length} OR f.author ILIKE $${params.length})`
     }
 
     if (hashtag) {
-      query = sql`${query} AND ${hashtag} = ANY(hashtags)`
+      params.push(hashtag)
+      queryText += ` AND $${params.length} = ANY(f.hashtags)`
     }
 
-    query = sql`${query} ORDER BY created_at DESC`
+    queryText += ` ORDER BY f.created_at DESC`
 
-    const result = await query
+    // Execute query with parameters
+    const result = params.length > 0
+      ? await sql(queryText, params)
+      : await sql(queryText)
+
     return result
   } catch (error) {
     console.error('Error getting public files:', error)
@@ -175,6 +192,154 @@ export async function getPopularHashtags() {
     return result
   } catch (error) {
     console.error('Error getting popular hashtags:', error)
+    throw error
+  }
+}
+
+// ============================================
+// LIKES FUNCTIONS
+// ============================================
+
+export async function toggleLike(fileId: string, userId: string) {
+  try {
+    const existing = await sql`
+      SELECT id FROM likes WHERE file_id = ${fileId} AND user_id = ${userId}
+    `
+
+    if (existing.length > 0) {
+      await sql`
+        DELETE FROM likes WHERE file_id = ${fileId} AND user_id = ${userId}
+      `
+      return { liked: false }
+    } else {
+      await sql`
+        INSERT INTO likes (file_id, user_id)
+        VALUES (${fileId}, ${userId})
+      `
+      return { liked: true }
+    }
+  } catch (error) {
+    console.error('Error toggling like:', error)
+    throw error
+  }
+}
+
+export async function getLikeCount(fileId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT COUNT(*)::int as count FROM likes WHERE file_id = ${fileId}
+    `
+    return result[0]?.count || 0
+  } catch (error) {
+    console.error('Error getting like count:', error)
+    throw error
+  }
+}
+
+export async function hasUserLiked(fileId: string, userId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT id FROM likes WHERE file_id = ${fileId} AND user_id = ${userId}
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error checking user like:', error)
+    throw error
+  }
+}
+
+export async function getLikeStats(fileId: string, userId?: string) {
+  try {
+    const count = await getLikeCount(fileId)
+    const userHasLiked = userId ? await hasUserLiked(fileId, userId) : false
+    return { count, userHasLiked }
+  } catch (error) {
+    console.error('Error getting like stats:', error)
+    throw error
+  }
+}
+
+// ============================================
+// COMMENTS FUNCTIONS
+// ============================================
+
+export async function addComment(fileId: string, userId: string, content: string) {
+  try {
+    const result = await sql`
+      INSERT INTO comments (file_id, user_id, content)
+      VALUES (${fileId}, ${userId}, ${content})
+      RETURNING 
+        id,
+        file_id,
+        user_id,
+        content,
+        created_at::text as created_at,
+        updated_at::text as updated_at
+    `
+    return result[0]
+  } catch (error) {
+    console.error('Error adding comment:', error)
+    throw error
+  }
+}
+
+export async function getComments(fileId: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id,
+        file_id,
+        user_id,
+        content,
+        created_at::text as created_at,
+        updated_at::text as updated_at
+      FROM comments 
+      WHERE file_id = ${fileId}
+      ORDER BY created_at DESC
+    `
+    return result
+  } catch (error) {
+    console.error('Error getting comments:', error)
+    throw error
+  }
+}
+
+export async function getCommentCount(fileId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT COUNT(*)::int as count FROM comments WHERE file_id = ${fileId}
+    `
+    return result[0]?.count || 0
+  } catch (error) {
+    console.error('Error getting comment count:', error)
+    throw error
+  }
+}
+
+export async function deleteComment(commentId: string, userId: string) {
+  try {
+    const result = await sql`
+      DELETE FROM comments 
+      WHERE id = ${commentId} AND user_id = ${userId}
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error deleting comment:', error)
+    throw error
+  }
+}
+
+export async function getSocialStats(fileId: string, userId?: string) {
+  try {
+    const [likeCount, commentCount, userHasLiked] = await Promise.all([
+      getLikeCount(fileId),
+      getCommentCount(fileId),
+      userId ? hasUserLiked(fileId, userId) : Promise.resolve(false)
+    ])
+    return { likeCount, commentCount, userHasLiked }
+  } catch (error) {
+    console.error('Error getting social stats:', error)
     throw error
   }
 }

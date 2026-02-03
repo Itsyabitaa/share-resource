@@ -11,6 +11,8 @@ interface FileData {
   file_size?: number
   hashtags?: string[]
   created_at: string
+  like_count?: number
+  comment_count?: number
 }
 
 interface HashtagData {
@@ -39,10 +41,10 @@ export default function Explore() {
       const params = new URLSearchParams()
       if (searchTerm) params.append('search', searchTerm)
       if (selectedHashtag) params.append('hashtag', selectedHashtag)
-      
+
       const response = await fetch(`/api/explore?${params.toString()}`)
       const data = await response.json()
-      
+
       if (!response.ok) {
         const errorMessage = data.details || data.error || 'Failed to fetch data'
         setDbError(errorMessage)
@@ -51,7 +53,7 @@ export default function Explore() {
         setHashtags([])
         return
       }
-      
+
       setFiles(data.files || [])
       setHashtags(data.hashtags || [])
     } catch (error) {
@@ -90,9 +92,9 @@ export default function Explore() {
   }
 
   return (
-    <div style={{ 
-      maxWidth: 1200, 
-      margin: '0 auto', 
+    <div style={{
+      maxWidth: 1200,
+      margin: '0 auto',
       padding: 20,
       backgroundColor: colors.background,
       color: colors.text,
@@ -100,17 +102,17 @@ export default function Explore() {
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
       <Header />
-      
+
       <div style={{ marginBottom: 30 }}>
-        <h1 style={{ 
-          fontSize: '2.5rem', 
+        <h1 style={{
+          fontSize: '2.5rem',
           marginBottom: '10px',
-          color: colors.text 
+          color: colors.text
         }}>
           Explore Public Documents
         </h1>
-        <p style={{ 
-          fontSize: '1.1rem', 
+        <p style={{
+          fontSize: '1.1rem',
           color: colors.secondary,
           marginBottom: '30px'
         }}>
@@ -119,7 +121,7 @@ export default function Explore() {
       </div>
 
       {/* Search and Filter Section */}
-      <div style={{ 
+      <div style={{
         marginBottom: 30,
         padding: '20px',
         backgroundColor: colors.inputBackground,
@@ -147,17 +149,17 @@ export default function Explore() {
 
         {/* Popular Hashtags */}
         <div>
-          <h3 style={{ 
+          <h3 style={{
             marginBottom: '15px',
             color: colors.text,
             fontSize: '1.1rem'
           }}>
             Popular Topics
           </h3>
-          <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '10px' 
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px'
           }}>
             {hashtags.map((tag) => (
               <button
@@ -169,11 +171,11 @@ export default function Explore() {
                   border: 'none',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  backgroundColor: selectedHashtag === tag.hashtag 
-                    ? colors.primary 
+                  backgroundColor: selectedHashtag === tag.hashtag
+                    ? colors.primary
                     : colors.border,
-                  color: selectedHashtag === tag.hashtag 
-                    ? '#fff' 
+                  color: selectedHashtag === tag.hashtag
+                    ? '#fff'
                     : colors.text,
                   transition: 'all 0.2s ease'
                 }}
@@ -188,27 +190,27 @@ export default function Explore() {
       {/* Results Section */}
       <div>
         {loading ? (
-          <div style={{ 
-            textAlign: 'center', 
+          <div style={{
+            textAlign: 'center',
             padding: '40px',
-            color: colors.secondary 
+            color: colors.secondary
           }}>
             Loading...
           </div>
         ) : files.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
+          <div style={{
+            textAlign: 'center',
             padding: '40px',
-            color: colors.secondary 
+            color: colors.secondary
           }}>
-            {searchTerm || selectedHashtag 
-              ? 'No documents found matching your criteria.' 
+            {searchTerm || selectedHashtag
+              ? 'No documents found matching your criteria.'
               : 'No public documents available yet.'
             }
           </div>
         ) : (
-          <div style={{ 
-            display: 'grid', 
+          <div style={{
+            display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
             gap: '20px'
           }}>
@@ -216,14 +218,14 @@ export default function Explore() {
               <div
                 key={file.id}
                 onClick={() => handleFileClick(file.id)}
-                                 style={{
-                   padding: '20px',
-                   backgroundColor: colors.inputBackground,
-                   borderRadius: '10px',
-                   border: `1px solid ${colors.border}`,
-                   cursor: 'pointer',
-                   transition: 'all 0.2s ease'
-                 }}
+                style={{
+                  padding: '20px',
+                  backgroundColor: colors.inputBackground,
+                  borderRadius: '10px',
+                  border: `1px solid ${colors.border}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = colors.primary
                   e.currentTarget.style.transform = 'translateY(-2px)'
@@ -233,15 +235,15 @@ export default function Explore() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <h3 style={{ 
+                <h3 style={{
                   marginBottom: '10px',
                   fontSize: '1.2rem',
                   color: colors.text
                 }}>
                   {file.title}
                 </h3>
-                
-                <div style={{ 
+
+                <div style={{
                   marginBottom: '15px',
                   fontSize: '0.9rem',
                   color: colors.secondary
@@ -264,11 +266,27 @@ export default function Explore() {
                   </div>
                 </div>
 
+                {/* Social Stats */}
+                <div style={{
+                  display: 'flex',
+                  gap: '15px',
+                  marginBottom: '15px',
+                  fontSize: '0.9rem',
+                  color: colors.secondary
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    ❤️ {file.like_count || 0}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    💬 {file.comment_count || 0}
+                  </div>
+                </div>
+
                 {file.hashtags && file.hashtags.length > 0 && (
-                  <div style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: '5px' 
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '5px'
                   }}>
                     {file.hashtags.map((tag) => (
                       <span

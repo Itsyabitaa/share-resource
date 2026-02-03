@@ -14,6 +14,12 @@ async function migrateFresh() {
     console.log('🗑️  Dropping all existing tables...\n');
 
     // Drop all tables (in correct order due to foreign keys)
+    await pool.query('DROP TABLE IF EXISTS comments CASCADE');
+    console.log('  ✓ Dropped comments table');
+
+    await pool.query('DROP TABLE IF EXISTS likes CASCADE');
+    console.log('  ✓ Dropped likes table');
+
     await pool.query('DROP TABLE IF EXISTS session CASCADE');
     console.log('  ✓ Dropped session table');
 
@@ -130,6 +136,31 @@ async function migrateFresh() {
     `);
     console.log('  ✓ Created user_credentials table');
 
+    // Create likes table
+    await pool.query(`
+      CREATE TABLE likes (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(file_id, user_id)
+      )
+    `);
+    console.log('  ✓ Created likes table');
+
+    // Create comments table
+    await pool.query(`
+      CREATE TABLE comments (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        content TEXT NOT NULL CHECK (char_length(content) <= 1000),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+    console.log('  ✓ Created comments table');
+
     // Create indexes for better performance
     await pool.query('CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at DESC)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_files_is_public ON files(is_public)');
@@ -139,6 +170,11 @@ async function migrateFresh() {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_user_credentials_user_id ON user_credentials(user_id)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_session_user_id ON session("userId")');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_account_user_id ON account("userId")');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_likes_file_id ON likes(file_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_likes_user_id ON likes(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_file_id ON comments(file_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id)');
     console.log('  ✓ Created indexes');
 
     console.log('\n✅ Fresh migration completed successfully!');
@@ -146,6 +182,7 @@ async function migrateFresh() {
     console.log('  • User authentication tables (user, session, account, verification)');
     console.log('  • Files table with tiered storage (user_id, expires_at, storage_tier)');
     console.log('  • User credentials table (encrypted storage for custom Neon/Cloudinary)');
+    console.log('  • Likes and comments tables (social features)');
     console.log('  • All necessary indexes');
     console.log('\n📝 Next steps:');
     console.log('  1. Make sure ENCRYPTION_KEY is set in your .env.local');
