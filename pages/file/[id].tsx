@@ -6,6 +6,7 @@ import rehypeRaw from 'rehype-raw'
 import { useTheme } from '../../lib/ThemeContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useSession } from '../../lib/auth-client'
 
 interface Comment {
   id: string
@@ -67,6 +68,7 @@ export default function FilePage({
   const [copied, setCopied] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
+  const { data: session } = useSession()
 
   // Social features state
   const [likeCount, setLikeCount] = useState(0)
@@ -219,22 +221,26 @@ export default function FilePage({
             style={{
               padding: '8px 16px',
               fontSize: '14px',
-              backgroundColor: colors.buttonBackground,
-              color: colors.buttonText,
-              border: 'none',
+              backgroundColor: 'transparent',
+              color: colors.text,
+              border: `1px solid ${colors.border}`,
               borderRadius: '5px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               marginBottom: '15px',
-              transition: 'background-color 0.2s ease'
+              transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = colors.primary
+              e.currentTarget.style.color = '#fff'
+              e.currentTarget.style.borderColor = colors.primary
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.buttonBackground
+              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.color = colors.text
+              e.currentTarget.style.borderColor = colors.border
             }}
           >
             ← Back
@@ -513,11 +519,23 @@ export default function FilePage({
               padding: '10px 20px',
               fontSize: '14px',
               backgroundColor: colors.primary,
-              color: '#fff',
+              color: '#000000',
               border: 'none',
               borderRadius: '5px',
               cursor: isSubmitting || !newComment.trim() ? 'not-allowed' : 'pointer',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
               opacity: isSubmitting || !newComment.trim() ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!isSubmitting && newComment.trim()) {
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
             }}
           >
             {isSubmitting ? 'Posting...' : 'Post Comment'}
@@ -551,20 +569,32 @@ export default function FilePage({
                   alignItems: 'center'
                 }}>
                   <span>{new Date(comment.created_at).toLocaleString()}</span>
-                  <button
-                    onClick={() => handleDeleteComment(comment.id)}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '12px',
-                      backgroundColor: 'transparent',
-                      color: '#ff4444',
-                      border: `1px solid #ff4444`,
-                      borderRadius: '3px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
+                  {/* Only show delete button if user is the comment owner */}
+                  {session?.user?.id && session.user.id === comment.user_id && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        backgroundColor: 'transparent',
+                        color: '#ff4444',
+                        border: `1px solid #ff4444`,
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#ff4444'
+                        e.currentTarget.style.color = '#fff'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#ff4444'
+                      }}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
                 <div style={{ color: colors.text, whiteSpace: 'pre-wrap' }}>
                   {comment.content}
