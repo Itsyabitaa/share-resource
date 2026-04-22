@@ -290,6 +290,27 @@ export default function MarkdownEditor({
           border: 1px solid ${colors.border};
           border-radius: 5px;
         }
+        .editor-container :global(.editor-preview),
+        .editor-container :global(.editor-preview-side) {
+          background: ${colors.inputBackground};
+          color: ${colors.text};
+          border: 1px solid ${colors.border};
+          border-radius: 5px;
+        }
+        .editor-container :global(.editor-preview pre),
+        .editor-container :global(.editor-preview-side pre) {
+          background: rgba(0, 0, 0, 0.15);
+          border: 1px solid ${colors.border};
+          border-radius: 6px;
+        }
+        .editor-container :global(.editor-preview code),
+        .editor-container :global(.editor-preview-side code) {
+          color: ${colors.text};
+        }
+        .editor-container :global(.editor-preview a),
+        .editor-container :global(.editor-preview-side a) {
+          color: ${colors.primary};
+        }
         .editor-container :global(.CodeMirror-cursor) {
           border-left: 2px solid ${colors.primary};
         }
