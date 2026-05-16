@@ -80,6 +80,7 @@ export default function Home() {
     await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId)
   }
 
+  return (
     <div style={{
       maxWidth: 800,
       width: '100%',
