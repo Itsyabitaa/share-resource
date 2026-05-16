@@ -25,6 +25,7 @@ export default function Home() {
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const router = useRouter()
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
@@ -64,7 +65,7 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.background }}>
-      {session?.user && (
+      {session?.user && isSidebarOpen && (
         <Sidebar 
           activeFolderId={activeFolderId} 
           onSelectFolder={setActiveFolderId} 
@@ -73,7 +74,7 @@ export default function Home() {
       
       <div style={{
         flex: 1,
-        marginLeft: session?.user ? '260px' : '0',
+        marginLeft: (session?.user && isSidebarOpen) ? '260px' : '0',
         transition: 'margin-left 0.3s ease',
         display: 'flex',
         flexDirection: 'column'
@@ -86,7 +87,10 @@ export default function Home() {
           color: colors.text,
           transition: 'color 0.3s ease'
         }}>
-          <Header />
+          <Header 
+            onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined} 
+            isSidebarOpen={isSidebarOpen} 
+          />
 
       {/* Storage Tier Notification */}
       {!session?.user ? (
