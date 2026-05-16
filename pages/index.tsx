@@ -9,6 +9,7 @@ import MarkdownEditor from '../components/MarkdownEditor'
 import ShareButton from '../components/ShareButton'
 import { handleFileUpload, handleSave } from '../utils/fileHandlers'
 import Link from 'next/link'
+import Sidebar from '../components/Sidebar'
 
 export default function Home() {
   const [text, setText] = useState('')
@@ -23,6 +24,7 @@ export default function Home() {
   const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
   const router = useRouter()
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
@@ -57,20 +59,34 @@ export default function Home() {
   }
 
   const onShare = async () => {
-    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router)
+    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, activeFolderId)
   }
 
   return (
-    <div style={{
-      maxWidth: 800,
-      margin: '0 auto',
-      padding: 20,
-      backgroundColor: colors.background,
-      color: colors.text,
-      minHeight: '100vh',
-      transition: 'background-color 0.3s ease, color 0.3s ease'
-    }}>
-      <Header />
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.background }}>
+      {session?.user && (
+        <Sidebar 
+          activeFolderId={activeFolderId} 
+          onSelectFolder={setActiveFolderId} 
+        />
+      )}
+      
+      <div style={{
+        flex: 1,
+        marginLeft: session?.user ? '260px' : '0',
+        transition: 'margin-left 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div style={{
+          maxWidth: 800,
+          width: '100%',
+          margin: '0 auto',
+          padding: 20,
+          color: colors.text,
+          transition: 'color 0.3s ease'
+        }}>
+          <Header />
 
       {/* Storage Tier Notification */}
       {!session?.user ? (
@@ -178,7 +194,9 @@ export default function Home() {
         />
       )}
 
-      <ShareButton text={text} onShare={onShare} />
+        <ShareButton text={text} onShare={onShare} />
+      </div>
+      </div>
     </div>
   )
 }
