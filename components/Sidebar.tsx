@@ -281,6 +281,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder }: SidebarProps
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {folders.map(folder => (
           <div key={folder.id}>
             <div
               onClick={() => onSelectFolder(folder.id)}
@@ -375,6 +376,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder }: SidebarProps
               </div>
             )}
           </div>
+        ))}
       </div>
     </div>
   )
