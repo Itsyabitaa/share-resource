@@ -55,7 +55,8 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
       const res = await fetch('/api/user/files')
       if (res.ok) {
         const data = await res.json()
-        setActiveFiles(data.files)
+        // Filter out files that belong to a folder, so this section acts as the root/unassigned directory
+        setActiveFiles(data.files.filter((f: any) => !f.folder_id))
       }
     } catch (error) {
       console.error('Failed to fetch all user files:', error)
