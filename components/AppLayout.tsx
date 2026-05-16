@@ -53,26 +53,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           flexDirection: 'column'
         }}
       >
-        <div
-          style={{
-            maxWidth: 800,
-            width: '100%',
-            margin: '0 auto',
-            padding: 20,
-            color: colors.text,
-            transition: 'color 0.3s ease',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          <Header
-            onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined}
-            isSidebarOpen={isSidebarOpen}
-            onResetCreate={handleResetCreate}
-          />
-          {children}
-        </div>
+        {/* We pass a React Context or cloneElement if we need to pass props to children,
+            but for now we just render children. Individual pages handle their own headers and widths. */}
+        {children}
       </div>
     </div>
   )
