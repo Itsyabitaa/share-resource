@@ -7,9 +7,10 @@ import { useSession, signOut } from '../lib/auth-client'
 export interface HeaderProps {
   onToggleSidebar?: () => void
   isSidebarOpen?: boolean
+  onResetCreate?: () => void
 }
 
-export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps = {}) {
+export default function Header({ onToggleSidebar, isSidebarOpen, onResetCreate }: HeaderProps = {}) {
   const { theme, toggleTheme, colors } = useTheme()
   const router = useRouter()
   const { data: session } = useSession()
@@ -55,7 +56,7 @@ export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps =
         )}
         <h1 style={{ color: colors.text, margin: 0 }}>md-Nest</h1>
         <nav style={{ display: 'flex', gap: '15px' }}>
-          <Link href="/" style={{
+          <Link href="/" onClick={() => onResetCreate && onResetCreate()} style={{
             color: router.pathname === '/' ? colors.primary : colors.text,
             textDecoration: 'none',
             fontWeight: router.pathname === '/' ? '600' : '400',
