@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from '../lib/auth-client'
 import { useTheme } from '../lib/ThemeContext'
+import { useSidebar } from '../lib/SidebarContext'
 import Sidebar from './Sidebar'
-import Header from './Header'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -11,9 +11,9 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter()
-  const { data: session, isPending } = useSession()
+  const { data: session } = useSession()
   const { colors } = useTheme()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const { isSidebarOpen } = useSidebar()
   const [viewedFolderId, setViewedFolderId] = useState<string | null>(null)
 
   // Pages that shouldn't have the standard layout
