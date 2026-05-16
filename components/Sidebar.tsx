@@ -11,9 +11,10 @@ export interface Folder {
 interface SidebarProps {
   activeFolderId: string | null
   onSelectFolder: (folderId: string | null) => void
+  onCreateFileInFolder?: (folderId: string) => void
 }
 
-export default function Sidebar({ activeFolderId, onSelectFolder }: SidebarProps) {
+export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileInFolder }: SidebarProps) {
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
   const [folders, setFolders] = useState<Folder[]>([])
@@ -318,24 +319,48 @@ export default function Sidebar({ activeFolderId, onSelectFolder }: SidebarProps
                   {folder.name}
                 </span>
               </div>
-              {activeFolderId === folder.id && (
-                <button
-                  onClick={(e) => handleDeleteFolder(folder.id, e)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: colors.text,
-                    opacity: 0.5,
-                    cursor: 'pointer',
-                    padding: '2px 5px'
-                  }}
-                  title="Delete Folder"
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
-                >
-                  🗑️
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: '5px' }}>
+                {activeFolderId === folder.id && onCreateFileInFolder && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCreateFileInFolder(folder.id)
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.text,
+                      opacity: 0.5,
+                      cursor: 'pointer',
+                      padding: '2px 5px',
+                      fontSize: '14px'
+                    }}
+                    title="Create file in this folder"
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                  >
+                    ➕
+                  </button>
+                )}
+                {activeFolderId === folder.id && (
+                  <button
+                    onClick={(e) => handleDeleteFolder(folder.id, e)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.text,
+                      opacity: 0.5,
+                      cursor: 'pointer',
+                      padding: '2px 5px'
+                    }}
+                    title="Delete Folder"
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                  >
+                    🗑️
+                  </button>
+                )}
+              </div>
             </div>
             {/* Render files if this folder is active */}
             {activeFolderId === folder.id && (
