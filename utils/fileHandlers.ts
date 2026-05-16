@@ -49,7 +49,8 @@ export const handleSave = async (
   author: string,
   isPublic: boolean,
   hashtags: string[],
-  router: any
+  router: any,
+  folderId?: string | null
 ) => {
   try {
     const res = await fetch('/api/save', {
@@ -60,7 +61,8 @@ export const handleSave = async (
         title: title || 'Untitled Document',
         author: showAuthor ? author : undefined,
         isPublic,
-        hashtags
+        hashtags,
+        folderId
       }),
     })
 
