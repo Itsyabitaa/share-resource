@@ -98,6 +98,11 @@ export default function Home() {
           <Header 
             onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined} 
             isSidebarOpen={isSidebarOpen} 
+            onResetCreate={() => {
+              setTargetFolderId(null)
+              setText('')
+              setTitle('')
+            }}
           />
 
       {/* Storage Tier Notification */}
