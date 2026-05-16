@@ -7,6 +7,7 @@ import { useTheme } from '../../lib/ThemeContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from '../../lib/auth-client'
+import { useSidebar } from '../../lib/SidebarContext'
 
 interface Comment {
   id: string
@@ -68,6 +69,7 @@ export default function FilePage({
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
   const { data: session } = useSession()
+  const { isSidebarOpen, toggleSidebar } = useSidebar()
 
   const [likeCount, setLikeCount] = useState(0)
   const [commentCount, setCommentCount] = useState(0)
@@ -210,6 +212,27 @@ export default function FilePage({
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {session?.user && (
+              <button 
+                onClick={toggleSidebar}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: colors.text,
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '0 5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.8
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+              >
+                ☰
+              </button>
+            )}
             <button
               onClick={() => router.back()}
               style={{
