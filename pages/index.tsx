@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
-import Header from '../components/Header'
+import { handleFileUpload, handleSave } from '../utils/fileHandlers'
+import Link from 'next/link'
 import ModeSelector from '../components/ModeSelector'
 import FileUpload from '../components/FileUpload'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ShareButton from '../components/ShareButton'
-import { handleFileUpload, handleSave } from '../utils/fileHandlers'
-import Link from 'next/link'
-import Sidebar from '../components/Sidebar'
 import FolderSelect from '../components/FolderSelect'
 
 export default function Home() {
@@ -25,12 +23,28 @@ export default function Home() {
   const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
-  const [viewedFolderId, setViewedFolderId] = useState<string | null>(null)
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const router = useRouter()
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
+
+  // Handle query parameters from AppLayout Sidebar
+  useEffect(() => {
+    if (router.query.targetFolderId) {
+      setTargetFolderId(router.query.targetFolderId as string)
+      // Clean URL
+      const { targetFolderId, ...rest } = router.query
+      router.replace({ pathname: '/', query: rest }, undefined, { shallow: true })
+    }
+    if (router.query.reset) {
+      setTargetFolderId(null)
+      setText('')
+      setTitle('')
+      // Clean URL
+      const { reset, ...rest } = router.query
+      router.replace({ pathname: '/', query: rest }, undefined, { shallow: true })
+    }
+  }, [router.query.targetFolderId, router.query.reset, router.replace])
 
   // Check if user has custom credentials
   useEffect(() => {
@@ -66,45 +80,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.background }}>
-      {session?.user && isSidebarOpen && (
-        <Sidebar 
-          activeFolderId={viewedFolderId} 
-          onSelectFolder={setViewedFolderId} 
-          onCreateFileInFolder={(folderId) => {
-            setTargetFolderId(folderId)
-            // Optional: reset editor text
-            setText('')
-            setTitle('')
-          }}
-        />
-      )}
-      
-      <div style={{
-        flex: 1,
-        marginLeft: (session?.user && isSidebarOpen) ? '260px' : '0',
-        transition: 'margin-left 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <div style={{
-          maxWidth: 800,
-          width: '100%',
-          margin: '0 auto',
-          padding: 20,
-          color: colors.text,
-          transition: 'color 0.3s ease'
-        }}>
-          <Header 
-            onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined} 
-            isSidebarOpen={isSidebarOpen} 
-            onResetCreate={() => {
-              setTargetFolderId(null)
-              setText('')
-              setTitle('')
-            }}
-          />
-
+    <>
       {/* Storage Tier Notification */}
       {!session?.user ? (
         <div style={{
@@ -213,8 +189,6 @@ export default function Home() {
 
         <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
         <ShareButton text={text} onShare={onShare} />
-      </div>
-      </div>
-    </div>
+    </>
   )
 }
