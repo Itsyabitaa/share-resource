@@ -3,11 +3,15 @@ import { ThemeProvider } from '../lib/ThemeContext'
 import '../styles/globals.css'
 import Footer from '../components/Footer'
 
+import AppLayout from '../components/AppLayout'
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
-      <Component {...pageProps} />
-      <Footer />
+      <AppLayout>
+        <Component {...pageProps} />
+        <Footer />
+      </AppLayout>
     </ThemeProvider>
   )
 }
