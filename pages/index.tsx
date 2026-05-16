@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
+import Header from '../components/Header'
 import { handleFileUpload, handleSave } from '../utils/fileHandlers'
 import Link from 'next/link'
 import ModeSelector from '../components/ModeSelector'
@@ -79,8 +80,26 @@ export default function Home() {
     await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId)
   }
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+
   return (
-    <>
+    <div style={{
+      maxWidth: 800,
+      width: '100%',
+      margin: '0 auto',
+      padding: 20,
+      color: colors.text,
+      transition: 'color 0.3s ease'
+    }}>
+      <Header 
+        onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined} 
+        isSidebarOpen={isSidebarOpen} 
+        onResetCreate={() => {
+          setTargetFolderId(null)
+          setText('')
+          setTitle('')
+        }}
+      />
       {/* Storage Tier Notification */}
       {!session?.user ? (
         <div style={{
@@ -189,6 +208,6 @@ export default function Home() {
 
         <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
         <ShareButton text={text} onShare={onShare} />
-    </>
+    </div>
   )
 }
