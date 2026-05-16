@@ -74,14 +74,15 @@ export async function insertFile(
   hashtags: string[] = [],
   userId?: string,
   expiresAt?: Date,
-  storageTier: 'guest' | 'registered' = 'guest'
+  storageTier: 'guest' | 'registered' = 'guest',
+  folderId?: string
 ) {
   try {
     const id = uuidv4()
     const result = await sql`
-      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags, user_id, expires_at, storage_tier)
-      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier})
-      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags, user_id, expires_at, storage_tier
+      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags, user_id, expires_at, storage_tier, folder_id)
+      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
+      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags, user_id, expires_at, storage_tier, folder_id
     `
     return result[0]
   } catch (error) {
@@ -340,6 +341,109 @@ export async function getSocialStats(fileId: string, userId?: string) {
     return { likeCount, commentCount, userHasLiked }
   } catch (error) {
     console.error('Error getting social stats:', error)
+    throw error
+  }
+}
+
+// ============================================
+// FOLDERS FUNCTIONS
+// ============================================
+
+export async function createFolder(name: string, userId: string) {
+  try {
+    const id = uuidv4()
+    const result = await sql`
+      INSERT INTO folders (id, name, user_id)
+      VALUES (${id}, ${name}, ${userId})
+      RETURNING id, name, user_id, created_at::text as created_at
+    `
+    return result[0]
+  } catch (error) {
+    console.error('Error creating folder:', error)
+    throw error
+  }
+}
+
+export async function getFoldersByUser(userId: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id,
+        name,
+        user_id,
+        created_at::text as created_at,
+        updated_at::text as updated_at
+      FROM folders 
+      WHERE user_id = ${userId}
+      ORDER BY created_at ASC
+    `
+    return result
+  } catch (error) {
+    console.error('Error getting folders:', error)
+    throw error
+  }
+}
+
+export async function deleteFolder(folderId: string, userId: string) {
+  try {
+    // files inside the folder will have their folder_id set to NULL due to ON DELETE SET NULL
+    // or if we wanted to delete them, we could, but SET NULL is safer.
+    // wait, the foreign key says: REFERENCES folders(id) ON DELETE SET NULL.
+    // So this is correct.
+    const result = await sql`
+      DELETE FROM folders 
+      WHERE id = ${folderId} AND user_id = ${userId}
+      RETURNING id
+    `
+    return result.length > 0
+  } catch (error) {
+    console.error('Error deleting folder:', error)
+    throw error
+  }
+}
+
+export async function getFilesByFolder(folderId: string, userId: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id,
+        title,
+        author,
+        file_type,
+        file_size,
+        hashtags,
+        created_at::text as created_at,
+        folder_id
+      FROM files 
+      WHERE folder_id = ${folderId} AND user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+    return result
+  } catch (error) {
+    console.error('Error getting files by folder:', error)
+    throw error
+  }
+}
+
+export async function getAllUserFiles(userId: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id,
+        title,
+        author,
+        file_type,
+        file_size,
+        hashtags,
+        created_at::text as created_at,
+        folder_id
+      FROM files 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `
+    return result
+  } catch (error) {
+    console.error('Error getting all user files:', error)
     throw error
   }
 }
