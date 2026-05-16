@@ -25,7 +25,8 @@ export default function Home() {
   const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
+  const [viewedFolderId, setViewedFolderId] = useState<string | null>(null)
+  const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const router = useRouter()
   const { colors, theme } = useTheme()
@@ -61,15 +62,21 @@ export default function Home() {
   }
 
   const onShare = async () => {
-    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, activeFolderId)
+    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId)
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.background }}>
       {session?.user && isSidebarOpen && (
         <Sidebar 
-          activeFolderId={activeFolderId} 
-          onSelectFolder={setActiveFolderId} 
+          activeFolderId={viewedFolderId} 
+          onSelectFolder={setViewedFolderId} 
+          onCreateFileInFolder={(folderId) => {
+            setTargetFolderId(folderId)
+            // Optional: reset editor text
+            setText('')
+            setTitle('')
+          }}
         />
       )}
       
@@ -199,7 +206,7 @@ export default function Home() {
         />
       )}
 
-        <FolderSelect activeFolderId={activeFolderId} onChange={setActiveFolderId} />
+        <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
         <ShareButton text={text} onShare={onShare} />
       </div>
       </div>
