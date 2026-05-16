@@ -80,9 +80,6 @@ export default function Home() {
     await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId)
   }
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-
-  return (
     <div style={{
       maxWidth: 800,
       width: '100%',
@@ -92,8 +89,6 @@ export default function Home() {
       transition: 'color 0.3s ease'
     }}>
       <Header 
-        onToggleSidebar={session?.user ? () => setIsSidebarOpen(!isSidebarOpen) : undefined} 
-        isSidebarOpen={isSidebarOpen} 
         onResetCreate={() => {
           setTargetFolderId(null)
           setText('')
