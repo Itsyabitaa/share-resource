@@ -10,6 +10,7 @@ import ShareButton from '../components/ShareButton'
 import { handleFileUpload, handleSave } from '../utils/fileHandlers'
 import Link from 'next/link'
 import Sidebar from '../components/Sidebar'
+import FolderSelect from '../components/FolderSelect'
 
 export default function Home() {
   const [text, setText] = useState('')
@@ -198,6 +199,7 @@ export default function Home() {
         />
       )}
 
+        <FolderSelect activeFolderId={activeFolderId} onChange={setActiveFolderId} />
         <ShareButton text={text} onShare={onShare} />
       </div>
       </div>
