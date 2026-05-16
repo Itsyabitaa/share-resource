@@ -3,15 +3,15 @@ import { useTheme } from '../lib/ThemeContext'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession, signOut } from '../lib/auth-client'
+import { useSidebar } from '../lib/SidebarContext'
 
 export interface HeaderProps {
-  onToggleSidebar?: () => void
-  isSidebarOpen?: boolean
   onResetCreate?: () => void
 }
 
-export default function Header({ onToggleSidebar, isSidebarOpen, onResetCreate }: HeaderProps = {}) {
+export default function Header({ onResetCreate }: HeaderProps = {}) {
   const { theme, toggleTheme, colors } = useTheme()
+  const { isSidebarOpen, toggleSidebar } = useSidebar()
   const router = useRouter()
   const { data: session } = useSession()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
@@ -33,9 +33,9 @@ export default function Header({ onToggleSidebar, isSidebarOpen, onResetCreate }
       marginBottom: 30
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        {onToggleSidebar && (
+        {session?.user && (
           <button 
-            onClick={onToggleSidebar}
+            onClick={toggleSidebar}
             style={{
               background: 'none',
               border: 'none',
