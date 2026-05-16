@@ -12,7 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       title = 'Untitled Document',
       author,
       isPublic = false,
-      hashtags = []
+      hashtags = [],
+      folderId
     } = req.body
 
     if (!content) {
@@ -73,7 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       hashtags,
       userId,
       expiresAt,
-      storageTier
+      storageTier,
+      folderId
     )
 
     console.log('File metadata stored in database:', fileData)
