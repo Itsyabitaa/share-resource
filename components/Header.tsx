@@ -4,7 +4,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession, signOut } from '../lib/auth-client'
 
-export default function Header() {
+export interface HeaderProps {
+  onToggleSidebar?: () => void
+  isSidebarOpen?: boolean
+}
+
+export default function Header({ onToggleSidebar, isSidebarOpen }: HeaderProps = {}) {
   const { theme, toggleTheme, colors } = useTheme()
   const router = useRouter()
   const { data: session } = useSession()
@@ -27,7 +32,28 @@ export default function Header() {
       marginBottom: 30
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <h1 style={{ color: colors.text }}>md-Nest</h1>
+        {onToggleSidebar && (
+          <button 
+            onClick={onToggleSidebar}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: colors.text,
+              fontSize: '20px',
+              cursor: 'pointer',
+              padding: '0 5px',
+              display: 'flex',
+              alignItems: 'center',
+              opacity: 0.8
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+            title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            ☰
+          </button>
+        )}
+        <h1 style={{ color: colors.text, margin: 0 }}>md-Nest</h1>
         <nav style={{ display: 'flex', gap: '15px' }}>
           <Link href="/" style={{
             color: router.pathname === '/' ? colors.primary : colors.text,
