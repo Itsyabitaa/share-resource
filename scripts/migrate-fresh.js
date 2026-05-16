@@ -35,6 +35,9 @@ async function migrateFresh() {
     await pool.query('DROP TABLE IF EXISTS files CASCADE');
     console.log('  ✓ Dropped files table');
 
+    await pool.query('DROP TABLE IF EXISTS folders CASCADE');
+    console.log('  ✓ Dropped folders table');
+
     await pool.query('DROP TABLE IF EXISTS "user" CASCADE');
     console.log('  ✓ Dropped user table');
 
@@ -100,6 +103,18 @@ async function migrateFresh() {
     `);
     console.log('  ✓ Created verification table');
 
+    // Create folders table
+    await pool.query(`
+      CREATE TABLE folders (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `);
+    console.log('  ✓ Created folders table');
+
     // Create files table (your app) with tiered storage support
     await pool.query(`
       CREATE TABLE files (
@@ -114,11 +129,12 @@ async function migrateFresh() {
         user_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
         expires_at TIMESTAMP WITH TIME ZONE,
         storage_tier VARCHAR(20) DEFAULT 'guest',
+        folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       )
     `);
-    console.log('  ✓ Created files table (with tiered storage)');
+    console.log('  ✓ Created files table (with tiered storage and folders)');
 
     // Create user_credentials table for storing encrypted user credentials
     await pool.query(`
@@ -175,12 +191,15 @@ async function migrateFresh() {
     await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_file_id ON comments(file_id)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC)');
     await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_files_folder_id ON files(folder_id)');
     console.log('  ✓ Created indexes');
 
     console.log('\n✅ Fresh migration completed successfully!');
     console.log('\nDatabase is now ready with:');
     console.log('  • User authentication tables (user, session, account, verification)');
-    console.log('  • Files table with tiered storage (user_id, expires_at, storage_tier)');
+    console.log('  • Folders table for user workspaces');
+    console.log('  • Files table with tiered storage and folder support');
     console.log('  • User credentials table (encrypted storage for custom Neon/Cloudinary)');
     console.log('  • Likes and comments tables (social features)');
     console.log('  • All necessary indexes');
