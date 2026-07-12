@@ -40,7 +40,7 @@ A modern, full-featured markdown sharing platform with tiered storage, authentic
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (Pages Router)
 - **Language**: TypeScript
 - **UI**: React with CSS-in-JS
 - **Editor**: SimpleMDE (EasyMDE)
@@ -246,6 +246,44 @@ npm run type-check   # TypeScript type checking
    - Enter your Neon/Cloudinary details
    - Validate before saving
    - Delete anytime to revert to default
+
+## 📁 Project Architecture & Routing
+
+This project uses Next.js **Pages Router** (file-based routing under `pages/`).
+
+### Routing Directory Structure
+
+#### 🖥️ Frontend Page Routes (`pages/`)
+- `pages/index.tsx` (`/`): The main editor and upload workspace dashboard. Not auth-gated (runs in *Guest* mode with 3-day file expiry or *Registered* mode with permanent storage).
+- `pages/about.tsx` (`/about`): Public informational static page explaining the platform. Not auth-gated.
+- `pages/explore.tsx` (`/explore`): Public discovery page for searching public documents and hashtags. Not auth-gated.
+- `pages/file/[id].tsx` (`/file/[id]`): Public shared markdown viewer. Renders files by ID. Not auth-gated. Uses server-side rendering (`getServerSideProps`) to retrieve database metadata and fetch file text dynamically from Cloudinary.
+- `pages/login.tsx` (`/login`): Account login portal. Not auth-gated.
+- `pages/signup.tsx` (`/signup`): Account registration portal. Not auth-gated.
+- `pages/settings.tsx` (`/settings`): Gated configuration panel to modify display name and toggle custom Neon database / Cloudinary storage credentials. **Auth-Gated** (client-side redirect to `/login`).
+
+#### 🔌 Backend API Routes (`pages/api/`)
+- `pages/api/auth/[...all].ts` (`/api/auth/*`): Better Auth endpoints.
+- `pages/api/cleanup.ts` (`/api/cleanup`): **Auth-Gated** (via Bearer `CLEANUP_CRON_SECRET`). Cron endpoint to sweep and purge expired guest uploads.
+- `pages/api/comments.ts` (`/api/comments`): Comments endpoints. POST/DELETE are **Auth-Gated** (session check). GET is public.
+- `pages/api/convert.ts` (`/api/convert`): File uploads endpoint supporting Word (doc/docx), text, and markdown conversion.
+- `pages/api/credentials.ts` (`/api/credentials`): **Auth-Gated**. Standard CRUD (GET, POST, DELETE) for custom user database and Cloudinary storage credentials.
+- `pages/api/explore.ts` (`/api/explore`): Fetches public files and popular hashtag lists.
+- `pages/api/folders/index.ts` (`/api/folders`): **Auth-Gated**. Directory paths listing (GET) and creation (POST).
+- `pages/api/folders/[id].ts` (`/api/folders/[id]`): **Auth-Gated**. Folder files listing (GET) and folder deletion (DELETE).
+- `pages/api/likes.ts` (`/api/likes`): Likes endpoints. POST is **Auth-Gated**; GET is public.
+- `pages/api/profile.ts` (`/api/profile`): **Auth-Gated**. User name updating (PUT) and info retrieval (GET).
+- `pages/api/save.ts` (`/api/save`): Document upload saving endpoint. Supports both Guest and Registered users.
+- `pages/api/user/files.ts` (`/api/user/files`): **Auth-Gated**. Retrieves a index list of all files belonging to the signed-in user.
+
+### Data Fetching Strategies
+
+- **Server-Side Rendering (`getServerSideProps`)**:
+  - `pages/file/[id].tsx`: Fetches metadata from Neon PostgreSQL and loads the document content from Cloudinary server-side for optimal SEO, preview speed, and metadata indexing.
+- **Static Generation (`getStaticProps`)**:
+  - None. Pages (`/`, `/about`, `/explore`, `/login`, `/signup`, `/settings`) use static HTML shell generation and fetch active session or dynamic states client-side.
+- **Client-Side Fetching**:
+  - Dynamic profile information, file discovery indexes, folder indexes, comments, likes, and credentials validation are updated via direct client-side JSON API requests (`fetch`) to `/api/*`.
 
 ## 🐛 Troubleshooting
 
