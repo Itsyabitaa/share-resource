@@ -10,6 +10,26 @@ import FileUpload from '../components/FileUpload'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ShareButton from '../components/ShareButton'
 import FolderSelect from '../components/FolderSelect'
+import { useAppPaths } from '../lib/appPaths'
+
+const buildQueryString = (query: Record<string, unknown>) => {
+  const params = new URLSearchParams()
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value == null) {
+      return
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach(item => params.append(key, String(item)))
+      return
+    }
+
+    params.set(key, String(value))
+  })
+
+  return params.toString()
+}
 
 export default function Home() {
   const [text, setText] = useState('')
@@ -28,6 +48,7 @@ export default function Home() {
   const router = useRouter()
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
+  const { apiPath, sitePath } = useAppPaths()
 
   // Handle query parameters from AppLayout Sidebar
   useEffect(() => {
@@ -35,7 +56,8 @@ export default function Home() {
       setTargetFolderId(router.query.targetFolderId as string)
       // Clean URL
       const { targetFolderId, ...rest } = router.query
-      router.replace({ pathname: '/', query: rest }, undefined, { shallow: true })
+      const queryString = buildQueryString(rest)
+      router.replace(queryString ? `${sitePath('/')}?${queryString}` : sitePath('/'), undefined, { shallow: true })
     }
     if (router.query.reset) {
       setTargetFolderId(null)
@@ -43,14 +65,15 @@ export default function Home() {
       setTitle('')
       // Clean URL
       const { reset, ...rest } = router.query
-      router.replace({ pathname: '/', query: rest }, undefined, { shallow: true })
+      const queryString = buildQueryString(rest)
+      router.replace(queryString ? `${sitePath('/')}?${queryString}` : sitePath('/'), undefined, { shallow: true })
     }
-  }, [router.query.targetFolderId, router.query.reset, router.replace])
+  }, [router.query.targetFolderId, router.query.reset, router.replace, sitePath])
 
   // Check if user has custom credentials
   useEffect(() => {
     if (session?.user) {
-      fetch('/api/credentials')
+      fetch(apiPath('/credentials'))
         .then(res => res.json())
         .then(data => {
           setHasCustomCredentials(data.hasCredentials)
@@ -72,12 +95,16 @@ export default function Home() {
       autoFormat,
       setText,
       setMode,
-      setIsConverting
+        setIsConverting,
+        { apiPath }
     )
   }
 
   const onShare = async () => {
-    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId)
+    await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId, {
+      sitePath,
+      apiPath,
+    })
   }
 
   return (
@@ -112,7 +139,7 @@ export default function Home() {
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
               <strong>Guest Mode:</strong> Your uploads will be available for <strong>3 days</strong>.{' '}
-              <Link href="/signup" style={{
+              <Link href={sitePath('/signup')} style={{
                 color: theme === 'dark' ? '#fbbf24' : '#d97706',
                 textDecoration: 'underline',
                 fontWeight: '600'
@@ -155,7 +182,7 @@ export default function Home() {
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
               <strong>Default Storage:</strong> Using shared storage (permanent).{' '}
-              <Link href="/settings" style={{
+              <Link href={sitePath('/settings')} style={{
                 color: theme === 'dark' ? '#60a5fa' : '#2563eb',
                 textDecoration: 'underline',
                 fontWeight: '600'

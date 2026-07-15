@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { signIn } from '../lib/auth-client'
 import Toast from '../components/Toast'
+import { useAppPaths } from '../lib/appPaths'
 
 export default function Login() {
     const [email, setEmail] = useState('')
@@ -13,6 +14,7 @@ export default function Login() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
     const router = useRouter()
     const { colors, theme } = useTheme()
+    const { sitePath } = useAppPaths()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,7 +40,7 @@ export default function Login() {
             // Success
             setToast({ message: 'Successfully logged in! Redirecting...', type: 'success' })
             setTimeout(() => {
-                window.location.href = '/'
+                window.location.href = sitePath('/')
             }, 1000)
         } catch (err: any) {
             const errorMessage = err.message || 'Login failed. Please check your credentials.'
@@ -313,7 +315,7 @@ export default function Login() {
                 }}>
                     <p style={{ color: colors.text, opacity: 0.6, fontSize: '0.95rem' }}>
                         Don't have an account?{' '}
-                        <Link href="/signup" style={{
+                        <Link href={sitePath('/signup')} style={{
                             color: colors.text,
                             fontWeight: '600',
                             textDecoration: 'underline',
@@ -328,7 +330,7 @@ export default function Login() {
                 </div>
 
                 <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-                    <Link href="/" style={{
+                    <Link href={sitePath('/')} style={{
                         color: colors.text,
                         opacity: 0.5,
                         textDecoration: 'none',

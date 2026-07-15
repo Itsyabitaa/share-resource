@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from '../lib/auth-client'
 import { useTheme } from '../lib/ThemeContext'
 import { Folder } from './Sidebar'
+import { useAppPaths } from '../lib/appPaths'
 
 interface FolderSelectProps {
   activeFolderId: string | null
@@ -11,6 +12,7 @@ interface FolderSelectProps {
 export default function FolderSelect({ activeFolderId, onChange }: FolderSelectProps) {
   const { data: session } = useSession()
   const { colors } = useTheme()
+  const { apiPath } = useAppPaths()
   const [folders, setFolders] = useState<Folder[]>([])
 
   // Fetch folders independently or listen to updates
@@ -18,7 +20,7 @@ export default function FolderSelect({ activeFolderId, onChange }: FolderSelectP
   // In a more complex app, this would use a global state manager (e.g. Zustand) or SWR.
   useEffect(() => {
     if (session?.user) {
-      fetch('/api/folders')
+      fetch(apiPath('/folders'))
         .then(res => res.json())
         .then(data => setFolders(data.folders))
         .catch(console.error)

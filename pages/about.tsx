@@ -1,8 +1,10 @@
 import { useTheme } from '../lib/ThemeContext'
 import Link from 'next/link'
+import { useAppPaths } from '../lib/appPaths'
 
 export default function AboutPage() {
   const { colors, theme, toggleTheme } = useTheme()
+  const { sitePath } = useAppPaths()
 
   return (
     <div style={{ 
@@ -28,7 +30,7 @@ export default function AboutPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/" passHref>
+          <Link href={sitePath('/')} passHref>
             <button
               style={{
                 padding: '8px 16px',

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { signUp } from '../lib/auth-client'
 import Toast from '../components/Toast'
+import { useAppPaths } from '../lib/appPaths'
 
 export default function Signup() {
     const [name, setName] = useState('')
@@ -14,6 +15,7 @@ export default function Signup() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
     const router = useRouter()
     const { colors, theme } = useTheme()
+    const { sitePath } = useAppPaths()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -41,7 +43,7 @@ export default function Signup() {
             // Success
             setToast({ message: 'Account created successfully! Redirecting...', type: 'success' })
             setTimeout(() => {
-                window.location.href = '/'
+                window.location.href = sitePath('/')
             }, 1000)
         } catch (err: any) {
             const errorMessage = err.message || 'Signup failed. Please try again.'
@@ -367,7 +369,7 @@ export default function Signup() {
                 }}>
                     <p style={{ color: colors.text, opacity: 0.6, fontSize: '0.95rem' }}>
                         Already have an account?{' '}
-                        <Link href="/login" style={{
+                        <Link href={sitePath('/login')} style={{
                             color: colors.text,
                             fontWeight: '600',
                             textDecoration: 'underline',
@@ -382,7 +384,7 @@ export default function Signup() {
                 </div>
 
                 <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-                    <Link href="/" style={{
+                    <Link href={sitePath('/')} style={{
                         color: colors.text,
                         opacity: 0.5,
                         textDecoration: 'none',

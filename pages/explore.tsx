@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 import Header from '../components/Header'
+import { useAppPaths } from '../lib/appPaths'
 
 interface FileData {
   id: string
@@ -29,6 +30,7 @@ export default function Explore() {
   const [dbError, setDbError] = useState<string | null>(null)
   const router = useRouter()
   const { colors } = useTheme()
+  const { apiPath, sitePath } = useAppPaths()
 
   useEffect(() => {
     loadData()
@@ -42,7 +44,7 @@ export default function Explore() {
       if (searchTerm) params.append('search', searchTerm)
       if (selectedHashtag) params.append('hashtag', selectedHashtag)
 
-      const response = await fetch(`/api/explore?${params.toString()}`)
+      const response = await fetch(apiPath(`/explore?${params.toString()}`))
       const data = await response.json()
 
       if (!response.ok) {
@@ -69,7 +71,7 @@ export default function Explore() {
   }
 
   const handleFileClick = (fileId: string) => {
-    router.push(`/file/${fileId}`)
+    router.push(sitePath(`/file/${fileId}`))
   }
 
   const handleHashtagClick = (hashtag: string) => {

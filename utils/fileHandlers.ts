@@ -5,9 +5,13 @@ export const handleFileUpload = async (
   autoFormat: boolean,
   setText: (text: string) => void,
   setMode: (mode: 'editor' | 'upload') => void,
-  setIsConverting: (converting: boolean) => void
+  setIsConverting: (converting: boolean) => void,
+  paths?: {
+    apiPath?: (path: string) => string
+  }
 ) => {
   setIsConverting(true)
+  const apiPath = paths?.apiPath ?? ((path: string) => path)
 
   try {
     const formData = new FormData()
@@ -19,7 +23,7 @@ export const handleFileUpload = async (
     // Include auto-format preference
     formData.append('autoFormat', String(autoFormat))
 
-    const res = await fetch('/api/convert', {
+    const res = await fetch(apiPath('/convert'), {
       method: 'POST',
       body: formData,
     })
@@ -51,9 +55,16 @@ export const handleSave = async (
   hashtags: string[],
   router: any,
   folderId?: string | null
+  paths?: {
+    sitePath?: (path: string) => string
+    apiPath?: (path: string) => string
+  }
 ) => {
+  const sitePath = paths?.sitePath ?? ((path: string) => path)
+  const apiPath = paths?.apiPath ?? ((path: string) => path)
+
   try {
-    const res = await fetch('/api/save', {
+    const res = await fetch(apiPath('/save'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -75,7 +86,7 @@ export const handleSave = async (
     }
 
     if (data.id) {
-      router.push(`/file/${data.id}`)
+      router.push(sitePath(`/file/${data.id}`))
     }
   } catch (err) {
     console.error('Network error:', err)

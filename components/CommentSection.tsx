@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../lib/ThemeContext'
 import { useRouter } from 'next/router'
+import { useAppPaths } from '../lib/appPaths'
 
 interface Comment {
   id: string
@@ -22,6 +23,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { colors } = useTheme()
   const router = useRouter()
+  const { apiPath, sitePath } = useAppPaths()
 
   useEffect(() => {
     loadComments()
@@ -29,7 +31,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`/api/comments?fileId=${fileId}`)
+      const response = await fetch(apiPath(`/comments?fileId=${fileId}`))
       if (response.ok) {
         const data = await response.json()
         setComments(data.comments || [])
@@ -45,7 +47,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
     e.preventDefault()
 
     if (!isAuthenticated) {
-      router.push('/login?redirect=' + encodeURIComponent(router.asPath))
+      router.push(`${sitePath('/login')}?redirect=${encodeURIComponent(router.asPath)}`)
       return
     }
 
@@ -53,7 +55,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
 
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/comments', {
+      const response = await fetch(apiPath('/comments'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId, content: newComment.trim() })
@@ -79,7 +81,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
     if (!confirm('Are you sure you want to delete this comment?')) return
 
     try {
-      const response = await fetch(`/api/comments?id=${commentId}`, {
+      const response = await fetch(apiPath(`/comments?id=${commentId}`), {
         method: 'DELETE'
       })
 
@@ -192,7 +194,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
             Please login to comment
           </p>
           <button
-            onClick={() => router.push('/login?redirect=' + encodeURIComponent(router.asPath))}
+            onClick={() => router.push(`${sitePath('/login')}?redirect=${encodeURIComponent(router.asPath)}`)}
             style={{
               padding: '8px 20px',
               backgroundColor: colors.buttonBackground,

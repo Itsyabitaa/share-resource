@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession, signOut } from '../lib/auth-client'
 import { useSidebar } from '../lib/SidebarContext'
+import { useAppPaths } from '../lib/appPaths'
 
 export interface HeaderProps {
   onResetCreate?: () => void
@@ -15,6 +16,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
   const router = useRouter()
   const { data: session } = useSession()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const { sitePath } = useAppPaths()
 
   // Debug logging
   console.log('Header - Session data:', session)
@@ -22,7 +24,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
 
   const handleSignOut = async () => {
     await signOut()
-    window.location.href = '/'
+    window.location.href = sitePath('/')
   }
 
   return (
@@ -56,7 +58,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
         )}
         <h1 style={{ color: colors.text, margin: 0 }}>md-Nest</h1>
         <nav style={{ display: 'flex', gap: '15px' }}>
-          <Link href="/" onClick={() => onResetCreate && onResetCreate()} style={{
+          <Link href={sitePath('/')} onClick={() => onResetCreate && onResetCreate()} style={{
             color: router.pathname === '/' ? colors.primary : colors.text,
             textDecoration: 'none',
             fontWeight: router.pathname === '/' ? '600' : '400',
@@ -66,7 +68,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
           }}>
             Create
           </Link>
-          <Link href="/explore" style={{
+          <Link href={sitePath('/explore')} style={{
             color: router.pathname === '/explore' ? colors.primary : colors.text,
             textDecoration: 'none',
             fontWeight: router.pathname === '/explore' ? '600' : '400',
@@ -76,7 +78,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
           }}>
             Explore
           </Link>
-          <Link href="/about" style={{
+          <Link href={sitePath('/about')} style={{
             color: router.pathname === '/about' ? colors.primary : colors.text,
             textDecoration: 'none',
             fontWeight: router.pathname === '/about' ? '600' : '400',
@@ -213,7 +215,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
                   </div>
 
                   <div style={{ padding: '8px' }}>
-                    <Link href="/settings" onClick={() => setShowProfileMenu(false)}>
+                    <Link href={sitePath('/settings')} onClick={() => setShowProfileMenu(false)}>
                       <button
                         style={{
                           width: '100%',
@@ -276,7 +278,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
             )}
           </div>
         ) : (
-          <Link href="/login">
+          <Link href={sitePath('/login')}>
             <button
               style={{
                 padding: '8px 16px',

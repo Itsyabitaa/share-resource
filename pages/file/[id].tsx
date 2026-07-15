@@ -26,21 +26,23 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       return {
         notFound: true
       }
+      import { useAppPaths } from '../../lib/appPaths'
     }
 
     const response = await fetch(fileData.cloudinary_url)
     const content = await response.text()
+        const { apiPath, sitePath } = useAppPaths()
 
     return {
       props: {
-        fileId: id,
+            const likeRes = await fetch(apiPath(`/likes?fileId=${fileId}`))
         content,
         title: fileData.title,
         author: fileData.author,
         fileType: fileData.file_type,
         createdAt: fileData.created_at
       }
-    }
+            const commentRes = await fetch(apiPath(`/comments?fileId=${fileId}`))
   } catch (error) {
     console.error('Error fetching file:', error)
     return {
@@ -53,14 +55,14 @@ export default function FilePage({
   fileId,
   content,
   title,
-  author,
+            const res = await fetch(apiPath('/likes'), {
   fileType,
   createdAt
 }: {
   fileId: string
   content: string
   title: string
-  author?: string
+              router.push(sitePath('/login'))
   fileType: string
   createdAt: string
 }) {
@@ -82,14 +84,14 @@ export default function FilePage({
 
   useEffect(() => {
     setCurrentUrl(window.location.href)
-    loadSocialData()
+            const res = await fetch(apiPath('/comments'), {
   }, [fileId])
 
   const loadSocialData = async () => {
     try {
       const likeRes = await fetch(`/api/likes?fileId=${fileId}`)
       if (likeRes.ok) {
-        const likeData = await likeRes.json()
+              router.push(sitePath('/login'))
         setLikeCount(likeData.likeCount)
         setUserHasLiked(likeData.userHasLiked)
       }
@@ -113,7 +115,7 @@ export default function FilePage({
 
   const handleLike = async () => {
     try {
-      const res = await fetch('/api/likes', {
+            const res = await fetch(apiPath(`/comments?id=${commentId}`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId })

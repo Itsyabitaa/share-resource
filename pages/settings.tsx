@@ -5,11 +5,13 @@ import { useSession } from '../lib/auth-client'
 import Toast from '../components/Toast'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { useAppPaths } from '../lib/appPaths'
 
 export default function Settings() {
     const router = useRouter()
     const { colors, theme } = useTheme()
     const { data: session, isPending } = useSession()
+    const { apiPath, sitePath } = useAppPaths()
 
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -32,7 +34,7 @@ export default function Settings() {
 
     useEffect(() => {
         if (!isPending && !session) {
-            router.push('/login')
+            router.push(sitePath('/login'))
         }
     }, [session, isPending, router])
 
@@ -45,7 +47,7 @@ export default function Settings() {
 
     const loadProfile = async () => {
         try {
-            const response = await fetch('/api/profile')
+            const response = await fetch(apiPath('/profile'))
             if (response.ok) {
                 const data = await response.json()
                 setProfileName(data.name || '')
@@ -58,7 +60,7 @@ export default function Settings() {
     const loadCredentials = async () => {
         setLoading(true)
         try {
-            const response = await fetch('/api/credentials')
+            const response = await fetch(apiPath('/credentials'))
             if (response.ok) {
                 const data = await response.json()
                 setHasCredentials(data.hasCredentials)
@@ -81,7 +83,7 @@ export default function Settings() {
 
         setSavingProfile(true)
         try {
-            const response = await fetch('/api/profile', {
+            const response = await fetch(apiPath('/profile'), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: profileName }),
@@ -108,7 +110,7 @@ export default function Settings() {
 
         setValidating(true)
         try {
-            const response = await fetch('/api/credentials', {
+            const response = await fetch(apiPath('/credentials'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -138,7 +140,7 @@ export default function Settings() {
         setSaving(true)
 
         try {
-            const response = await fetch('/api/credentials', {
+            const response = await fetch(apiPath('/credentials'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -171,7 +173,7 @@ export default function Settings() {
 
         setSaving(true)
         try {
-            const response = await fetch('/api/credentials', {
+            const response = await fetch(apiPath('/credentials'), {
                 method: 'DELETE',
             })
 

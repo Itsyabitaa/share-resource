@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
+import { useAppPaths } from '../lib/appPaths'
 
 export interface Folder {
   id: string
@@ -17,6 +18,7 @@ interface SidebarProps {
 export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileInFolder }: SidebarProps) {
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
+  const { apiPath, sitePath } = useAppPaths()
   const [folders, setFolders] = useState<Folder[]>([])
   const [activeFiles, setActiveFiles] = useState<any[]>([])
   const [isCreating, setIsCreating] = useState(false)
@@ -40,7 +42,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
 
   const fetchFilesByFolder = async (folderId: string) => {
     try {
-      const res = await fetch(`/api/folders/${folderId}`)
+      const res = await fetch(apiPath(`/folders/${folderId}`))
       if (res.ok) {
         const data = await res.json()
         setActiveFiles(data.files)
@@ -52,7 +54,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
 
   const fetchAllUserFiles = async () => {
     try {
-      const res = await fetch('/api/user/files')
+      const res = await fetch(apiPath('/user/files'))
       if (res.ok) {
         const data = await res.json()
         // Filter out files that belong to a folder, so this section acts as the root/unassigned directory
@@ -65,7 +67,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
 
   const fetchFolders = async () => {
     try {
-      const res = await fetch('/api/folders')
+      const res = await fetch(apiPath('/folders'))
       if (res.ok) {
         const data = await res.json()
         setFolders(data.folders)
@@ -79,7 +81,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
     if (!newFolderName.trim()) return
 
     try {
-      const res = await fetch('/api/folders', {
+      const res = await fetch(apiPath('/folders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newFolderName.trim() })
@@ -104,7 +106,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
     }
 
     try {
-      const res = await fetch(`/api/folders/${folderId}`, {
+      const res = await fetch(apiPath(`/folders/${folderId}`), {
         method: 'DELETE'
       })
 
@@ -189,7 +191,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
               activeFiles.map(file => (
                 <a
                   key={file.id}
-                  href={`/file/${file.id}`}
+                  href={sitePath(`/file/${file.id}`)}
                   style={{
                     display: 'block',
                     padding: '6px 8px',
@@ -372,7 +374,7 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
                   activeFiles.map(file => (
                     <a
                       key={file.id}
-                      href={`/file/${file.id}`}
+                      href={sitePath(`/file/${file.id}`)}
                       style={{
                         display: 'block',
                         padding: '6px 8px',

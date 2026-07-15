@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from '../lib/ThemeContext'
 import { useRouter } from 'next/router'
+import { useAppPaths } from '../lib/appPaths'
 
 interface LikeButtonProps {
   fileId: string
@@ -20,11 +21,12 @@ export default function LikeButton({
   const [isLoading, setIsLoading] = useState(false)
   const { colors } = useTheme()
   const router = useRouter()
+  const { apiPath, sitePath } = useAppPaths()
 
   const handleLike = async () => {
     if (!isAuthenticated) {
       // Redirect to login
-      router.push('/login?redirect=' + encodeURIComponent(router.asPath))
+      router.push(`${sitePath('/login')}?redirect=${encodeURIComponent(router.asPath)}`)
       return
     }
 
@@ -38,7 +40,7 @@ export default function LikeButton({
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/likes', {
+      const response = await fetch(apiPath('/likes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileId })
