@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react'
 
-type RouteQuery = Record<string, string | number | boolean | null | undefined>
+type RouteQuery = Record<string, string | string[] | number | boolean | null | undefined>
 
 interface AppPathHelpers {
   basePath: string

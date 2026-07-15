@@ -54,7 +54,7 @@ export const handleSave = async (
   isPublic: boolean,
   hashtags: string[],
   router: any,
-  folderId?: string | null
+  folderId?: string | null,
   paths?: {
     sitePath?: (path: string) => string
     apiPath?: (path: string) => string
