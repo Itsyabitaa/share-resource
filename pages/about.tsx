@@ -1,172 +1,117 @@
-import { useTheme } from '../lib/ThemeContext'
+import React from 'react'
 import Link from 'next/link'
+import Navbar from '../components/Navbar'
+import PageContainer from '../components/PageContainer'
+import Card from '../components/ui/Card'
+import Button from '../components/ui/Button'
 
 export default function AboutPage() {
-  const { colors, theme, toggleTheme } = useTheme()
-
   return (
-    <div style={{ 
-      maxWidth: 800, 
-      margin: '0 auto', 
-      padding: 20,
-      backgroundColor: colors.background,
-      color: colors.text,
-      minHeight: '100vh',
-      transition: 'background-color 0.3s ease, color 0.3s ease'
-    }}>
-      {/* Header with theme toggle */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 30 
-      }}>
-        <div>
-          <h1 style={{ color: colors.text, marginBottom: '8px' }}>About mdnest</h1>
-          <p style={{ color: colors.secondary, fontSize: '16px' }}>
-            A modern markdown sharing platform
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href="/" passHref>
-            <button
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                backgroundColor: colors.buttonBackground,
-                color: colors.buttonText,
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              🏠 Home
-            </button>
-          </Link>
-          <button
-            onClick={toggleTheme}
-            style={{
-              padding: '8px 16px',
-              fontSize: '14px',
-              backgroundColor: colors.buttonBackground,
-              color: colors.buttonText,
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
-          </button>
-        </div>
-      </div>
+    <PageContainer maxWidth="800px">
+      <Navbar />
 
-      {/* Main Content */}
-      <div style={{ lineHeight: '1.6' }}>
+      <div style={{ marginTop: 'var(--space-4)', fontFamily: 'var(--font-sans)', lineHeight: 'var(--leading-relaxed)' }}>
         
-        {/* Platform Description */}
-        <section style={{ marginBottom: '40px' }}>
-          <h2 style={{ 
-            fontSize: '1.8em', 
-            marginBottom: '20px', 
-            color: colors.text,
-            borderBottom: `2px solid ${colors.primary}`,
-            paddingBottom: '10px'
-          }}>
-            What is mdnest?
-          </h2>
-          <p style={{ fontSize: '16px', marginBottom: '15px', color: colors.text }}>
-            mdnest is a modern platform for creating, editing, and sharing markdown documents. 
-            Whether you're a developer writing documentation, a student taking notes, or a content creator 
-            sharing articles, mdnest provides a seamless experience for all your markdown needs.
+        {/* Header Title Section */}
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h1 style={{ fontSize: 'var(--font-3xl)', fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-2)', color: 'var(--color-text)' }}>
+            About md-Nest
+          </h1>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-base)', margin: 0 }}>
+            A modern markdown sharing and backup platform
           </p>
-          <p style={{ fontSize: '16px', color: colors.text }}>
-            Built with performance and user experience in mind, mdnest combines the simplicity of markdown 
-            with powerful features like real-time editing, file uploads, and beautiful themes.
+        </div>
+
+        {/* What is md-Nest */}
+        <section style={{ marginBottom: 'var(--space-10)' }}>
+          <h2 style={{ 
+            fontSize: 'var(--font-xl)', 
+            fontWeight: 'var(--weight-bold)',
+            marginBottom: 'var(--space-4)', 
+            color: 'var(--color-text)',
+            borderBottom: '2px solid var(--color-border)',
+            paddingBottom: 'var(--space-2)'
+          }}>
+            What is md-Nest?
+          </h2>
+          <p style={{ fontSize: 'var(--font-base)', marginBottom: 'var(--space-3)', color: 'var(--color-text)' }}>
+            md-Nest is a premium platform for creating, converting, and sharing markdown documents. 
+            Whether you are a developer drafting API documentations, a student saving markdown notes, or a writer 
+            distributing articles, md-Nest offers a secure, instant, and clean environment.
+          </p>
+          <p style={{ fontSize: 'var(--font-base)', color: 'var(--color-text)' }}>
+            Built with modern performance and design aesthetics, md-Nest simplifies markdown writing with auto-formatting, 
+            word document parsing (.docx), tag organization, and dedicated user storage control.
           </p>
         </section>
 
-        {/* How to Use */}
-        <section style={{ marginBottom: '40px' }}>
+        {/* How to Use Card */}
+        <section style={{ marginBottom: 'var(--space-10)' }}>
           <h2 style={{ 
-            fontSize: '1.8em', 
-            marginBottom: '20px', 
-            color: colors.text,
-            borderBottom: `2px solid ${colors.primary}`,
-            paddingBottom: '10px'
+            fontSize: 'var(--font-xl)', 
+            fontWeight: 'var(--weight-bold)',
+            marginBottom: 'var(--space-4)', 
+            color: 'var(--color-text)',
+            borderBottom: '2px solid var(--color-border)',
+            paddingBottom: 'var(--space-2)'
           }}>
             How to Use
           </h2>
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: colors.cardBackground, 
-            borderRadius: '10px',
-            border: `1px solid ${colors.border}`
-          }}>
-            <h3 style={{ color: colors.primary, marginBottom: '15px' }}>Getting Started</h3>
-            <ol style={{ color: colors.text, fontSize: '16px', paddingLeft: '20px' }}>
-              <li style={{ marginBottom: '10px' }}>
-                <strong>Choose your method:</strong> Use the text editor to write directly, or upload an existing file (TXT, DOC, DOCX, MD)
+          <Card>
+            <h3 style={{ color: 'var(--color-accent)', fontSize: 'var(--font-lg)', fontWeight: 'var(--weight-bold)', marginBottom: 'var(--space-3)' }}>
+              Getting Started
+            </h3>
+            <ol style={{ color: 'var(--color-text)', fontSize: 'var(--font-base)', paddingLeft: 'var(--space-5)', margin: 0 }}>
+              <li style={{ marginBottom: 'var(--space-2)' }}>
+                <strong>Select your Mode:</strong> Direct write in the editor or upload an existing file (TXT, DOCX, MD) for automatic markdown conversion.
               </li>
-              <li style={{ marginBottom: '10px' }}>
-                <strong>Add details:</strong> Enter a title for your document and optionally add an author name
+              <li style={{ marginBottom: 'var(--space-2)' }}>
+                <strong>Add Metadata:</strong> Fill in the document title, optional author name, public/private toggles, and hashtag labels.
               </li>
-              <li style={{ marginBottom: '10px' }}>
-                <strong>Share:</strong> Click "Share" to generate a unique link that you can copy and share with others
+              <li style={{ marginBottom: 'var(--space-2)' }}>
+                <strong>Share/Save:</strong> Click Share to upload your document and get a secure unique link immediately.
               </li>
-              <li style={{ marginBottom: '10px' }}>
-                <strong>Explore:</strong> Visit the Explore page to discover public documents shared by the community
+              <li style={{ marginBottom: 'var(--space-2)' }}>
+                <strong>Explore:</strong> Browse public notes and document uploads from the community.
               </li>
             </ol>
-          </div>
+          </Card>
         </section>
 
-        {/* Copyright */}
-        <section style={{ marginBottom: '40px' }}>
+        {/* Copyright Card */}
+        <section style={{ marginBottom: 'var(--space-10)' }}>
           <h2 style={{ 
-            fontSize: '1.8em', 
-            marginBottom: '20px', 
-            color: colors.text,
-            borderBottom: `2px solid ${colors.primary}`,
-            paddingBottom: '10px'
+            fontSize: 'var(--font-xl)', 
+            fontWeight: 'var(--weight-bold)',
+            marginBottom: 'var(--space-4)', 
+            color: 'var(--color-text)',
+            borderBottom: '2px solid var(--color-border)',
+            paddingBottom: 'var(--space-2)'
           }}>
-            Copyright
+            Copyright & Platform Specs
           </h2>
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: colors.cardBackground, 
-            borderRadius: '10px',
-            border: `1px solid ${colors.border}`
-          }}>
-            <p style={{ color: colors.text, fontSize: '16px', marginBottom: '15px' }}>
-              © 2024 mdnest. All rights reserved.
+          <Card>
+            <p style={{ color: 'var(--color-text)', fontSize: 'var(--font-sm)', marginBottom: 'var(--space-3)' }}>
+              © {new Date().getFullYear()} md-Nest. All rights reserved.
             </p>
-            <p style={{ color: colors.text, fontSize: '16px', marginBottom: '15px' }}>
-              This platform is designed to facilitate the sharing of markdown content. 
-              Users retain ownership of their content and are responsible for ensuring they have the right to share it.
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-sm)', marginBottom: 'var(--space-3)' }}>
+              This platform facilitates instant markdown storage and sharing. 
+              Users retain full ownership of their contributions and remain responsible for the files shared.
             </p>
-            <p style={{ color: colors.text, fontSize: '16px' }}>
-              Built with Next.js, React, and TypeScript.
+            <p style={{ color: 'var(--color-text-weak)', fontSize: 'var(--font-xs)', margin: 0 }}>
+              Engineered using Next.js (Pages Router), React 19, Neon database client, and Cloudinary APIs.
             </p>
-          </div>
+          </Card>
         </section>
 
-        {/* Footer */}
-        <footer style={{ 
-          marginTop: '60px', 
-          padding: '20px 0', 
-          borderTop: `1px solid ${colors.border}`,
-          textAlign: 'center',
-          color: colors.secondary,
-          fontSize: '14px'
-        }}>
-          </footer>
+        {/* Back to Home Action */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-6)' }}>
+          <Link href="/">
+            <Button variant="primary">Create a New Document</Button>
+          </Link>
+        </div>
+
       </div>
-    </div>
+    </PageContainer>
   )
 }

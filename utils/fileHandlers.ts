@@ -4,6 +4,7 @@ export const handleFileUpload = async (
   author: string,
   autoFormat: boolean,
   setText: (text: string) => void,
+  setTitle: (title: string) => void,
   setMode: (mode: 'editor' | 'upload') => void,
   setIsConverting: (converting: boolean) => void
 ) => {
@@ -33,11 +34,12 @@ export const handleFileUpload = async (
     }
 
     setText(data.content)
+    setTitle(data.title || file.name)
     setMode('editor')
-    setIsConverting(false)
   } catch (err) {
     console.error('Conversion error:', err)
     alert('Error converting file')
+  } finally {
     setIsConverting(false)
   }
 }

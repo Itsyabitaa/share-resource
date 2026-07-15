@@ -35,7 +35,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showSidebar = !!session?.user && isSidebarOpen
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.background }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--color-bg)' }}>
       {showSidebar && (
         <Sidebar
           activeFolderId={viewedFolderId}

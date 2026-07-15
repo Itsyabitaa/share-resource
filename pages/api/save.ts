@@ -20,6 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Content is required' })
     }
 
+    const sizeInBytes = Buffer.byteLength(content, 'utf8')
+    if (sizeInBytes > 5 * 1024 * 1024) {
+      return res.status(413).json({ error: 'File size exceeds maximum limit of 5MB' })
+    }
+
     // Check if user is authenticated
     const session = await auth.api.getSession({
       headers: req.headers as any

@@ -101,6 +101,8 @@ export async function getFileById(id: string) {
         cloudinary_url,
         file_type,
         file_size,
+        is_public,
+        user_id,
         created_at::text as created_at,
         updated_at::text as updated_at
       FROM files WHERE id = ${id}

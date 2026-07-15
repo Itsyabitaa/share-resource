@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
+import path from 'path'
+
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 const PORT = process.env.PORT || 3000
 const baseURL = `http://localhost:${PORT}`
@@ -9,10 +13,10 @@ export default defineConfig({
   expect: {
     timeout: 5000,
   },
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL,
@@ -23,6 +27,8 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
   projects: [
     {

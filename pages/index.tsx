@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
-import Header from '../components/Header'
+import Navbar from '../components/Navbar'
 import { handleFileUpload, handleSave } from '../utils/fileHandlers'
 import Link from 'next/link'
 import ModeSelector from '../components/ModeSelector'
@@ -10,6 +10,7 @@ import FileUpload from '../components/FileUpload'
 import MarkdownEditor from '../components/MarkdownEditor'
 import ShareButton from '../components/ShareButton'
 import FolderSelect from '../components/FolderSelect'
+import PageContainer from '../components/PageContainer'
 
 export default function Home() {
   const [text, setText] = useState('')
@@ -21,12 +22,11 @@ export default function Home() {
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
-  const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
+  const [autoFormat, setAutoFormat] = useState(true)
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
   const router = useRouter()
-  const { colors, theme } = useTheme()
   const { data: session } = useSession()
 
   // Handle query parameters from AppLayout Sidebar
@@ -71,6 +71,7 @@ export default function Home() {
       author,
       autoFormat,
       setText,
+      setTitle,
       setMode,
       setIsConverting
     )
@@ -81,87 +82,96 @@ export default function Home() {
   }
 
   return (
-    <div style={{
-      maxWidth: 800,
-      width: '100%',
-      margin: '0 auto',
-      padding: 20,
-      color: colors.text,
-      transition: 'color 0.3s ease'
-    }}>
-      <Header 
+    <PageContainer maxWidth="800px">
+      <Navbar
         onResetCreate={() => {
           setTargetFolderId(null)
           setText('')
           setTitle('')
         }}
       />
-      {/* Storage Tier Notification */}
+
+      {/* Storage Tier Notification Banner */}
       {!session?.user ? (
-        <div style={{
-          backgroundColor: theme === 'dark' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(251, 191, 36, 0.4)'}`,
-          borderRadius: '10px',
-          padding: '12px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <span style={{ fontSize: '20px' }}>⏰</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Guest Mode:</strong> Your uploads will be available for <strong>3 days</strong>.{' '}
-              <Link href="/signup" style={{
-                color: theme === 'dark' ? '#fbbf24' : '#d97706',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}>
-                Sign up
-              </Link> for permanent storage!
+        <div
+          style={{
+            backgroundColor: 'var(--color-accent-light)',
+            border: '1px solid var(--color-accent)',
+            borderRadius: 'var(--radius-md)',
+            padding: '16px 20px',
+            marginBottom: 'var(--space-5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            boxShadow: '0 4px 6px -1px var(--color-shadow)'
+          }}
+        >
+          <span style={{ fontSize: '24px' }}>🚀</span>
+          <div style={{ flex: 1, fontFamily: 'var(--font-sans)' }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-sm)', color: 'var(--color-text)', lineHeight: 'var(--leading-relaxed)' }}>
+              <strong>Guest Mode:</strong> Your shared documents are active for <strong>3 days</strong>.{' '}
+              <Link
+                href="/signup"
+                style={{
+                  color: 'var(--color-accent)',
+                  textDecoration: 'underline',
+                  fontWeight: 'var(--weight-bold)'
+                }}
+              >
+                Sign up for free
+              </Link>{' '}
+              in 30 seconds to enjoy permanent storage!
             </p>
           </div>
         </div>
       ) : useCustomCredentials ? (
-        <div style={{
-          backgroundColor: theme === 'dark' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.4)'}`,
-          borderRadius: '10px',
-          padding: '12px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div
+          style={{
+            backgroundColor: 'var(--color-success-light)',
+            border: '1px solid var(--color-success)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 18px',
+            marginBottom: 'var(--space-5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
           <span style={{ fontSize: '20px' }}>✅</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Custom Storage:</strong> Using your personal Neon and Cloudinary credentials.
+          <div style={{ flex: 1, fontFamily: 'var(--font-sans)' }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-sm)', color: 'var(--color-text)' }}>
+              <strong>Custom Storage:</strong> Saving files to your dedicated Neon and Cloudinary buckets.
             </p>
           </div>
         </div>
       ) : (
-        <div style={{
-          backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.4)'}`,
-          borderRadius: '10px',
-          padding: '12px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
+        <div
+          style={{
+            backgroundColor: 'var(--color-surface-hover)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 18px',
+            marginBottom: 'var(--space-5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
           <span style={{ fontSize: '20px' }}>💾</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Default Storage:</strong> Using shared storage (permanent).{' '}
-              <Link href="/settings" style={{
-                color: theme === 'dark' ? '#60a5fa' : '#2563eb',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}>
+          <div style={{ flex: 1, fontFamily: 'var(--font-sans)' }}>
+            <p style={{ margin: 0, fontSize: 'var(--font-sm)', color: 'var(--color-text)' }}>
+              <strong>Default Storage:</strong> Saving permanently to our shared cloud.{' '}
+              <Link
+                href="/settings"
+                style={{
+                  color: 'var(--color-accent)',
+                  textDecoration: 'underline',
+                  fontWeight: 'var(--weight-semibold)'
+                }}
+              >
                 Add your own credentials
-              </Link> for dedicated storage.
+              </Link>{' '}
+              for private database control.
             </p>
           </div>
         </div>
@@ -202,8 +212,8 @@ export default function Home() {
         />
       )}
 
-        <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
-        <ShareButton text={text} onShare={onShare} />
-    </div>
+      <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
+      <ShareButton text={text} onShare={onShare} />
+    </PageContainer>
   )
 }

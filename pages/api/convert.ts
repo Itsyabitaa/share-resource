@@ -5,6 +5,7 @@ import path from 'path'
 import cloudinary from '../../lib/cloudinary'
 import { insertFile } from '../../lib/dbSchema'
 import { formatToMarkdown, isAlreadyMarkdown } from '../../utils/markdownFormatter'
+import mammoth from 'mammoth'
 
 export const config = {
   api: {
@@ -19,13 +20,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const form = new IncomingForm({
-      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      maxFileSize: 5 * 1024 * 1024, // 5MB limit
       keepExtensions: true,
     })
 
     const [fields, files] = await new Promise<[any, any]>((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
-        if (err) reject(err)
+        if (err) {
+          if (err.message && err.message.includes('maxFileSize exceeded')) {
+            reject(new Error('File size exceeds maximum limit of 5MB'))
+          } else {
+            reject(err)
+          }
+        }
         else resolve([fields, files])
       })
     })
@@ -42,6 +49,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const filePath = file.filepath
     const fileExtension = path.extname(file.originalFilename || '').toLowerCase()
     const fileName = file.originalFilename || 'uploaded-file'
+    const fileMimeType = file.mimetype || ''
+
+    // Server-side hardening: Validate file content type
+    const allowedMimeTypes = [
+      'text/plain',
+      'text/markdown',
+      'application/octet-stream',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]
+    if (fileMimeType && !allowedMimeTypes.includes(fileMimeType) && !fileMimeType.startsWith('text/')) {
+      await fs.unlink(filePath)
+      return res.status(400).json({ error: 'Unsupported file content type' })
+    }
 
     let content = ''
 
@@ -63,16 +83,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         break
 
-      case '.doc':
       case '.docx':
-        // For now, just read as text (you might want to add proper DOC parsing)
-        content = await fs.readFile(filePath, 'utf-8')
-        if (autoFormat) {
-          content = formatToMarkdown(content)
-        } else {
-          content = `# Converted Document\n\n${content}`
+        try {
+          const mammothResult = await mammoth.extractRawText({ path: filePath })
+          content = mammothResult.value
+          if (autoFormat) {
+            content = formatToMarkdown(content)
+          } else {
+            content = `# Converted Document\n\n${content}`
+          }
+        } catch (err: any) {
+          await fs.unlink(filePath)
+          return res.status(400).json({ error: 'Failed to parse .docx document content.' })
         }
         break
+
+      case '.doc':
+        await fs.unlink(filePath)
+        return res.status(400).json({ error: 'Legacy .doc format is not supported. Please upload .docx instead.' })
 
       default:
         return res.status(400).json({ error: 'Unsupported file type' })
@@ -109,6 +137,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     console.error('File conversion error:', error)
+    if (error instanceof Error && error.message === 'File size exceeds maximum limit of 5MB') {
+      return res.status(413).json({ error: error.message })
+    }
     res.status(500).json({
       error: 'File conversion failed',
       details: error instanceof Error ? error.message : 'Unknown error'

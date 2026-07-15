@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             try {
                 // Extract public_id from Cloudinary URL
                 const url = file.cloudinary_url
-                const publicIdMatch = url.match(/\/md-nest\/([^/]+)\.txt$/)
+                const publicIdMatch = url.match(/\/md-nest\/([^/]+)\.[a-zA-Z0-9]+$/)
 
                 if (publicIdMatch) {
                     const publicId = `md-nest/${publicIdMatch[1]}`

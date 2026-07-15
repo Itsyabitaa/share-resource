@@ -1,85 +1,48 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Authentication Flow', () => {
+test('Full Authentication Lifecycle', async ({ page }) => {
   const uniqueEmail = `user-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`
   const password = 'Password123!'
   const fullName = 'E2E Test User'
 
-  test('Signup successfully and redirects to home page', async ({ page }) => {
-    await page.goto('/signup')
-    
-    // Fill signup form
-    await page.fill('#name', fullName)
-    await page.fill('#email', uniqueEmail)
-    await page.fill('#password', password)
-    
-    // Submit form
-    await page.click('button[type="submit"]')
-    
-    // Verify signup success toast or redirection to homepage
-    await expect(page).toHaveURL('/', { timeout: 15000 })
-    
-    // Header should now show the user's name
-    await expect(page.locator('header')).toContainText('Profile')
-  })
+  // 1. Signup Flow
+  await page.goto('/signup')
+  await page.fill('#name', fullName)
+  await page.fill('#email', uniqueEmail)
+  await page.fill('#password', password)
+  await page.click('button[type="submit"]')
+  
+  // Verify signup success and landing
+  await expect(page).toHaveURL('/', { timeout: 15000 })
+  await expect(page.locator('button:has-text("Profile")')).toBeVisible({ timeout: 10000 })
 
-  test('Login fails with invalid password, succeeds with correct password', async ({ page }) => {
-    // 1. Invalid login
-    await page.goto('/login')
-    await page.fill('#email', uniqueEmail)
-    await page.fill('#password', 'WrongPassword123!')
-    await page.click('button[type="submit"]')
-    
-    // Verify toast error is visible
-    const toast = page.locator('div', { hasText: 'Login failed' })
-    await expect(toast.first()).toBeVisible({ timeout: 5000 })
+  // 2. Session Persistence on Reload
+  await page.reload()
+  await expect(page.locator('button:has-text("Profile")')).toBeVisible({ timeout: 5000 })
 
-    // 2. Successful login
-    await page.fill('#password', password)
-    await page.click('button[type="submit"]')
-    
-    // Redirects to homepage
-    await expect(page).toHaveURL('/', { timeout: 15000 })
-    await expect(page.locator('header')).toContainText('Profile')
-  })
+  // 3. Settings Accessibility (Protected Route)
+  await page.goto('/settings')
+  await expect(page).toHaveURL('/settings')
 
-  test('Logout terminates the session and redirects correctly', async ({ page }) => {
-    // Navigate to settings (protected route) after logging in
-    await page.goto('/login')
-    await page.fill('#email', uniqueEmail)
-    await page.fill('#password', password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL('/')
+  // 4. Logout Flow
+  await page.click('button:has-text("Profile")')
+  await page.click('button:has-text("Sign Out")')
+  await expect(page).toHaveURL('/', { timeout: 15000 })
+  await expect(page.locator('button:has-text("Sign In")')).toBeVisible({ timeout: 10000 })
 
-    // Navigate to settings
-    await page.goto('/settings')
-    await expect(page).toHaveURL('/settings')
+  // 5. Protected Route Gate Redirect
+  await page.goto('/settings')
+  await expect(page).toHaveURL('/login', { timeout: 10000 })
 
-    // Click Profile to open dropdown
-    await page.click('button:has-text("Profile")')
+  // 6. Login Validation (Incorrect Password)
+  await page.fill('#email', uniqueEmail)
+  await page.fill('#password', 'IncorrectPass123!')
+  await page.click('button[type="submit"]')
+  await expect(page.locator('text=/Invalid/i').first()).toBeVisible({ timeout: 5000 })
 
-    // Click Sign Out
-    await page.click('button:has-text("Sign Out")')
-
-    // Redirect to homepage or login page due to settings auth gate redirecting
-    await expect(page).toHaveURL('/login', { timeout: 15000 })
-    
-    // If we try to access settings again, it should redirect to login
-    await page.goto('/settings')
-    await expect(page).toHaveURL('/login')
-  })
-
-  test('Session persistence across reloads', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('#email', uniqueEmail)
-    await page.fill('#password', password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL('/')
-    
-    // Reload the page
-    await page.reload()
-    
-    // Verify session still exists
-    await expect(page.locator('header')).toContainText('Profile')
-  })
+  // 7. Login Validation (Correct Password)
+  await page.fill('#password', password)
+  await page.click('button[type="submit"]')
+  await expect(page).toHaveURL('/', { timeout: 15000 })
+  await expect(page.locator('button:has-text("Profile")')).toBeVisible({ timeout: 10000 })
 })

@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from '../../lib/auth-client'
 import { useSidebar } from '../../lib/SidebarContext'
+import { auth } from '../../lib/auth'
 
 interface Comment {
   id: string
@@ -25,6 +26,19 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     if (!fileData) {
       return {
         notFound: true
+      }
+    }
+
+    // Access control check: if not public, restrict access to the file owner
+    if (!fileData.is_public) {
+      const session = await auth.api.getSession({
+        headers: context.req.headers as any
+      })
+      const userId = session?.user?.id
+      if (!userId || fileData.user_id !== userId) {
+        return {
+          notFound: true
+        }
       }
     }
 
@@ -64,7 +78,17 @@ export default function FilePage({
   fileType: string
   createdAt: string
 }) {
-  const { colors, theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
+  const colors = {
+    background: 'var(--color-bg)',
+    text: 'var(--color-text)',
+    border: 'var(--color-border)',
+    primary: 'var(--color-accent)',
+    secondary: 'var(--color-text-muted)',
+    buttonBackground: 'var(--color-surface-hover)',
+    buttonText: 'var(--color-text)',
+    inputBackground: 'var(--color-input-bg)',
+  }
   const [copied, setCopied] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
