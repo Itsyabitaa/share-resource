@@ -18,12 +18,25 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
   const { data: session } = useSession()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const { sitePath } = useAppPaths()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const { sitePath, apiPath } = useAppPaths()
 
   useEffect(() => {
     setMobileNavOpen(false)
     setShowProfileMenu(false)
   }, [router.pathname])
+
+  useEffect(() => {
+    if (!session?.user) {
+      setIsAdmin(false)
+      return
+    }
+
+    fetch(apiPath('/profile'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setIsAdmin(!!data?.isAdmin))
+      .catch(() => setIsAdmin(false))
+  }, [session?.user?.id, apiPath])
 
   const handleSignOut = async () => {
     await signOut()
@@ -143,6 +156,11 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
                   <Link href={sitePath('/pricing')} onClick={() => setShowProfileMenu(false)}>
                     <span className="nav-link" style={{ display: 'block' }}>Pricing</span>
                   </Link>
+                  {isAdmin && (
+                    <Link href={sitePath('/admin')} onClick={() => setShowProfileMenu(false)}>
+                      <span className="nav-link" style={{ display: 'block' }}>Admin</span>
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handleSignOut}

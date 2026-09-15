@@ -801,3 +801,33 @@ export async function applyProStorageToUserFiles(userId: string) {
     WHERE user_id = ${userId}
   `
 }
+
+export async function applyFreeStorageToUserFiles(userId: string) {
+  await sql`
+    UPDATE files
+    SET
+      expires_at = created_at + INTERVAL '30 days',
+      storage_tier = 'free',
+      updated_at = NOW()
+    WHERE user_id = ${userId}
+  `
+}
+
+export async function getUserByEmail(email: string) {
+  const result = await sql`
+    SELECT id, email, name FROM "user" WHERE LOWER(email) = LOWER(${email.trim()})
+  `
+  return result[0] as { id: string; email: string; name: string | null } | undefined
+}
+
+export async function searchUsers(query: string, limit = 25) {
+  const pattern = `%${query.trim()}%`
+  const result = await sql`
+    SELECT id, email, name, "createdAt"::text as created_at
+    FROM "user"
+    WHERE email ILIKE ${pattern} OR COALESCE(name, '') ILIKE ${pattern}
+    ORDER BY "createdAt" DESC
+    LIMIT ${limit}
+  `
+  return result as Array<{ id: string; email: string; name: string | null; created_at: string }>
+}

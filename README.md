@@ -47,6 +47,22 @@ First-time Google sign-in creates an account automatically (same as email signup
 
 Run `npm run db:setup` after pulling to add the `user.plan` column. Set `PRO_PROMO_CODE` or `ENABLE_SELF_SERVE_PRO=true` to allow upgrades from the pricing page.
 
+### Admin (grant Pro)
+
+1. Set `ADMIN_EMAILS=your@email.com` in `.env.local` and Vercel (comma-separated for multiple admins).
+2. Sign in with that email.
+3. Open **Account → Admin** or visit `/admin`.
+4. Search users by email/name, or enter an email and choose **Pro** / **Free**.
+
+Optional CLI (uses `ADMIN_SECRET`):
+
+```bash
+curl -X POST https://mdnest.vercel.app/api/admin/set-plan \
+  -H "Authorization: Bearer YOUR_ADMIN_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","plan":"pro"}'
+```
+
 ## Scripts
 
 - `npm run dev` / `build` / `start`

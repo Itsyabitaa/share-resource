@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../../lib/auth'
-import { applyProStorageToUserFiles, getUserPlan, setUserPlan } from '../../../lib/dbSchema'
+import { getUserPlan } from '../../../lib/dbSchema'
+import { applyPlanToUser } from '../../../lib/planActions'
 
 function canUpgrade(promoCode?: string) {
   const configuredPromo = process.env.PRO_PROMO_CODE
@@ -38,8 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   }
 
-  await setUserPlan(userId, 'pro')
-  await applyProStorageToUserFiles(userId)
+  await applyPlanToUser(userId, 'pro')
 
   return res.status(200).json({
     plan: 'pro',

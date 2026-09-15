@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../lib/auth'
+import { isAdminEmail } from '../../lib/admin'
 import { getUserPlan } from '../../lib/dbSchema'
 import sql from '../../lib/neonClient'
 
@@ -31,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 name: result[0].name || '',
                 email: result[0].email,
                 plan,
+                isAdmin: isAdminEmail(result[0].email),
             })
         }
 
