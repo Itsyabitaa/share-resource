@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
+import { sendPasswordResetEmail } from "./email";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -81,6 +82,13 @@ function createAuth() {
         baseURL: getAuthBaseURL(),
         emailAndPassword: {
             enabled: true,
+            sendResetPassword: async ({ user, url }) => {
+                await sendPasswordResetEmail({
+                    to: user.email,
+                    name: user.name,
+                    url,
+                })
+            },
         },
         account: {
             accountLinking: {

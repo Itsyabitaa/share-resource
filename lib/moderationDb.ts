@@ -1,6 +1,7 @@
 import sql from './neonClient'
 import type { ModerationAction } from './moderation'
 import { DEFAULT_WARNING_MESSAGE } from './moderation'
+import { sendModerationWarningEmail } from './email'
 
 export type AdminFileRow = {
   id: string
@@ -124,15 +125,32 @@ export async function applyModerationAction(
     `
 
     if (file.user_id) {
+      const warningText = options.warningMessage?.trim() || reason || DEFAULT_WARNING_MESSAGE
+
       await sql`
         INSERT INTO user_warnings (user_id, file_id, message, created_by)
         VALUES (
           ${file.user_id},
           ${fileId},
-          ${options.warningMessage?.trim() || reason || DEFAULT_WARNING_MESSAGE},
+          ${warningText},
           ${actorEmail}
         )
       `
+
+      const userRows = await sql`
+        SELECT email, name FROM "user" WHERE id = ${file.user_id}
+      `
+      const warnedUser = userRows[0]
+      if (warnedUser?.email) {
+        sendModerationWarningEmail({
+          to: warnedUser.email,
+          name: warnedUser.name,
+          message: warningText,
+          fileTitle: file.title,
+        }).catch((error) => {
+          console.error('[email] Failed to send moderation warning:', error)
+        })
+      }
     }
 
     await recordModerationEvent('user_warned', {
