@@ -14,7 +14,7 @@
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 html {
@@ -180,17 +180,17 @@ body.dark .app-shell {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 60;
+  z-index: 70;
   height: var(--header-height);
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 0 16px;
   border-bottom: 1px solid rgba(120, 113, 108, 0.18);
-  background: color-mix(in srgb, var(--header-bg, #f7f6f3) 94%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: left 0.25s ease;
+  background: var(--header-bg, #f1eee6);
+  box-shadow: 0 1px 0 rgba(120, 113, 108, 0.08);
+  transition: left 0.25s ease, width 0.25s ease;
 }
 
 body.light .site-header {
@@ -879,13 +879,41 @@ body.dark .sidebar-admin-section .sidebar-admin-item.is-active {
   max-width: none;
 }
 
+.admin-sticky-top {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 55;
+  margin: -8px 0 16px;
+  padding: 8px 0 12px;
+  background: var(--page-bg, #f1eee6);
+  border-bottom: 1px solid rgba(120, 113, 108, 0.12);
+}
+
+body.dark .admin-sticky-top {
+  background: var(--page-bg, #121110);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 0;
+}
+
+.admin-sticky-top .admin-toolbar {
+  margin-top: 12px;
+}
+
+.admin-sticky-top .admin-field {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.admin-sticky-top .admin-hint {
+  margin-top: 8px;
 }
 
 .admin-tabs {

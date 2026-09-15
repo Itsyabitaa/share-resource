@@ -257,26 +257,153 @@ export default function AdminPage() {
     <div className="page-shell admin-dashboard" style={{ color: colors.text }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <header className="admin-header">
-        <div>
-          <p className="composer-kicker">Admin</p>
-          <h1 className="page-title">{pageMeta.title}</h1>
-          <p className="page-subtitle">{pageMeta.subtitle}</p>
-        </div>
-        <button
-          type="button"
-          className="header-btn"
-          disabled={loading}
-          onClick={() => {
-            if (tab === 'posts') loadPosts()
-            else if (tab === 'viral') loadViral()
-            else if (tab === 'accounts') loadUsers()
-            else loadDashboard()
-          }}
-        >
-          Refresh
-        </button>
-      </header>
+      <div className="admin-sticky-top">
+        <header className="admin-header">
+          <div>
+            <p className="composer-kicker">Admin</p>
+            <h1 className="page-title">{pageMeta.title}</h1>
+            <p className="page-subtitle">{pageMeta.subtitle}</p>
+          </div>
+          <button
+            type="button"
+            className="header-btn"
+            disabled={loading}
+            onClick={() => {
+              if (tab === 'posts') loadPosts()
+              else if (tab === 'viral') loadViral()
+              else if (tab === 'accounts') loadUsers()
+              else loadDashboard()
+            }}
+          >
+            Refresh
+          </button>
+        </header>
+
+        {tab === 'posts' && (
+          <>
+            <div className="admin-toolbar admin-toolbar-wrap">
+              <input
+                value={postSearch}
+                onChange={(e) => setPostSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadPosts()}
+                placeholder="Search by title, author, or owner email"
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              />
+              <select
+                value={postStatus}
+                onChange={(e) => setPostStatus(e.target.value as AdminFileStatusFilter)}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="warned">Warned</option>
+                <option value="removed">Removed</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="guest">Guest posts</option>
+              </select>
+              <select
+                value={postSort}
+                onChange={(e) => setPostSort(e.target.value as AdminFileSort)}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="viral">Viral score</option>
+                <option value="views">Most views</option>
+                <option value="shares">Most shares</option>
+              </select>
+              <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
+                Apply filters
+              </button>
+            </div>
+            <label className="admin-field">
+              <span>Warning / takedown message</span>
+              <textarea
+                value={modReason}
+                onChange={(e) => setModReason(e.target.value)}
+                rows={2}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              />
+            </label>
+          </>
+        )}
+
+        {tab === 'accounts' && (
+          <>
+            <p className="admin-hint">
+              Real accounts from Neon. Filter by Google, documents, or search.
+            </p>
+            <div className="admin-toolbar admin-toolbar-wrap">
+              <input
+                value={planEmail}
+                onChange={(e) => setPlanEmail(e.target.value)}
+                placeholder="Grant Pro by email"
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              />
+              <select
+                value={plan}
+                onChange={(e) => setPlan(e.target.value as 'free' | 'pro')}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              >
+                <option value="pro">Pro</option>
+                <option value="free">Free</option>
+              </select>
+              <button
+                type="button"
+                className="header-btn primary"
+                disabled={loading || !planEmail.trim()}
+                onClick={() => assignPlan(planEmail.trim(), plan)}
+              >
+                Save plan
+              </button>
+            </div>
+            <div className="admin-toolbar admin-toolbar-wrap">
+              <input
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
+                placeholder="Search by email or name"
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              />
+              <select
+                value={accountProvider}
+                onChange={(e) => setAccountProvider(e.target.value as AccountProviderFilter)}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              >
+                <option value="all">All sign-in methods</option>
+                <option value="google">Google only</option>
+                <option value="email">Email / password only</option>
+              </select>
+              <select
+                value={accountActivity}
+                onChange={(e) => setAccountActivity(e.target.value as AccountActivityFilter)}
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              >
+                <option value="all">All activity</option>
+                <option value="has_docs">Has documents</option>
+                <option value="verified">Email verified</option>
+              </select>
+              <button type="button" className="header-btn primary" disabled={loading} onClick={() => loadUsers()}>
+                Apply filters
+              </button>
+              <button
+                type="button"
+                className="header-btn"
+                disabled={loading}
+                onClick={() => {
+                  setUserSearch('')
+                  setAccountProvider('all')
+                  setAccountActivity('all')
+                  loadUsers({ query: '', provider: 'all', activity: 'all' })
+                }}
+              >
+                Reset
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {tab === 'overview' && stats && (
         <div className="admin-stat-grid">
@@ -300,51 +427,6 @@ export default function AdminPage() {
 
       {tab === 'posts' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <div className="admin-toolbar admin-toolbar-wrap">
-            <input
-              value={postSearch}
-              onChange={(e) => setPostSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadPosts()}
-              placeholder="Search by title, author, or owner email"
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            />
-            <select
-              value={postStatus}
-              onChange={(e) => setPostStatus(e.target.value as AdminFileStatusFilter)}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            >
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="warned">Warned</option>
-              <option value="removed">Removed</option>
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-              <option value="guest">Guest posts</option>
-            </select>
-            <select
-              value={postSort}
-              onChange={(e) => setPostSort(e.target.value as AdminFileSort)}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="viral">Viral score</option>
-              <option value="views">Most views</option>
-              <option value="shares">Most shares</option>
-            </select>
-            <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
-              Apply filters
-            </button>
-          </div>
-          <label className="admin-field">
-            <span>Warning / takedown message</span>
-            <textarea
-              value={modReason}
-              onChange={(e) => setModReason(e.target.value)}
-              rows={2}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            />
-          </label>
           <AdminFileTable
             files={postFiles}
             sitePath={sitePath}
@@ -392,77 +474,6 @@ export default function AdminPage() {
 
       {tab === 'accounts' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <p className="admin-hint">
-            These are real accounts stored in Neon — not sample data. Use filters to find Google sign-ins
-            or users who actually created documents. Random email sign-ups with 0 docs are often bots or tests.
-          </p>
-          <div className="admin-toolbar admin-toolbar-wrap">
-            <input
-              value={planEmail}
-              onChange={(e) => setPlanEmail(e.target.value)}
-              placeholder="Grant Pro by email"
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            />
-            <select
-              value={plan}
-              onChange={(e) => setPlan(e.target.value as 'free' | 'pro')}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            >
-              <option value="pro">Pro</option>
-              <option value="free">Free</option>
-            </select>
-            <button
-              type="button"
-              className="header-btn primary"
-              disabled={loading || !planEmail.trim()}
-              onClick={() => assignPlan(planEmail.trim(), plan)}
-            >
-              Save plan
-            </button>
-          </div>
-          <div className="admin-toolbar admin-toolbar-wrap">
-            <input
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
-              placeholder="Search by email or name"
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            />
-            <select
-              value={accountProvider}
-              onChange={(e) => setAccountProvider(e.target.value as AccountProviderFilter)}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            >
-              <option value="all">All sign-in methods</option>
-              <option value="google">Google only</option>
-              <option value="email">Email / password only</option>
-            </select>
-            <select
-              value={accountActivity}
-              onChange={(e) => setAccountActivity(e.target.value as AccountActivityFilter)}
-              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-            >
-              <option value="all">All activity</option>
-              <option value="has_docs">Has documents</option>
-              <option value="verified">Email verified</option>
-            </select>
-            <button type="button" className="header-btn primary" disabled={loading} onClick={() => loadUsers()}>
-              Apply filters
-            </button>
-            <button
-              type="button"
-              className="header-btn"
-              disabled={loading}
-              onClick={() => {
-                setUserSearch('')
-                setAccountProvider('all')
-                setAccountActivity('all')
-                loadUsers({ query: '', provider: 'all', activity: 'all' })
-              }}
-            >
-              Reset
-            </button>
-          </div>
           {users.length === 0 ? (
             <p className="admin-hint">No users found.</p>
           ) : (

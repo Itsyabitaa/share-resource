@@ -56,6 +56,8 @@ function LayoutInner({ children }: AppLayoutProps) {
       className={`app-shell${showSidebar ? ' sidebar-open' : ''}`}
       style={{ color: colors.text }}
     >
+      <Header onResetCreate={handleResetCreate} />
+
       {session?.user && (
         <>
           {isSidebarOpen && (
@@ -71,7 +73,6 @@ function LayoutInner({ children }: AppLayoutProps) {
       )}
 
       <div className="app-main">
-        <Header onResetCreate={handleResetCreate} />
         {children}
         <Footer />
       </div>
