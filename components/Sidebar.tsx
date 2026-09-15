@@ -367,45 +367,44 @@ export default function Sidebar({
                       <IconFolder />
                       <span className="sidebar-folder-name">{folder.name}</span>
                     </span>
-                    <span className="sidebar-folder-meta">
-                      <span className="sidebar-count">{fileCounts[folder.id] || 0}</span>
-                      <span className="sidebar-folder-actions">
-                        {onCreateFileInFolder && (
-                          <button
-                            type="button"
-                            className="sidebar-icon-btn"
-                            title="Create document in folder"
-                            aria-label={`Create document in ${folder.name}`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onCreateFileInFolder(folder.id)
-                              afterNavigate()
-                            }}
-                          >
-                            <IconPlus />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="sidebar-icon-btn"
-                          title="Rename folder"
-                          aria-label={`Rename ${folder.name}`}
-                          onClick={(e) => startRename(folder, e)}
-                        >
-                          <IconEdit />
-                        </button>
-                        <button
-                          type="button"
-                          className="sidebar-icon-btn danger"
-                          title="Delete folder"
-                          aria-label={`Delete ${folder.name}`}
-                          onClick={(e) => handleDeleteFolder(folder.id, e)}
-                        >
-                          <IconTrash />
-                        </button>
-                      </span>
+                    <span className="sidebar-count sidebar-folder-count">
+                      {fileCounts[folder.id] || 0}
                     </span>
                   </button>
+                  <div className="sidebar-folder-actions">
+                    {onCreateFileInFolder && (
+                      <button
+                        type="button"
+                        className="sidebar-icon-btn"
+                        title="Create document in folder"
+                        aria-label={`Create document in ${folder.name}`}
+                        onClick={() => {
+                          onCreateFileInFolder(folder.id)
+                          afterNavigate()
+                        }}
+                      >
+                        <IconPlus />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="sidebar-icon-btn"
+                      title="Rename folder"
+                      aria-label={`Rename ${folder.name}`}
+                      onClick={(e) => startRename(folder, e)}
+                    >
+                      <IconEdit />
+                    </button>
+                    <button
+                      type="button"
+                      className="sidebar-icon-btn danger"
+                      title="Delete folder"
+                      aria-label={`Delete ${folder.name}`}
+                      onClick={(e) => handleDeleteFolder(folder.id, e)}
+                    >
+                      <IconTrash />
+                    </button>
+                  </div>
                 </div>
               )
             })

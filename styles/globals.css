@@ -492,7 +492,12 @@ body.dark .sidebar-rename-input {
 }
 
 .sidebar-folder-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px;
   border-radius: 10px;
+  padding-right: 4px;
   transition: background 0.15s ease;
 }
 
@@ -506,16 +511,17 @@ body.dark .sidebar-rename-input {
 }
 
 .sidebar-folder-item.is-renaming {
+  display: block;
   padding: 2px 4px;
 }
 
 .sidebar-folder-main {
-  width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 8px 8px 8px 10px;
+  gap: 8px;
+  padding: 8px 4px 8px 10px;
   border: none;
   background: transparent;
   color: inherit;
@@ -554,25 +560,14 @@ body.dark .sidebar-rename-input {
   white-space: nowrap;
 }
 
-.sidebar-folder-meta {
-  position: relative;
+.sidebar-folder-count {
   flex-shrink: 0;
-  width: 78px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.sidebar-folder-meta .sidebar-count {
+  min-width: 1.25rem;
+  text-align: right;
   transition: opacity 0.15s ease;
 }
 
 .sidebar-folder-actions {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   gap: 1px;
@@ -581,9 +576,12 @@ body.dark .sidebar-rename-input {
   transition: opacity 0.15s ease;
 }
 
-.sidebar-folder-item:hover .sidebar-folder-meta .sidebar-count,
-.sidebar-folder-item.is-active .sidebar-folder-meta .sidebar-count {
+.sidebar-folder-item:hover .sidebar-folder-count,
+.sidebar-folder-item.is-active .sidebar-folder-count {
   opacity: 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sidebar-folder-item:hover .sidebar-folder-actions,
@@ -593,8 +591,11 @@ body.dark .sidebar-rename-input {
 }
 
 @media (hover: none) {
-  .sidebar-folder-item.is-active .sidebar-folder-meta .sidebar-count {
+  .sidebar-folder-item.is-active .sidebar-folder-count {
     opacity: 0;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .sidebar-folder-item.is-active .sidebar-folder-actions {
