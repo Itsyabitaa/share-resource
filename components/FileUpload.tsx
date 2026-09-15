@@ -46,7 +46,7 @@ export default function FileUpload({
     }}>
       <input
         type="file"
-        accept=".txt,.doc,.docx,.md"
+        accept=".txt,.doc,.docx,.md,.pdf,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={onFileUpload}
         style={{ display: 'none' }}
         id="file-upload"
@@ -56,7 +56,7 @@ export default function FileUpload({
           {isConverting ? '🔄 Converting...' : '📁 Click to upload a file'}
         </div>
         <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '15px' }}>
-          Supported formats: TXT, DOC, DOCX, MD
+          Supported formats: TXT, MD, DOC, DOCX, PDF
         </div>
         <div style={{
           padding: '10px 20px',

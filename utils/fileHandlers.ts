@@ -28,24 +28,26 @@ export const handleFileUpload = async (
       body: formData,
     })
 
-    const data = await res.json()
+    const data = await res.json().catch(() => ({}))
 
     if (!res.ok) {
       console.error('Convert error:', data)
-      alert(`Error converting file: ${data.error || 'Unknown error'}`)
+      alert(data.error || 'Could not convert this file.')
+      return
+    }
+
+    if (!data.content) {
+      alert('Could not convert this file.')
       return
     }
 
     setText(data.content)
-    if (data.title) {
-      // title is applied by the caller if provided
-    }
     setMode('editor')
-    setIsConverting(false)
     return data.title as string | undefined
   } catch (err) {
     console.error('Conversion error:', err)
-    alert('Error converting file')
+    alert('Could not convert this file. Check the file type and try again.')
+  } finally {
     setIsConverting(false)
   }
 }
