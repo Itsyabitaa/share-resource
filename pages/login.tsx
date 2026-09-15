@@ -40,8 +40,10 @@ export default function Login() {
 
             // Success
             setToast({ message: 'Successfully logged in! Redirecting...', type: 'success' })
+            const redirect = typeof router.query.redirect === 'string' ? router.query.redirect : ''
+            const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : sitePath('/')
             setTimeout(() => {
-                window.location.href = sitePath('/')
+                window.location.href = safeRedirect
             }, 1000)
         } catch (err: any) {
             const errorMessage = err.message || 'Login failed. Please check your credentials.'

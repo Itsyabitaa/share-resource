@@ -24,7 +24,11 @@ export default function Explore() {
   const [files, setFiles] = useState<FileData[]>([])
   const [hashtags, setHashtags] = useState<HashtagData[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedHashtag, setSelectedHashtag] = useState('')
+  const [sort, setSort] = useState('new')
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [dbError, setDbError] = useState<string | null>(null)
   const router = useRouter()
@@ -32,24 +36,33 @@ export default function Explore() {
   const { apiPath, sitePath } = useAppPaths()
 
   useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, selectedHashtag, sort])
+
+  useEffect(() => {
     loadData()
-  }, [searchTerm, selectedHashtag])
+  }, [debouncedSearch, selectedHashtag, sort, page])
 
   const loadData = async () => {
     setLoading(true)
     setDbError(null)
     try {
       const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
+      if (debouncedSearch) params.append('search', debouncedSearch)
       if (selectedHashtag) params.append('hashtag', selectedHashtag)
+      params.append('sort', sort)
+      params.append('page', String(page))
 
       const response = await fetch(apiPath(`/explore?${params.toString()}`))
       const data = await response.json()
 
       if (!response.ok) {
-        const errorMessage = data.details || data.error || 'Failed to fetch data'
-        setDbError(errorMessage)
-        // Don't throw error, just set empty data
+        setDbError(data.error || 'Failed to fetch data')
         setFiles([])
         setHashtags([])
         return
@@ -57,11 +70,10 @@ export default function Explore() {
 
       setFiles(data.files || [])
       setHashtags(data.hashtags || [])
+      setPages(data.pages || 1)
     } catch (error) {
-      console.error('Error loading data:', error)
       const errorMessage = error instanceof Error ? error.message : 'Network error occurred'
       setDbError(errorMessage)
-      // Set empty arrays to show appropriate empty state
       setFiles([])
       setHashtags([])
     } finally {
@@ -128,6 +140,23 @@ export default function Explore() {
               outline: 'none'
             }}
           />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+          {[
+            { id: 'new', label: 'Newest' },
+            { id: 'liked', label: 'Most liked' },
+            { id: 'commented', label: 'Most commented' },
+          ].map(option => (
+            <button
+              key={option.id}
+              className={`header-btn${sort === option.id ? ' primary' : ''}`}
+              type="button"
+              onClick={() => setSort(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         {/* Popular Hashtags */}
@@ -285,6 +314,18 @@ export default function Explore() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {pages > 1 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 24 }}>
+            <button className="header-btn" type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              Previous
+            </button>
+            <span style={{ alignSelf: 'center', fontSize: 14 }}>Page {page} of {pages}</span>
+            <button className="header-btn" type="button" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+              Next
+            </button>
           </div>
         )}
       </div>

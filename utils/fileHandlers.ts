@@ -37,8 +37,12 @@ export const handleFileUpload = async (
     }
 
     setText(data.content)
+    if (data.title) {
+      // title is applied by the caller if provided
+    }
     setMode('editor')
     setIsConverting(false)
+    return data.title as string | undefined
   } catch (err) {
     console.error('Conversion error:', err)
     alert('Error converting file')
@@ -58,10 +62,16 @@ export const handleSave = async (
   paths?: {
     sitePath?: (path: string) => string
     apiPath?: (path: string) => string
-  }
+  },
+  isAuthenticated?: boolean
 ) => {
   const sitePath = paths?.sitePath ?? ((path: string) => path)
   const apiPath = paths?.apiPath ?? ((path: string) => path)
+
+  if (!isAuthenticated && typeof window !== 'undefined') {
+    const ok = window.confirm('Guest links expire in 3 days. Continue? Sign up to keep documents permanently.')
+    if (!ok) return
+  }
 
   try {
     const res = await fetch(apiPath('/save'), {

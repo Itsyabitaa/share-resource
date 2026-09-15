@@ -103,6 +103,7 @@ export type FileRecord = {
   is_public: boolean
   user_id?: string | null
   expires_at?: string | null
+  folder_id?: string | null
 }
 
 export function isFileExpired(expiresAt?: string | Date | null): boolean {
@@ -145,7 +146,8 @@ export async function getFileById(id: string): Promise<FileRecord | undefined> {
         updated_at::text as updated_at,
         is_public,
         user_id,
-        expires_at::text as expires_at
+        expires_at::text as expires_at,
+        folder_id
       FROM files WHERE id = ${id}
     `
     return result[0] as FileRecord | undefined
@@ -163,21 +165,17 @@ export async function getAccessibleFile(id: string, userId?: string | null): Pro
   return file
 }
 
-export async function getAllFiles() {
+export async function getPublicFiles(options: {
+  searchTerm?: string
+  hashtag?: string
+  sort?: string
+  page?: number
+  limit?: number
+} = {}) {
   try {
-    const result = await sql`
-      SELECT * FROM files ORDER BY created_at DESC
-    `
-    return result
-  } catch (error) {
-    console.error('Error getting all files:', error)
-    throw error
-  }
-}
+    const { searchTerm, hashtag, sort = 'new', page = 1, limit = 12 } = options
+    const offset = Math.max(0, (page - 1) * limit)
 
-export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
-  try {
-    // Build the base query with social stats
     let queryText = `
       SELECT 
         f.id,
@@ -188,7 +186,8 @@ export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
         f.hashtags,
         f.created_at::text as created_at,
         COALESCE(l.like_count, 0)::int as like_count,
-        COALESCE(c.comment_count, 0)::int as comment_count
+        COALESCE(c.comment_count, 0)::int as comment_count,
+        COUNT(*) OVER()::int as total_count
       FROM files f
       LEFT JOIN (
         SELECT file_id, COUNT(*)::int as like_count
@@ -201,13 +200,14 @@ export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
         GROUP BY file_id
       ) c ON f.id = c.file_id
       WHERE f.is_public = true
+        AND (f.expires_at IS NULL OR f.expires_at > NOW())
     `
 
     const params: any[] = []
 
     if (searchTerm) {
       params.push(`%${searchTerm}%`)
-      queryText += ` AND (f.title ILIKE $${params.length} OR f.author ILIKE $${params.length})`
+      queryText += ` AND (f.title ILIKE $${params.length} OR f.author ILIKE $${params.length} OR COALESCE(array_to_string(f.hashtags, ','), '') ILIKE $${params.length})`
     }
 
     if (hashtag) {
@@ -215,14 +215,29 @@ export async function getPublicFiles(searchTerm?: string, hashtag?: string) {
       queryText += ` AND $${params.length} = ANY(f.hashtags)`
     }
 
-    queryText += ` ORDER BY f.created_at DESC`
+    if (sort === 'liked') {
+      queryText += ` ORDER BY like_count DESC, f.created_at DESC`
+    } else if (sort === 'commented') {
+      queryText += ` ORDER BY comment_count DESC, f.created_at DESC`
+    } else {
+      queryText += ` ORDER BY f.created_at DESC`
+    }
 
-    // Execute query with parameters
-    const result = params.length > 0
-      ? await sql(queryText, params)
-      : await sql(queryText)
+    params.push(limit)
+    queryText += ` LIMIT $${params.length}`
+    params.push(offset)
+    queryText += ` OFFSET $${params.length}`
 
-    return result
+    const result = await sql(queryText, params)
+    const total = result[0]?.total_count || 0
+
+    return {
+      files: result,
+      total,
+      page,
+      limit,
+      pages: Math.max(1, Math.ceil(total / limit)),
+    }
   } catch (error) {
     console.error('Error getting public files:', error)
     throw error
@@ -328,7 +343,11 @@ export async function addComment(fileId: string, userId: string, content: string
         created_at::text as created_at,
         updated_at::text as updated_at
     `
-    return result[0]
+    const user = await sql`SELECT name, email FROM "user" WHERE id = ${userId}`
+    return {
+      ...result[0],
+      author_name: user[0]?.name || user[0]?.email?.split('@')[0] || 'User',
+    }
   } catch (error) {
     console.error('Error adding comment:', error)
     throw error
@@ -339,15 +358,17 @@ export async function getComments(fileId: string) {
   try {
     const result = await sql`
       SELECT 
-        id,
-        file_id,
-        user_id,
-        content,
-        created_at::text as created_at,
-        updated_at::text as updated_at
-      FROM comments 
-      WHERE file_id = ${fileId}
-      ORDER BY created_at DESC
+        c.id,
+        c.file_id,
+        c.user_id,
+        c.content,
+        c.created_at::text as created_at,
+        c.updated_at::text as updated_at,
+        COALESCE(u.name, split_part(u.email, '@', 1), 'User') as author_name
+      FROM comments c
+      LEFT JOIN "user" u ON u.id = c.user_id
+      WHERE c.file_id = ${fileId}
+      ORDER BY c.created_at DESC
     `
     return result
   } catch (error) {
@@ -435,6 +456,72 @@ export async function getFoldersByUser(userId: string) {
   }
 }
 
+export async function renameFolder(folderId: string, userId: string, name: string) {
+  try {
+    const result = await sql`
+      UPDATE folders
+      SET name = ${name.trim()}, updated_at = NOW()
+      WHERE id = ${folderId} AND user_id = ${userId}
+      RETURNING id, name, user_id, created_at::text as created_at
+    `
+    return result[0] || null
+  } catch (error) {
+    console.error('Error renaming folder:', error)
+    throw error
+  }
+}
+
+export async function updateOwnedFile(
+  fileId: string,
+  userId: string,
+  updates: {
+    title?: string
+    author?: string
+    isPublic?: boolean
+    hashtags?: string[]
+    folderId?: string | null
+    cloudinaryUrl?: string
+    fileSize?: number
+  }
+) {
+  const current = await sql`SELECT * FROM files WHERE id = ${fileId} AND user_id = ${userId}`
+  if (current.length === 0) return null
+
+  const title = updates.title ?? current[0].title
+  const author = updates.author ?? current[0].author
+  const isPublic = updates.isPublic ?? current[0].is_public
+  const hashtags = updates.hashtags ?? current[0].hashtags ?? []
+  const folderId = updates.folderId === undefined ? current[0].folder_id : updates.folderId
+  const cloudinaryUrl = updates.cloudinaryUrl ?? current[0].cloudinary_url
+  const fileSize = updates.fileSize ?? current[0].file_size
+
+  const result = await sql`
+    UPDATE files
+    SET
+      title = ${title},
+      author = ${author},
+      is_public = ${isPublic},
+      hashtags = ${hashtags},
+      folder_id = ${folderId},
+      cloudinary_url = ${cloudinaryUrl},
+      file_size = ${fileSize},
+      updated_at = NOW()
+    WHERE id = ${fileId} AND user_id = ${userId}
+    RETURNING
+      id, title, author, cloudinary_url, is_public, hashtags, folder_id, user_id,
+      created_at::text as created_at, updated_at::text as updated_at
+  `
+  return result[0]
+}
+
+export async function deleteOwnedFile(fileId: string, userId: string) {
+  const result = await sql`
+    DELETE FROM files WHERE id = ${fileId} AND user_id = ${userId}
+    RETURNING id
+  `
+  return result.length > 0
+}
+
 export async function deleteFolder(folderId: string, userId: string) {
   try {
     // files inside the folder will have their folder_id set to NULL due to ON DELETE SET NULL
@@ -487,7 +574,9 @@ export async function getAllUserFiles(userId: string) {
         file_size,
         hashtags,
         created_at::text as created_at,
-        folder_id
+        folder_id,
+        is_public,
+        expires_at::text as expires_at
       FROM files 
       WHERE user_id = ${userId}
       ORDER BY created_at DESC

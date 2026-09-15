@@ -32,6 +32,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
 
   const navItems = [
     { href: sitePath('/'), label: 'Create', match: '/' },
+    ...(session?.user ? [{ href: sitePath('/workspace'), label: 'Workspace', match: '/workspace' }] : []),
     { href: sitePath('/explore'), label: 'Explore', match: '/explore' },
     { href: sitePath('/about'), label: 'About', match: '/about' },
   ]

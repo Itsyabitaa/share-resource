@@ -22,7 +22,6 @@ export default function Settings() {
 
     // Form state
     const [useCustomCredentials, setUseCustomCredentials] = useState(false)
-    const [neonDatabaseUrl, setNeonDatabaseUrl] = useState('')
     const [cloudinaryCloudName, setCloudinaryCloudName] = useState('')
     const [cloudinaryApiKey, setCloudinaryApiKey] = useState('')
     const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState('')
@@ -142,7 +141,7 @@ export default function Settings() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    neonDatabaseUrl: neonDatabaseUrl || null,
+                    neonDatabaseUrl: null,
                     cloudinaryCloudName: cloudinaryCloudName || null,
                     cloudinaryApiKey: cloudinaryApiKey || null,
                     cloudinaryApiSecret: cloudinaryApiSecret || null,
@@ -179,7 +178,6 @@ export default function Settings() {
                 setToast({ message: 'Credentials deleted successfully', type: 'success' })
                 setHasCredentials(false)
                 setUseCustomCredentials(false)
-                setNeonDatabaseUrl('')
                 setCloudinaryCloudName('')
                 setCloudinaryApiKey('')
                 setCloudinaryApiSecret('')
@@ -333,7 +331,7 @@ export default function Settings() {
                             <strong>Default Storage:</strong> Your files are stored using our shared infrastructure (permanent storage).
                         </p>
                         <p style={{ color: colors.text, fontSize: '0.95rem', margin: '0.5rem 0 0 0' }}>
-                            <strong>Custom Storage:</strong> Provide your own Neon database and Cloudinary credentials for dedicated storage.
+                            <strong>Custom Storage:</strong> Use your own Cloudinary account for file delivery. Documents still use the shared md-nest database.
                         </p>
                     </div>
 
@@ -368,53 +366,6 @@ export default function Settings() {
                                     fontSize: '1.25rem',
                                     fontWeight: '600',
                                     marginBottom: '1rem',
-                                }}>
-                                    Neon Database (Optional)
-                                </h3>
-
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{
-                                        color: colors.text,
-                                        fontWeight: '500',
-                                        marginBottom: '0.5rem',
-                                        display: 'block',
-                                        fontSize: '0.95rem',
-                                    }}>
-                                        Database URL
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={neonDatabaseUrl}
-                                        onChange={(e) => setNeonDatabaseUrl(e.target.value)}
-                                        placeholder="postgresql://user:password@host/database"
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.875rem 1rem',
-                                            borderRadius: '8px',
-                                            border: theme === 'dark' ? '2px solid #2a2a2a' : '2px solid #e5e5e5',
-                                            fontSize: '0.95rem',
-                                            backgroundColor: theme === 'dark' ? '#0a0a0a' : '#fafafa',
-                                            color: colors.text,
-                                            outline: 'none',
-                                        }}
-                                    />
-                                    <small style={{
-                                        color: colors.text,
-                                        opacity: 0.6,
-                                        fontSize: '0.85rem',
-                                        display: 'block',
-                                        marginTop: '0.5rem',
-                                    }}>
-                                        Leave empty to use default database
-                                    </small>
-                                </div>
-
-                                <h3 style={{
-                                    color: colors.text,
-                                    fontSize: '1.25rem',
-                                    fontWeight: '600',
-                                    marginBottom: '1rem',
-                                    marginTop: '2rem',
                                 }}>
                                     Cloudinary Credentials
                                 </h3>

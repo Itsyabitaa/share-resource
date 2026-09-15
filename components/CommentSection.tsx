@@ -8,6 +8,7 @@ interface Comment {
   user_id: string
   content: string
   created_at: string
+  author_name?: string
 }
 
 interface CommentSectionProps {
@@ -245,6 +246,7 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
                     marginBottom: '5px'
                   }}>
                     {formatDate(comment.created_at)}
+                    {comment.author_name ? ` · ${comment.author_name}` : ''}
                   </div>
                   <div style={{
                     fontSize: '14px',

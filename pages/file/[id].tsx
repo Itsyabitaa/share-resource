@@ -1,8 +1,10 @@
 import { GetServerSideProps } from 'next'
 import { getAccessibleFile } from '../../lib/dbSchema'
 import { auth } from '../../lib/auth'
+import { extractHeadings } from '../../lib/toc'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import { useTheme } from '../../lib/ThemeContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
@@ -14,6 +16,7 @@ interface Comment {
   user_id: string
   content: string
   created_at: string
+  author_name?: string
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -41,7 +44,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         title: fileData.title,
         author: fileData.author,
         fileType: fileData.file_type,
-        createdAt: fileData.created_at
+        createdAt: fileData.created_at,
+        isPublic: !!fileData.is_public,
+        expiresAt: fileData.expires_at || null,
+        isOwner: !!session?.user?.id && session.user.id === fileData.user_id,
       }
     }
   } catch (error) {
@@ -58,7 +64,10 @@ export default function FilePage({
   title,
   author,
   fileType,
-  createdAt
+  createdAt,
+  isPublic,
+  expiresAt,
+  isOwner,
 }: {
   fileId: string
   content: string
@@ -66,9 +75,35 @@ export default function FilePage({
   author?: string
   fileType: string
   createdAt: string
+  isPublic: boolean
+  expiresAt: string | null
+  isOwner: boolean
 }) {
   const { colors } = useTheme()
-  const [copied, setCopied] = useState(false)
+  const [copiedMd, setCopiedMd] = useState(false)
+  const headings = extractHeadings(content)
+
+  const handleCopyMarkdown = async () => {
+    await navigator.clipboard.writeText(content)
+    setCopiedMd(true)
+    setTimeout(() => setCopiedMd(false), 2000)
+  }
+
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${title || 'document'}.md`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDeleteFile = async () => {
+    if (!confirm('Delete this document permanently?')) return
+    const res = await fetch(apiPath(`/files/${fileId}`), { method: 'DELETE' })
+    if (res.ok) router.push(sitePath('/workspace'))
+  }
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
   const { data: session } = useSession()
@@ -226,6 +261,22 @@ export default function FilePage({
             >
               {copied ? 'Copied' : 'Copy link'}
             </button>
+            <button className="header-btn" type="button" onClick={handleCopyMarkdown}>
+              {copiedMd ? 'Copied md' : 'Copy md'}
+            </button>
+            <button className="header-btn" type="button" onClick={handleDownload}>
+              Download
+            </button>
+            {isOwner && (
+              <>
+                <button className="header-btn" type="button" onClick={() => router.push(sitePath(`/edit/${fileId}`))}>
+                  Edit
+                </button>
+                <button className="header-btn" type="button" onClick={handleDeleteFile}>
+                  Delete
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -252,6 +303,14 @@ export default function FilePage({
                 }}>
                   {title}
                 </h1>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
+                  <span className="header-btn" style={{ cursor: 'default' }}>{isPublic ? 'Public' : 'Private'}</span>
+                  {expiresAt && (
+                    <span className="header-btn" style={{ cursor: 'default' }}>
+                      Expires {new Date(expiresAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
 
                 <div style={{
                   display: 'flex',
@@ -333,7 +392,15 @@ export default function FilePage({
               }}
             >
               <div className="markdown-body" style={{ color: colors.text }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight]}
+                  components={{
+                    h1: ({ children, ...props }) => <h1 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h1>,
+                    h2: ({ children, ...props }) => <h2 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h2>,
+                    h3: ({ children, ...props }) => <h3 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h3>,
+                  }}
+                >
                   {content}
                 </ReactMarkdown>
               </div>
@@ -492,7 +559,7 @@ export default function FilePage({
                             gap: '8px'
                           }}>
                             <span style={{ fontSize: '16px' }}>👤</span>
-                            <span>User • {new Date(comment.created_at).toLocaleString('en-US', {
+                            <span>{comment.author_name || 'User'} • {new Date(comment.created_at).toLocaleString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               hour: '2-digit',
@@ -571,6 +638,17 @@ export default function FilePage({
             }}>
               📋 Document Details
             </h3>
+
+            {headings.length > 0 && (
+              <nav style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, opacity: 0.7 }}>On this page</div>
+                {headings.map(heading => (
+                  <div key={heading.id} style={{ paddingLeft: (heading.level - 1) * 12, marginBottom: 6, fontSize: 14 }}>
+                    <a href={`#${heading.id}`} style={{ color: colors.link }}>{heading.text}</a>
+                  </div>
+                ))}
+              </nav>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{

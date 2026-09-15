@@ -1,0 +1,155 @@
+require('dotenv').config({ path: '.env.local' })
+const { Pool } = require('pg')
+
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL is not set')
+  process.exit(1)
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+
+async function setup() {
+  console.log('Applying non-destructive schema (CREATE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS)...')
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS "user" (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      "emailVerified" BOOLEAN NOT NULL DEFAULT FALSE,
+      name TEXT,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      image TEXT
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS session (
+      id TEXT PRIMARY KEY,
+      "expiresAt" TIMESTAMP NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      "ipAddress" TEXT,
+      "userAgent" TEXT,
+      "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS account (
+      id TEXT PRIMARY KEY,
+      "accountId" TEXT NOT NULL,
+      "providerId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      "accessToken" TEXT,
+      "refreshToken" TEXT,
+      "idToken" TEXT,
+      "expiresAt" TIMESTAMP,
+      password TEXT,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS verification (
+      id TEXT PRIMARY KEY,
+      identifier TEXT NOT NULL,
+      value TEXT NOT NULL,
+      "expiresAt" TIMESTAMP NOT NULL,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS folders (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS files (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      author VARCHAR(255),
+      cloudinary_url TEXT NOT NULL,
+      file_type VARCHAR(10) NOT NULL,
+      file_size INTEGER,
+      is_public BOOLEAN DEFAULT false,
+      hashtags TEXT[],
+      user_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      expires_at TIMESTAMP WITH TIME ZONE,
+      storage_tier VARCHAR(20) DEFAULT 'guest',
+      folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS folder_id UUID REFERENCES folders(id) ON DELETE SET NULL`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS storage_tier VARCHAR(20) DEFAULT 'guest'`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS hashtags TEXT[]`)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_credentials (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE REFERENCES "user"(id) ON DELETE CASCADE,
+      neon_database_url TEXT,
+      cloudinary_cloud_name TEXT,
+      cloudinary_api_key TEXT,
+      cloudinary_api_secret TEXT,
+      use_custom_credentials BOOLEAN DEFAULT false,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS likes (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      UNIQUE(file_id, user_id)
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      content TEXT NOT NULL CHECK (char_length(content) <= 1000),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at DESC)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_is_public ON files(is_public)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_hashtags ON files USING GIN(hashtags)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_expires_at ON files(expires_at)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_folder_id ON files(folder_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_user_credentials_user_id ON user_credentials(user_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_likes_file_id ON likes(file_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_file_id ON comments(file_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)')
+
+  console.log('Schema is up to date. No tables were dropped.')
+  await pool.end()
+}
+
+setup().catch(async (error) => {
+  console.error(error)
+  await pool.end()
+  process.exit(1)
+})

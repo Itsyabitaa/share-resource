@@ -2,9 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { IncomingForm } from 'formidable'
 import { promises as fs } from 'fs'
 import path from 'path'
-import cloudinary from '../../lib/cloudinary'
-import { insertFile } from '../../lib/dbSchema'
+import mammoth from 'mammoth'
 import { formatToMarkdown, isAlreadyMarkdown } from '../../utils/markdownFormatter'
+import { rateLimit, clientKey } from '../../lib/rateLimit'
 
 export const config = {
   api: {
@@ -17,9 +17,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const limit = rateLimit(`convert:${clientKey(req)}`, 20, 15 * 60 * 1000)
+  if (!limit.ok) {
+    return res.status(429).json({ error: 'Too many uploads. Try again later.' })
+  }
+
   try {
     const form = new IncomingForm({
-      maxFileSize: 10 * 1024 * 1024, // 10MB limit
+      maxFileSize: 10 * 1024 * 1024,
       keepExtensions: true,
     })
 
@@ -35,83 +40,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'No file uploaded' })
     }
 
-    // Extract author and autoFormat from form fields
-    const author = fields.author?.[0] || undefined
-    const autoFormat = fields.autoFormat?.[0] !== 'false' // Default to true
-
+    const autoFormat = fields.autoFormat?.[0] !== 'false'
     const filePath = file.filepath
     const fileExtension = path.extname(file.originalFilename || '').toLowerCase()
-    const fileName = file.originalFilename || 'uploaded-file'
+    const fileName = (file.originalFilename || 'uploaded-file').replace(/\.[^.]+$/, '')
 
     let content = ''
 
-    // Handle different file types
-    switch (fileExtension) {
-      case '.txt':
-        // Read text files and optionally format to markdown
-        content = await fs.readFile(filePath, 'utf-8')
-        if (autoFormat) {
-          content = formatToMarkdown(content)
+    try {
+      switch (fileExtension) {
+        case '.txt':
+          content = await fs.readFile(filePath, 'utf-8')
+          if (autoFormat) content = formatToMarkdown(content)
+          break
+        case '.md':
+          content = await fs.readFile(filePath, 'utf-8')
+          if (autoFormat && !isAlreadyMarkdown(content)) {
+            content = formatToMarkdown(content)
+          }
+          break
+        case '.docx': {
+          const result = await mammoth.convertToMarkdown({ path: filePath })
+          content = result.value || ''
+          break
         }
-        break
-
-      case '.md':
-        // Read markdown files directly, skip formatting if already well-formatted
-        content = await fs.readFile(filePath, 'utf-8')
-        if (autoFormat && !isAlreadyMarkdown(content)) {
-          content = formatToMarkdown(content)
-        }
-        break
-
-      case '.doc':
-      case '.docx':
-        // For now, just read as text (you might want to add proper DOC parsing)
-        content = await fs.readFile(filePath, 'utf-8')
-        if (autoFormat) {
-          content = formatToMarkdown(content)
-        } else {
-          content = `# Converted Document\n\n${content}`
-        }
-        break
-
-      default:
-        return res.status(400).json({ error: 'Unsupported file type' })
+        case '.doc':
+          return res.status(400).json({
+            error: 'Legacy .doc files are not supported. Save as .docx and try again.'
+          })
+        default:
+          return res.status(400).json({ error: 'Unsupported file type' })
+      }
+    } finally {
+      await fs.unlink(filePath).catch(() => undefined)
     }
 
-    // Clean up the temporary file
-    await fs.unlink(filePath)
-
-    // Upload to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(
-      `data:text/plain;base64,${Buffer.from(content).toString('base64')}`,
-      {
-        resource_type: 'raw',
-        public_id: `md-nest/${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        format: fileExtension.substring(1),
-        overwrite: true,
-      }
-    )
-
-    // Store metadata in Neon database
-    const fileData = await insertFile(
-      fileName,
-      uploadResult.secure_url,
-      fileExtension.substring(1),
-      content.length,
-      author
-    )
-
-    res.status(200).json({
+    return res.status(200).json({
       content,
-      id: fileData.id,
-      title: fileData.title,
-      url: fileData.cloudinary_url
+      title: fileName,
     })
   } catch (error) {
     console.error('File conversion error:', error)
-    res.status(500).json({
-      error: 'File conversion failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    })
+    return res.status(500).json({ error: 'File conversion failed' })
   }
 }

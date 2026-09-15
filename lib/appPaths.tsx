@@ -15,7 +15,7 @@ interface AppPathProviderProps {
 
 const AppPathContext = createContext<AppPathHelpers | null>(null)
 
-const staticRoutes = ['/explore', '/about', '/login', '/signup', '/settings']
+const staticRoutes = ['/explore', '/about', '/login', '/signup', '/settings', '/workspace']
 
 function stripQueryAndHash(value: string) {
   return value.split('?')[0].split('#')[0]
@@ -47,9 +47,9 @@ export function getAppBasePath(pathname?: string, asPath?: string, query?: Route
     return normalizeBasePath(normalizedAsPath)
   }
 
-  const fileMatch = normalizedAsPath.match(/^(.*)\/file\/[^/]+$/)
-  if (routePath.startsWith('/file/') || fileMatch) {
-    return normalizeBasePath(fileMatch?.[1] || normalizedAsPath.replace(/\/file\/[^/]+$/, ''))
+  const fileMatch = normalizedAsPath.match(/^(.*)\/(?:file|edit)\/[^/]+$/)
+  if (routePath.startsWith('/file/') || routePath.startsWith('/edit/') || fileMatch) {
+    return normalizeBasePath(fileMatch?.[1] || normalizedAsPath.replace(/\/(?:file|edit)\/[^/]+$/, ''))
   }
 
   for (const route of staticRoutes) {

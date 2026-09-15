@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { addComment, getComments, deleteComment, getAccessibleFile } from '../../lib/dbSchema'
 import { getUser } from '../../lib/auth'
+import { rateLimit } from '../../lib/rateLimit'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
@@ -25,6 +26,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             if (!user) {
                 return res.status(401).json({ error: 'Authentication required' })
+            }
+
+            const limit = rateLimit(`comment:${user.id}`, 20, 10 * 60 * 1000)
+            if (!limit.ok) {
+                return res.status(429).json({ error: 'Too many comments. Slow down.' })
             }
 
             const { fileId, content } = req.body

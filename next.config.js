@@ -1,11 +1,16 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
+  outputFileTracingRoot: path.join(__dirname),
   images: {
-    domains: ['res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
 }
 

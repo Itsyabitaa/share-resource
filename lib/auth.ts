@@ -48,15 +48,34 @@ function getPool() {
     return pool
 }
 
-export const auth = betterAuth({
-    database: getPool(),
-    secret: process.env.BETTER_AUTH_SECRET!,
-    baseURL: getAuthBaseURL(),
-    emailAndPassword: {
-        enabled: true,
+function createAuth() {
+    return betterAuth({
+        database: getPool(),
+        secret: process.env.BETTER_AUTH_SECRET!,
+        baseURL: getAuthBaseURL(),
+        emailAndPassword: {
+            enabled: true,
+        },
+        trustedOrigins: getTrustedOrigins(),
+    })
+}
+
+let authInstance: ReturnType<typeof createAuth> | undefined
+
+function getAuth() {
+    if (!authInstance) {
+        authInstance = createAuth()
+    }
+    return authInstance
+}
+
+export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
+    get(_target, prop, receiver) {
+        const instance = getAuth() as any
+        const value = instance[prop]
+        return typeof value === 'function' ? value.bind(instance) : Reflect.get(instance, prop, receiver)
     },
-    trustedOrigins: getTrustedOrigins(),
-});
+})
 
 export async function getUser(req: any) {
     try {

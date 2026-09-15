@@ -344,8 +344,34 @@ export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder
                   </button>
                 )}
                 {activeFolderId === folder.id && (
-                  <button
-                    onClick={(e) => handleDeleteFolder(folder.id, e)}
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const name = prompt('Rename folder', folder.name)
+                        if (!name?.trim()) return
+                        fetch(apiPath(`/folders/${folder.id}`), {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: name.trim() }),
+                        }).then(res => {
+                          if (res.ok) fetchFolders()
+                        })
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: colors.text,
+                        opacity: 0.5,
+                        cursor: 'pointer',
+                        padding: '2px 5px'
+                      }}
+                      title="Rename folder"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteFolder(folder.id, e)}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -360,6 +386,7 @@ export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder
                   >
                     🗑️
                   </button>
+                  </>
                 )}
               </div>
             </div>

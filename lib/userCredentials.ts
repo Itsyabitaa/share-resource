@@ -1,6 +1,8 @@
 import sql from './neonClient'
-import { encrypt, decrypt, encryptSafe, decryptSafe } from './encryption'
-import { v2 as cloudinary } from 'cloudinary'
+import { encryptSafe, decryptSafe } from './encryption'
+import { pingCloudinary, type CloudinaryConfig } from './cloudinaryOps'
+
+export type { CloudinaryConfig }
 
 export interface UserCredentials {
     id: string
@@ -12,12 +14,6 @@ export interface UserCredentials {
     useCustomCredentials: boolean
     createdAt: string
     updatedAt: string
-}
-
-export interface CloudinaryConfig {
-    cloud_name: string
-    api_key: string
-    api_secret: string
 }
 
 /**
@@ -213,19 +209,6 @@ export async function getCloudinaryConfig(userId?: string): Promise<CloudinaryCo
 }
 
 /**
- * Create a Cloudinary instance with user-specific or default configuration
- */
-export async function getCloudinaryInstance(userId?: string) {
-    const config = await getCloudinaryConfig(userId)
-
-    // Create a new Cloudinary instance with the config
-    const instance = cloudinary
-    instance.config(config)
-
-    return instance
-}
-
-/**
  * Validate Cloudinary credentials by attempting to ping the API
  */
 export async function validateCloudinaryCredentials(
@@ -234,17 +217,11 @@ export async function validateCloudinaryCredentials(
     apiSecret: string
 ): Promise<{ valid: boolean; error?: string }> {
     try {
-        // Create a temporary Cloudinary instance
-        const testInstance = cloudinary
-        testInstance.config({
+        await pingCloudinary({
             cloud_name: cloudName,
             api_key: apiKey,
             api_secret: apiSecret,
         })
-
-        // Try to ping the API
-        await testInstance.api.ping()
-
         return { valid: true }
     } catch (error: any) {
         return {

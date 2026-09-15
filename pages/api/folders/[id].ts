@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { deleteFolder, getFilesByFolder } from '../../../lib/dbSchema'
+import { deleteFolder, getFilesByFolder, renameFolder } from '../../../lib/dbSchema'
 import { auth } from '../../../lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -24,6 +24,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (error) {
       console.error('Error fetching files for folder:', error)
       return res.status(500).json({ error: 'Failed to fetch files' })
+    }
+  }
+
+  if (req.method === 'PATCH') {
+    try {
+      const { name } = req.body
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ error: 'Folder name is required' })
+      }
+      const folder = await renameFolder(id, userId, name)
+      if (!folder) {
+        return res.status(404).json({ error: 'Folder not found or unauthorized' })
+      }
+      return res.status(200).json({ folder })
+    } catch (error) {
+      console.error('Error renaming folder:', error)
+      return res.status(500).json({ error: 'Failed to rename folder' })
     }
   }
 

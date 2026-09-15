@@ -1,49 +1,48 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getPublicFiles, getPopularHashtags } from '../../lib/dbSchema'
+import { rateLimit, clientKey } from '../../lib/rateLimit'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const limitCheck = rateLimit(`explore:${clientKey(req)}`, 60, 60 * 1000)
+  if (!limitCheck.ok) {
+    return res.status(429).json({ error: 'Too many requests' })
+  }
+
   try {
-    // Check if DATABASE_URL is configured
     if (!process.env.DATABASE_URL) {
-      console.error('DATABASE_URL is not configured')
-      return res.status(500).json({ 
-        error: 'Database not configured',
-        details: 'Please set up your DATABASE_URL environment variable'
-      })
+      return res.status(500).json({ error: 'Database not configured' })
     }
 
-    const { search, hashtag } = req.query
-    
+    const { search, hashtag, sort, page } = req.query
     const searchTerm = typeof search === 'string' ? search : undefined
     const hashtagFilter = typeof hashtag === 'string' ? hashtag : undefined
+    const sortBy = typeof sort === 'string' ? sort : 'new'
+    const pageNum = typeof page === 'string' ? parseInt(page, 10) || 1 : 1
 
-    console.log('Fetching explore data with:', { searchTerm, hashtagFilter })
-
-    const [files, hashtags] = await Promise.all([
-      getPublicFiles(searchTerm, hashtagFilter),
+    const [paged, hashtags] = await Promise.all([
+      getPublicFiles({
+        searchTerm,
+        hashtag: hashtagFilter,
+        sort: sortBy,
+        page: pageNum,
+        limit: 12,
+      }),
       getPopularHashtags()
     ])
 
-    console.log('Successfully fetched:', { filesCount: files.length, hashtagsCount: hashtags.length })
-
     res.status(200).json({
-      files,
-      hashtags
+      files: paged.files,
+      hashtags,
+      page: paged.page,
+      pages: paged.pages,
+      total: paged.total,
     })
   } catch (error) {
     console.error('Error fetching explore data:', error)
-    
-    // Return more specific error information
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const isDatabaseError = errorMessage.includes('DATABASE_URL') || errorMessage.includes('connection')
-    
-    res.status(500).json({ 
-      error: isDatabaseError ? 'Database connection error' : 'Internal server error',
-      details: errorMessage
-    })
+    res.status(500).json({ error: 'Internal server error' })
   }
 }

@@ -87,7 +87,7 @@ export default function Home() {
     if (!file) return
 
     setUploadedFile(file)
-    await handleFileUpload(
+    const suggestedTitle = await handleFileUpload(
       file,
       showAuthor,
       author,
@@ -97,13 +97,16 @@ export default function Home() {
         setIsConverting,
         { apiPath }
     )
+    if (suggestedTitle && !title) {
+      setTitle(suggestedTitle)
+    }
   }
 
   const onShare = async () => {
     await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId, {
       sitePath,
       apiPath,
-    })
+    }, !!session?.user)
   }
 
   return (
