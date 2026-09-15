@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
+import { formatToMarkdown } from '../utils/markdownFormatter'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
 import 'easymde/dist/easymde.min.css'
-import { formatToMarkdown } from '../utils/markdownFormatter'
 
 interface MarkdownEditorProps {
   text: string
@@ -36,33 +35,27 @@ export default function MarkdownEditor({
   onIsPublicChange,
   onHashtagsChange
 }: MarkdownEditorProps) {
-  const { colors } = useTheme()
   const { data: session } = useSession()
 
-  // Auto-populate author field when checkbox is checked and user is logged in
   useEffect(() => {
     if (showAuthor && session?.user?.name && !author) {
       onAuthorChange(session.user.name)
     }
   }, [showAuthor, session?.user?.name, author, onAuthorChange])
 
-  // Stable onChange handler to prevent cursor issues
   const handleTextChange = useCallback((value: string) => {
     onTextChange(value)
   }, [onTextChange])
 
-  // Format text handler
   const handleFormatText = useCallback(() => {
     if (text.trim().length > 0) {
-      const formatted = formatToMarkdown(text)
-      onTextChange(formatted)
+      onTextChange(formatToMarkdown(text))
     }
   }, [text, onTextChange])
 
-  // Memoize options to prevent unnecessary re-renders
   const mdeOptions = React.useMemo(() => ({
     spellChecker: false,
-    placeholder: 'Write your markdown here...',
+    placeholder: 'The page is blank. Begin anywhere…',
     toolbar: [
       'bold', 'italic', 'heading', '|',
       'quote', 'unordered-list', 'ordered-list', '|',
@@ -70,255 +63,80 @@ export default function MarkdownEditor({
       'preview', 'side-by-side', 'fullscreen', '|',
       'guide'
     ] as const,
-    status: ['lines', 'words', 'cursor'] as const,
+    status: ['lines', 'words'] as const,
     autoDownloadFontAwesome: true,
     renderingConfig: {
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
-    minHeight: '300px'
+    minHeight: '420px'
   }), [])
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      {/* Title and Author Fields */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ marginBottom: 15 }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '5px',
-            color: colors.text,
-            fontWeight: '500'
-          }}>
-            Title *
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            placeholder="Enter document title..."
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              fontSize: '16px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: '5px',
-              backgroundColor: colors.inputBackground,
-              color: colors.text,
-              outline: 'none'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = colors.primary
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = colors.border
-            }}
-          />
-        </div>
+    <div className="composer-stage-body">
+      <label htmlFor="document-title" className="sr-only">Title</label>
+      <input
+        id="document-title"
+        className="composer-title-input"
+        type="text"
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        placeholder="Untitled nest"
+      />
 
-        <div style={{ marginBottom: 15 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: '5px'
-          }}>
-            <input
-              type="checkbox"
-              id="show-author"
-              checked={showAuthor}
-              onChange={(e) => onShowAuthorChange(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-            <label
-              htmlFor="show-author"
-              style={{
-                color: colors.text,
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
-            >
-              Add author acknowledgment
-            </label>
-          </div>
-
-          {showAuthor && (
-            <input
-              type="text"
-              value={author}
-              onChange={(e) => onAuthorChange(e.target.value)}
-              placeholder="Enter your name or handle..."
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '16px',
-                border: `1px solid ${colors.border}`,
-                borderRadius: '5px',
-                backgroundColor: colors.inputBackground,
-                color: colors.text,
-                outline: 'none'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = colors.primary
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = colors.border
-              }}
-            />
-          )}
-        </div>
-
-        {/* Public/Private Toggle */}
-        <div style={{ marginBottom: 15 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: '5px'
-          }}>
-            <input
-              type="checkbox"
-              id="is-public"
-              checked={isPublic}
-              onChange={(e) => onIsPublicChange(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-            <label
-              htmlFor="is-public"
-              style={{
-                color: colors.text,
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
-            >
-              Make this document public (appears in explore)
-            </label>
-          </div>
-        </div>
-
-        {/* Hashtags Input */}
-        {isPublic && (
-          <div style={{ marginBottom: 15 }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '5px',
-              color: colors.text,
-              fontWeight: '500'
-            }}>
-              Hashtags (comma separated)
-            </label>
-            <input
-              type="text"
-              value={hashtags.join(', ')}
-              onChange={(e) => {
-                const hashtagList = e.target.value
-                  .split(',')
-                  .map(tag => tag.trim())
-                  .filter(tag => tag.length > 0)
-                onHashtagsChange(hashtagList)
-              }}
-              placeholder="technology, ai, tutorial..."
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '16px',
-                border: `1px solid ${colors.border}`,
-                borderRadius: '5px',
-                backgroundColor: colors.inputBackground,
-                color: colors.text,
-                outline: 'none'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = colors.primary
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = colors.border
-              }}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Format Text Button */}
-      <div style={{
-        marginBottom: '15px',
-        display: 'flex',
-        justifyContent: 'flex-end'
-      }}>
+      <div className="composer-meta">
         <button
-          onClick={handleFormatText}
-          disabled={!text || text.trim().length === 0}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: text && text.trim().length > 0 ? colors.buttonBackground : colors.border,
-            color: text && text.trim().length > 0 ? colors.buttonText : colors.secondary,
-            border: 'none',
-            borderRadius: '5px',
-            cursor: text && text.trim().length > 0 ? 'pointer' : 'not-allowed',
-            fontSize: '14px',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            transition: 'all 0.2s ease',
-            opacity: text && text.trim().length > 0 ? 1 : 0.6
-          }}
-          onMouseEnter={(e) => {
-            if (text && text.trim().length > 0) {
-              e.currentTarget.style.opacity = '0.9'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (text && text.trim().length > 0) {
-              e.currentTarget.style.opacity = '1'
-            }
-          }}
-          title="Automatically format text to markdown (detect headings, lists, code blocks, etc.)"
+          type="button"
+          className={`chip${showAuthor ? ' is-on' : ''}`}
+          aria-pressed={showAuthor}
+          onClick={() => onShowAuthorChange(!showAuthor)}
         >
-          <span style={{ fontSize: '16px' }}>✨</span>
-          <span>Auto-Format to Markdown</span>
+          Author
+        </button>
+        <button
+          type="button"
+          className={`chip${isPublic ? ' is-on' : ''}`}
+          aria-pressed={isPublic}
+          onClick={() => onIsPublicChange(!isPublic)}
+        >
+          Public
+        </button>
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={handleFormatText}
+          disabled={!text.trim()}
+        >
+          Auto-format
         </button>
       </div>
 
-      <style jsx>{`
-        .editor-container :global(.CodeMirror) {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          font-size: 16px;
-          line-height: 1.6;
-          background-color: ${colors.inputBackground};
-          color: ${colors.text};
-          border: 1px solid ${colors.border};
-          border-radius: 5px;
-        }
-        .editor-container :global(.editor-preview),
-        .editor-container :global(.editor-preview-side) {
-          background: ${colors.inputBackground};
-          color: ${colors.text};
-          border: 1px solid ${colors.border};
-          border-radius: 5px;
-        }
-        .editor-container :global(.editor-preview pre),
-        .editor-container :global(.editor-preview-side pre) {
-          background: rgba(0, 0, 0, 0.15);
-          border: 1px solid ${colors.border};
-          border-radius: 6px;
-        }
-        .editor-container :global(.editor-preview code),
-        .editor-container :global(.editor-preview-side code) {
-          color: ${colors.text};
-        }
-        .editor-container :global(.editor-preview a),
-        .editor-container :global(.editor-preview-side a) {
-          color: ${colors.primary};
-        }
-        .editor-container :global(.CodeMirror-cursor) {
-          border-left: 2px solid ${colors.primary};
-        }
-        .editor-container :global(.CodeMirror-focused) {
-          border-color: ${colors.primary};
-          outline: none;
-        }
-      `}</style>
+      {showAuthor && (
+        <input
+          className="composer-field"
+          type="text"
+          value={author}
+          onChange={(e) => onAuthorChange(e.target.value)}
+          placeholder="Your name or handle"
+        />
+      )}
+
+      {isPublic && (
+        <input
+          className="composer-field"
+          type="text"
+          value={hashtags.join(', ')}
+          onChange={(e) => {
+            const hashtagList = e.target.value
+              .split(',')
+              .map(tag => tag.trim())
+              .filter(tag => tag.length > 0)
+            onHashtagsChange(hashtagList)
+          }}
+          placeholder="Tags for Explore — design, notes, tutorial"
+        />
+      )}
+
       <div className="editor-container">
         <SimpleMDE
           value={text}

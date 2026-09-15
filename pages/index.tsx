@@ -111,98 +111,71 @@ export default function Home() {
   }
 
   return (
-    <div className="page-shell" style={{ color: colors.text }}>
+    <div className="page-shell composer" style={{ color: colors.text }}>
+      <header className="composer-hero">
+        <p className="composer-kicker">Create</p>
+        <h1 className="page-title">Start a nest</h1>
+        <p className="page-subtitle">
+          Write in markdown, or drop in a Word or PDF. Share a quiet link when it feels ready.
+        </p>
+      </header>
+
       {!session?.user ? (
-        <div className="notice-banner" style={{
-          backgroundColor: theme === 'dark' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.12)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(251, 191, 36, 0.3)' : 'rgba(251, 191, 36, 0.4)'}`
-        }}>
-          <span style={{ fontSize: '20px' }}>⏰</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Guest Mode:</strong> Your uploads will be available for <strong>3 days</strong>.{' '}
-              <Link href={sitePath('/signup')} style={{
-                color: theme === 'dark' ? '#fbbf24' : '#d97706',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}>
-                Sign up
-              </Link> for permanent storage!
-            </p>
-          </div>
+        <div className="composer-note warn">
+          Guest nests last 3 days.{' '}
+          <Link href={sitePath('/signup')}>Create a free account</Link>
+          {' '}to keep them.
         </div>
       ) : useCustomCredentials ? (
-        <div className="notice-banner" style={{
-          backgroundColor: theme === 'dark' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.4)'}`
-        }}>
-          <span style={{ fontSize: '20px' }}>✅</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Custom Storage:</strong> Using your personal Neon and Cloudinary credentials.
-            </p>
-          </div>
+        <div className="composer-note ok">
+          Saving to your own Cloudinary storage.
         </div>
-      ) : (
-        <div className="notice-banner" style={{
-          backgroundColor: theme === 'dark' ? 'rgba(45, 212, 191, 0.1)' : 'rgba(15, 118, 110, 0.08)',
-          border: `1px solid ${theme === 'dark' ? 'rgba(45, 212, 191, 0.3)' : 'rgba(15, 118, 110, 0.25)'}`
-        }}>
-          <span style={{ fontSize: '20px' }}>💾</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '14px', color: colors.text }}>
-              <strong>Default Storage:</strong> Using shared storage (permanent).{' '}
-              <Link href={sitePath('/settings')} style={{
-                color: theme === 'dark' ? '#60a5fa' : '#2563eb',
-                textDecoration: 'underline',
-                fontWeight: '600'
-              }}>
-                Add your own credentials
-              </Link> for dedicated storage.
-            </p>
-          </div>
+      ) : hasCustomCredentials ? (
+        <div className="composer-note">
+          Using shared storage.{' '}
+          <Link href={sitePath('/settings')}>Use your own Cloudinary</Link>
         </div>
-      )}
+      ) : null}
 
-      <ModeSelector mode={mode} onModeChange={setMode} />
+      <section className="composer-stage">
+        <div className="composer-stage-bar">
+          <ModeSelector mode={mode} onModeChange={setMode} />
+        </div>
 
-      {/* Upload Mode */}
-      {mode === 'upload' && (
-        <FileUpload
-          uploadedFile={uploadedFile}
-          isConverting={isConverting}
-          showAuthor={showAuthor}
-          author={author}
-          autoFormat={autoFormat}
-          onFileUpload={onFileUpload}
-          onShowAuthorChange={setShowAuthor}
-          onAuthorChange={setAuthor}
-          onAutoFormatChange={setAutoFormat}
-        />
-      )}
+        {mode === 'upload' ? (
+          <FileUpload
+            uploadedFile={uploadedFile}
+            isConverting={isConverting}
+            showAuthor={showAuthor}
+            author={author}
+            autoFormat={autoFormat}
+            onFileUpload={onFileUpload}
+            onShowAuthorChange={setShowAuthor}
+            onAuthorChange={setAuthor}
+            onAutoFormatChange={setAutoFormat}
+          />
+        ) : (
+          <MarkdownEditor
+            text={text}
+            title={title}
+            author={author}
+            showAuthor={showAuthor}
+            isPublic={isPublic}
+            hashtags={hashtags}
+            onTextChange={setText}
+            onTitleChange={setTitle}
+            onAuthorChange={setAuthor}
+            onShowAuthorChange={setShowAuthor}
+            onIsPublicChange={setIsPublic}
+            onHashtagsChange={setHashtags}
+          />
+        )}
 
-      {/* Editor Mode */}
-      {mode === 'editor' && (
-        <MarkdownEditor
-          text={text}
-          title={title}
-          author={author}
-          showAuthor={showAuthor}
-          isPublic={isPublic}
-          hashtags={hashtags}
-          onTextChange={setText}
-          onTitleChange={setTitle}
-          onAuthorChange={setAuthor}
-          onShowAuthorChange={setShowAuthor}
-          onIsPublicChange={setIsPublic}
-          onHashtagsChange={setHashtags}
-        />
-      )}
-
-        <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
-        <div className="share-row">
+        <div className="composer-stage-footer">
+          <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
           <ShareButton text={text} onShare={onShare} />
         </div>
+      </section>
     </div>
   )
 }

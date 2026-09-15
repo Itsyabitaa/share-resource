@@ -28,12 +28,26 @@ body {
 }
 
 body.light {
-  background-color: #f7f6f3;
+  --page-bg: #f1eee6;
+  --composer-paper: #fffcf7;
+  --composer-ink: #1c1917;
+  --composer-muted: #78716c;
+  --composer-line: rgba(28, 25, 23, 0.1);
+  --composer-shadow: 0 24px 80px rgba(48, 36, 21, 0.1);
+  --chip-on: rgba(15, 118, 110, 0.12);
+  background-color: var(--page-bg);
   color: #1c1917;
 }
 
 body.dark {
-  background-color: #121110;
+  --page-bg: #121110;
+  --composer-paper: #1a1816;
+  --composer-ink: #f5f5f4;
+  --composer-muted: #a8a29e;
+  --composer-line: rgba(255, 255, 255, 0.08);
+  --composer-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+  --chip-on: rgba(45, 212, 191, 0.16);
+  background-color: var(--page-bg);
   color: #f5f5f4;
 }
 
@@ -116,7 +130,17 @@ body.dark .brand {
 .app-shell {
   display: flex;
   min-height: 100vh;
-  background: inherit;
+  background:
+    radial-gradient(1100px 520px at 50% -80px, rgba(15, 118, 110, 0.14), transparent 58%),
+    radial-gradient(700px 380px at 100% 0, rgba(180, 83, 9, 0.07), transparent 46%),
+    var(--page-bg, inherit);
+}
+
+body.dark .app-shell {
+  background:
+    radial-gradient(1100px 520px at 50% -80px, rgba(45, 212, 191, 0.1), transparent 58%),
+    radial-gradient(700px 380px at 100% 0, rgba(180, 83, 9, 0.08), transparent 46%),
+    var(--page-bg, inherit);
 }
 
 .app-main {
@@ -479,10 +503,378 @@ body.dark .footer-link {
 }
 
 .mode-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin: 0;
+  border-radius: 999px;
+  background: rgba(120, 113, 108, 0.1);
+  border: 1px solid var(--composer-line, rgba(120, 113, 108, 0.14));
+}
+
+.mode-tab {
+  border: none;
+  background: transparent;
+  color: var(--composer-muted, inherit);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mode-tab.is-active {
+  background: var(--composer-paper, #fff);
+  color: var(--brand);
+  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.08);
+}
+
+body.dark .mode-tab.is-active {
+  background: #292524;
+  color: #5eead4;
+}
+
+.page-shell.composer {
+  max-width: 980px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 28px;
+}
+
+.composer-hero {
+  margin-bottom: 22px;
+}
+
+.composer-kicker {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+body.dark .composer-kicker {
+  color: #5eead4;
+}
+
+.composer-hero .page-title {
+  margin-bottom: 8px;
+}
+
+.composer-hero .page-subtitle {
+  max-width: 36rem;
+  margin-bottom: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.composer-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  color: var(--composer-ink);
+  background: rgba(15, 118, 110, 0.08);
+  border: 1px solid rgba(15, 118, 110, 0.16);
+}
+
+.composer-note.warn {
+  background: rgba(180, 83, 9, 0.08);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+.composer-note.ok {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+.composer-note a {
+  color: var(--brand);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.composer-stage {
+  background: var(--composer-paper);
+  color: var(--composer-ink);
+  border: 1px solid var(--composer-line);
+  border-radius: 22px;
+  box-shadow: var(--composer-shadow);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.composer-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--composer-line);
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.05), transparent);
+}
+
+.composer-stage-body {
+  padding: 8px 22px 8px;
+}
+
+.composer-title-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  outline: none;
+  padding: 18px 0 6px;
+}
+
+.composer-title-input::placeholder {
+  color: var(--composer-muted);
+  opacity: 0.55;
+}
+
+.composer-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  align-items: center;
+  padding: 4px 0 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--composer-line);
+  background: transparent;
+  color: var(--composer-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip.is-on {
+  background: var(--chip-on);
+  color: var(--brand);
+  border-color: transparent;
+}
+
+body.dark .chip.is-on {
+  color: #5eead4;
+}
+
+.composer-field {
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--composer-line);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.composer-field:focus {
+  border-color: var(--brand);
+}
+
+.ghost-btn {
+  border: 1px solid var(--composer-line);
+  background: transparent;
+  color: var(--composer-muted);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost-btn:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+.ghost-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.composer-stage-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--composer-line);
+  background: rgba(120, 113, 108, 0.04);
+}
+
+.folder-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.folder-select label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--composer-muted);
+  white-space: nowrap;
+}
+
+.folder-select select {
+  min-width: 0;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--composer-line);
+  background: var(--composer-paper);
+  color: inherit;
+  font-size: 0.88rem;
+}
+
+.btn-share {
+  margin-left: auto;
+  padding: 11px 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.28);
+}
+
+.btn-share:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+body.dark .btn-share {
+  background: #2dd4bf;
+  color: #042f2e;
+}
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  min-height: 280px;
+  margin: 10px 0 8px;
+  padding: 36px 20px;
+  border: 1.5px dashed rgba(15, 118, 110, 0.35);
+  border-radius: 18px;
+  background:
+    radial-gradient(400px 160px at 50% 0, rgba(15, 118, 110, 0.08), transparent 70%);
+  cursor: pointer;
+}
+
+.dropzone h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin: 8px 0 6px;
+}
+
+.dropzone p {
+  margin: 0;
+  color: var(--composer-muted);
+  font-size: 0.92rem;
+}
+
+.dropzone-btn {
+  margin-top: 16px;
+  display: inline-flex;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+
+body.dark .dropzone-btn {
+  background: #2dd4bf;
+  color: #042f2e;
+}
+
+.dropzone.is-busy {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* EasyMDE inside the composer */
+.composer-stage .EasyMDEContainer {
+  display: block;
+}
+
+.composer-stage .editor-toolbar {
+  border: none;
+  background: transparent;
+  opacity: 1;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid var(--composer-line);
+}
+
+.composer-stage .editor-toolbar button {
+  color: var(--composer-muted) !important;
+  border: none !important;
+  border-radius: 8px !important;
+}
+
+.composer-stage .editor-toolbar button:hover,
+.composer-stage .editor-toolbar button.active {
+  background: var(--chip-on) !important;
+  color: var(--brand) !important;
+}
+
+.composer-stage .CodeMirror {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  min-height: 420px;
+  padding-top: 8px;
+}
+
+.composer-stage .CodeMirror-cursor {
+  border-left: 2px solid var(--brand);
+}
+
+.composer-stage .editor-statusbar {
+  border: none;
+  color: var(--composer-muted);
+  padding: 8px 0 4px;
+  opacity: 0.8;
+}
+
+.composer-stage .editor-preview,
+.composer-stage .editor-preview-side {
+  background: var(--composer-paper);
+  color: inherit;
 }
 
 .auth-card {
@@ -547,6 +939,40 @@ body.dark .footer-link {
 
   .share-row button {
     width: 100%;
+  }
+
+  .composer-note {
+    border-radius: 14px;
+    align-items: flex-start;
+  }
+
+  .composer-stage-body {
+    padding: 4px 16px 8px;
+  }
+
+  .composer-stage-bar,
+  .composer-stage-footer {
+    padding: 12px 14px;
+  }
+
+  .composer-stage-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .folder-select select {
+    max-width: none;
+    flex: 1;
+  }
+
+  .btn-share {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .dropzone {
+    min-height: 220px;
+    padding: 28px 14px;
   }
 }
 

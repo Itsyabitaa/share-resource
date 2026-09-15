@@ -1,5 +1,4 @@
 import React from 'react'
-import { useTheme } from '../lib/ThemeContext'
 
 interface ModeSelectorProps {
   mode: 'editor' | 'upload'
@@ -7,39 +6,25 @@ interface ModeSelectorProps {
 }
 
 export default function ModeSelector({ mode, onModeChange }: ModeSelectorProps) {
-  const { colors } = useTheme()
-
   return (
-    <div className="mode-tabs">
+    <div className="mode-tabs" role="tablist" aria-label="Create mode">
       <button
+        type="button"
+        role="tab"
+        aria-selected={mode === 'editor'}
+        className={`mode-tab${mode === 'editor' ? ' is-active' : ''}`}
         onClick={() => onModeChange('editor')}
-        style={{
-          padding: '10px 20px',
-          fontSize: '14px',
-          backgroundColor: mode === 'editor' ? colors.buttonBackground : colors.cardBackground,
-          color: mode === 'editor' ? colors.buttonText : colors.text,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '5px',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
       >
-        Text Editor
+        Write
       </button>
       <button
+        type="button"
+        role="tab"
+        aria-selected={mode === 'upload'}
+        className={`mode-tab${mode === 'upload' ? ' is-active' : ''}`}
         onClick={() => onModeChange('upload')}
-        style={{
-          padding: '10px 20px',
-          fontSize: '14px',
-          backgroundColor: mode === 'upload' ? colors.buttonBackground : colors.cardBackground,
-          color: mode === 'upload' ? colors.buttonText : colors.text,
-          border: `1px solid ${colors.border}`,
-          borderRadius: '5px',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
       >
-        Upload File
+        Upload
       </button>
     </div>
   )

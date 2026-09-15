@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
 
 interface FileUploadProps {
@@ -25,10 +24,8 @@ export default function FileUpload({
   onAuthorChange,
   onAutoFormatChange
 }: FileUploadProps) {
-  const { colors } = useTheme()
   const { data: session } = useSession()
 
-  // Auto-populate author field when checkbox is checked and user is logged in
   useEffect(() => {
     if (showAuthor && session?.user?.name && !author) {
       onAuthorChange(session.user.name)
@@ -36,14 +33,7 @@ export default function FileUpload({
   }, [showAuthor, session?.user?.name, author, onAuthorChange])
 
   return (
-    <div style={{
-      marginBottom: 20,
-      padding: '30px',
-      border: `2px dashed ${colors.primary}`,
-      borderRadius: '10px',
-      textAlign: 'center',
-      backgroundColor: colors.cardBackground
-    }}>
+    <div className="composer-stage-body">
       <input
         type="file"
         accept=".txt,.doc,.docx,.md,.pdf,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -51,127 +41,47 @@ export default function FileUpload({
         style={{ display: 'none' }}
         id="file-upload"
       />
-      <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
-        <div style={{ fontSize: '20px', marginBottom: '10px', color: colors.primary }}>
-          {isConverting ? '🔄 Converting...' : '📁 Click to upload a file'}
-        </div>
-        <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '15px' }}>
-          Supported formats: TXT, MD, DOC, DOCX, PDF
-        </div>
-        <div style={{
-          padding: '10px 20px',
-          backgroundColor: colors.buttonBackground,
-          color: colors.buttonText,
-          borderRadius: '5px',
-          display: 'inline-block'
-        }}>
-          Choose File
-        </div>
-      </label>
-      {uploadedFile && (
-        <div style={{ marginTop: '15px', fontSize: '14px', color: colors.primary }}>
-          ✅ Selected: {uploadedFile.name}
-        </div>
-      )}
-
-      {/* Author field for upload mode */}
-      <div style={{
-        marginTop: '20px',
-        textAlign: 'left',
-        padding: '20px',
-        backgroundColor: colors.inputBackground,
-        borderRadius: '8px',
-        border: `1px solid ${colors.border}`
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginBottom: '10px'
-        }}>
-          <input
-            type="checkbox"
-            id="show-author-upload"
-            checked={showAuthor}
-            onChange={(e) => onShowAuthorChange(e.target.checked)}
-            style={{ cursor: 'pointer' }}
-          />
-          <label
-            htmlFor="show-author-upload"
-            style={{
-              color: colors.text,
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            Add author acknowledgment
-          </label>
-        </div>
-
-        {showAuthor && (
-          <input
-            type="text"
-            value={author}
-            onChange={(e) => onAuthorChange(e.target.value)}
-            placeholder="Enter your name or handle..."
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              fontSize: '16px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: '5px',
-              backgroundColor: colors.inputBackground,
-              color: colors.text,
-              outline: 'none'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = colors.primary
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = colors.border
-            }}
-          />
+      <label
+        htmlFor="file-upload"
+        className={`dropzone${isConverting ? ' is-busy' : ''}`}
+      >
+        <p className="composer-kicker">{isConverting ? 'Working' : 'Bring a file'}</p>
+        <h2>{isConverting ? 'Turning it into markdown…' : 'Drop a document in the nest'}</h2>
+        <p>TXT, Markdown, Word, or PDF — up to 10 MB.</p>
+        <span className="dropzone-btn">{isConverting ? 'Converting' : 'Choose file'}</span>
+        {uploadedFile && (
+          <p style={{ marginTop: 14 }}>{uploadedFile.name}</p>
         )}
+      </label>
 
-        {/* Auto-format toggle */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          marginTop: '15px',
-          paddingTop: '15px',
-          borderTop: `1px solid ${colors.border}`
-        }}>
-          <input
-            type="checkbox"
-            id="auto-format-upload"
-            checked={autoFormat}
-            onChange={(e) => onAutoFormatChange(e.target.checked)}
-            style={{ cursor: 'pointer' }}
-          />
-          <label
-            htmlFor="auto-format-upload"
-            style={{
-              color: colors.text,
-              fontWeight: '500',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Auto-format to markdown
-          </label>
-          <span
-            style={{
-              fontSize: '12px',
-              color: colors.secondary,
-              marginLeft: '5px'
-            }}
-            title="Automatically detect and format headings, lists, code blocks, and links"
-          >
-            ℹ️
-          </span>
-        </div>
+      <div className="composer-meta">
+        <button
+          type="button"
+          className={`chip${showAuthor ? ' is-on' : ''}`}
+          aria-pressed={showAuthor}
+          onClick={() => onShowAuthorChange(!showAuthor)}
+        >
+          Author
+        </button>
+        <button
+          type="button"
+          className={`chip${autoFormat ? ' is-on' : ''}`}
+          aria-pressed={autoFormat}
+          onClick={() => onAutoFormatChange(!autoFormat)}
+        >
+          Auto-format
+        </button>
       </div>
+
+      {showAuthor && (
+        <input
+          className="composer-field"
+          type="text"
+          value={author}
+          onChange={(e) => onAuthorChange(e.target.value)}
+          placeholder="Your name or handle"
+        />
+      )}
     </div>
   )
 }
