@@ -585,13 +585,12 @@ body.dark .composer-kicker {
 }
 
 .composer-note {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: block;
   margin-bottom: 18px;
-  padding: 10px 14px;
-  border-radius: 999px;
+  padding: 12px 16px;
+  border-radius: 16px;
   font-size: 0.9rem;
+  line-height: 1.5;
   color: var(--composer-ink);
   background: rgba(15, 118, 110, 0.08);
   border: 1px solid rgba(15, 118, 110, 0.16);
@@ -964,7 +963,6 @@ body.dark .dropzone-btn {
 
   .composer-note {
     border-radius: 14px;
-    align-items: flex-start;
   }
 
   .composer-stage-body {
