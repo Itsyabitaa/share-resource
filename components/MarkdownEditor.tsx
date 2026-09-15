@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useSession } from '../lib/auth-client'
 import { formatToMarkdown } from '../utils/markdownFormatter'
@@ -36,6 +36,7 @@ export default function MarkdownEditor({
   onHashtagsChange
 }: MarkdownEditorProps) {
   const { data: session } = useSession()
+  const [formatStatus, setFormatStatus] = useState<'idle' | 'done' | 'same'>('idle')
 
   useEffect(() => {
     if (showAuthor && session?.user?.name && !author) {
@@ -43,14 +44,25 @@ export default function MarkdownEditor({
     }
   }, [showAuthor, session?.user?.name, author, onAuthorChange])
 
+  useEffect(() => {
+    if (formatStatus === 'idle') return
+    const timer = setTimeout(() => setFormatStatus('idle'), 1800)
+    return () => clearTimeout(timer)
+  }, [formatStatus])
+
   const handleTextChange = useCallback((value: string) => {
     onTextChange(value)
   }, [onTextChange])
 
   const handleFormatText = useCallback(() => {
-    if (text.trim().length > 0) {
-      onTextChange(formatToMarkdown(text))
+    if (!text.trim()) return
+    const formatted = formatToMarkdown(text)
+    if (formatted === text) {
+      setFormatStatus('same')
+      return
     }
+    onTextChange(formatted)
+    setFormatStatus('done')
   }, [text, onTextChange])
 
   const mdeOptions = React.useMemo(() => ({
@@ -103,11 +115,12 @@ export default function MarkdownEditor({
         </button>
         <button
           type="button"
-          className="ghost-btn"
+          className={`ghost-btn${formatStatus === 'done' ? ' is-on' : ''}`}
           onClick={handleFormatText}
           disabled={!text.trim()}
+          title="Convert plain text into clean markdown (headings, lists, links, code)"
         >
-          Auto-format
+          {formatStatus === 'done' ? 'Formatted' : formatStatus === 'same' ? 'Already clean' : 'Auto-format'}
         </button>
       </div>
 

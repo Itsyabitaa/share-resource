@@ -121,6 +121,9 @@ export async function convertBufferToMarkdown(
       if (!content) {
         throw new ConvertError('Could not read this Word document. Try saving it as .docx.')
       }
+      if (autoFormat && !isAlreadyMarkdown(content)) {
+        content = formatToMarkdown(content)
+      }
       break
     }
     case 'doc': {
@@ -136,7 +139,9 @@ export async function convertBufferToMarkdown(
       if (!content) {
         throw new ConvertError('Could not read this Word document. Try saving it as .docx.')
       }
-      if (autoFormat) content = formatToMarkdown(content)
+      if (autoFormat && !isAlreadyMarkdown(content)) {
+        content = formatToMarkdown(content)
+      }
       break
     }
     case 'rtf': {
