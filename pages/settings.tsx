@@ -212,19 +212,16 @@ export default function Settings() {
     }
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f5f5f5',
-        }}>
-        <div className="page-shell" style={{ paddingTop: '1.5rem' }}>
-                <h1 style={{
-                    color: colors.text,
-                    fontSize: '2rem',
-                    fontWeight: '700',
-                    marginBottom: '2rem',
-                }}>
-                    Settings
-                </h1>
+        <div>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+            <div className="page-shell" style={{ paddingTop: '1.5rem' }}>
+                <h1 className="page-title">Settings</h1>
 
                 {/* Profile Section */}
                 <div style={{
@@ -580,8 +577,6 @@ export default function Settings() {
                     </form>
                 </div>
             </div>
-
-            <Footer />
         </div>
     )
 }

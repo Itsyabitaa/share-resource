@@ -5,6 +5,7 @@ import { useTheme } from '../lib/ThemeContext'
 import { signIn } from '../lib/auth-client'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
+import BrandMark from '../components/BrandMark'
 
 export default function Login() {
     const [email, setEmail] = useState('')
@@ -96,55 +97,30 @@ export default function Login() {
                 animation: 'float 10s ease-in-out infinite reverse'
             }} />
 
-            <div style={{
+            <div className="auth-card" style={{
                 width: '100%',
                 maxWidth: '440px',
-                backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-                padding: '3rem',
+                backgroundColor: theme === 'dark' ? '#1c1917' : '#ffffff',
+                padding: undefined,
                 borderRadius: '16px',
                 boxShadow: theme === 'dark'
                     ? '0 20px 60px rgba(0, 0, 0, 0.8)'
                     : '0 20px 60px rgba(0, 0, 0, 0.08)',
                 position: 'relative',
                 zIndex: 1,
-                border: theme === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e5e5'
+                border: theme === 'dark' ? '1px solid #292524' : '1px solid #e7e5e4'
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{
-                        width: '70px',
-                        height: '70px',
-                        margin: '0 auto 1.5rem',
-                        backgroundColor: theme === 'dark' ? '#ffffff' : '#000000',
-                        borderRadius: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '2rem',
-                        transition: 'transform 0.3s ease',
-                        cursor: 'default'
-                    }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05) rotate(-5deg)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
-                    >
-                        <span style={{ filter: theme === 'dark' ? 'invert(1)' : 'none' }}>📝</span>
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                        <BrandMark href={sitePath('/')} size={40} stacked />
                     </div>
-                    <h1 style={{
-                        color: colors.text,
-                        marginBottom: '0.5rem',
-                        fontSize: '2rem',
-                        fontWeight: '700',
-                        letterSpacing: '-0.02em'
-                    }}>
-                        md-Nest
-                    </h1>
                     <h2 style={{
                         color: colors.text,
-                        fontSize: '1.5rem',
+                        fontSize: '1.25rem',
                         fontWeight: '600',
-                        opacity: 0.9,
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.35rem'
                     }}>
-                        Welcome Back
+                        Welcome back
                     </h2>
                     <p style={{
                         color: colors.text,

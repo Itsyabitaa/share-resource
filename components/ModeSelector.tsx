@@ -10,7 +10,7 @@ export default function ModeSelector({ mode, onModeChange }: ModeSelectorProps) 
   const { colors } = useTheme()
 
   return (
-    <div style={{ marginBottom: 20, display: 'flex', gap: 10 }}>
+    <div className="mode-tabs">
       <button
         onClick={() => onModeChange('editor')}
         style={{
