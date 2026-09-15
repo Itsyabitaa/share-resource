@@ -14,6 +14,32 @@ type AdminUser = {
   name: string | null
   plan: 'free' | 'pro'
   created_at: string
+  email_verified: boolean
+  auth_providers: string | null
+  file_count: number
+  last_seen: string | null
+  image: string | null
+}
+
+type AccountProviderFilter = 'all' | 'google' | 'email'
+type AccountActivityFilter = 'all' | 'has_docs' | 'verified'
+
+function formatAuthProviders(value: string | null) {
+  if (!value) return 'Email / password'
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((provider) => {
+      if (provider === 'google') return 'Google'
+      if (provider === 'credential') return 'Email'
+      return provider.charAt(0).toUpperCase() + provider.slice(1)
+    })
+    .join(', ')
+}
+
+function isGoogleUser(user: AdminUser) {
+  return (user.auth_providers || '').includes('google')
 }
 
 type Tab = 'overview' | 'posts' | 'viral' | 'activity' | 'accounts'
@@ -37,7 +63,7 @@ const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
   },
   accounts: {
     title: 'Accounts',
-    subtitle: 'Search users and manage Pro plans.',
+    subtitle: 'Real sign-ups from your database — filter by Google, activity, or search.',
   },
 }
 
@@ -69,6 +95,8 @@ export default function AdminPage() {
   const [modReason, setModReason] = useState(COMMUNITY_TAKEDOWN_MESSAGE)
 
   const [userSearch, setUserSearch] = useState('')
+  const [accountProvider, setAccountProvider] = useState<AccountProviderFilter>('all')
+  const [accountActivity, setAccountActivity] = useState<AccountActivityFilter>('all')
   const [users, setUsers] = useState<AdminUser[]>([])
   const [planEmail, setPlanEmail] = useState('')
   const [plan, setPlan] = useState<'free' | 'pro'>('pro')
@@ -128,20 +156,28 @@ export default function AdminPage() {
     }
   }, [apiPath])
 
-  const loadUsers = useCallback(async (query = userSearch) => {
+  const loadUsers = useCallback(async (overrides?: {
+    query?: string
+    provider?: AccountProviderFilter
+    activity?: AccountActivityFilter
+  }) => {
     setLoading(true)
     try {
-      const q = query.trim()
-      const url = q
-        ? apiPath(`/admin/users?q=${encodeURIComponent(q)}`)
-        : apiPath('/admin/users')
-      const res = await fetch(url)
+      const q = (overrides?.query ?? userSearch).trim()
+      const provider = overrides?.provider ?? accountProvider
+      const activity = overrides?.activity ?? accountActivity
+      const params = new URLSearchParams()
+      if (q) params.set('q', q)
+      if (provider !== 'all') params.set('provider', provider)
+      if (activity !== 'all') params.set('activity', activity)
+      const suffix = params.toString() ? `?${params.toString()}` : ''
+      const res = await fetch(apiPath(`/admin/users${suffix}`))
       const data = await res.json()
       if (res.ok) setUsers(data.users || [])
     } finally {
       setLoading(false)
     }
-  }, [apiPath, userSearch])
+  }, [apiPath, userSearch, accountProvider, accountActivity])
 
   useEffect(() => {
     if (!isAdmin) return
@@ -149,7 +185,7 @@ export default function AdminPage() {
     if (tab === 'posts') loadPosts()
     if (tab === 'viral') loadViral()
     if (tab === 'activity') loadDashboard()
-    if (tab === 'accounts') loadUsers('')
+    if (tab === 'accounts') loadUsers()
   }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers])
 
   const moderateFile = async (fileId: string, action: 'remove' | 'private' | 'warn' | 'restore') => {
@@ -218,7 +254,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="page-shell wide admin-dashboard" style={{ color: colors.text }}>
+    <div className="page-shell admin-dashboard" style={{ color: colors.text }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <header className="admin-header">
@@ -338,7 +374,7 @@ export default function AdminPage() {
             ) : (
               activity.map((item) => (
                 <div key={`${item.kind}-${item.id}`} className="admin-activity-row">
-                  <div>
+                  <div className="admin-activity-main">
                     <strong>{item.label}</strong>
                     <div className="admin-hint">
                       {item.kind.replace(/_/g, ' ')}
@@ -356,6 +392,10 @@ export default function AdminPage() {
 
       {tab === 'accounts' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+          <p className="admin-hint">
+            These are real accounts stored in Neon — not sample data. Use filters to find Google sign-ins
+            or users who actually created documents. Random email sign-ups with 0 docs are often bots or tests.
+          </p>
           <div className="admin-toolbar admin-toolbar-wrap">
             <input
               value={planEmail}
@@ -385,41 +425,111 @@ export default function AdminPage() {
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
-              placeholder="Search users by email or name"
+              placeholder="Search by email or name"
               style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
             />
-            <button type="button" className="header-btn" disabled={loading} onClick={() => loadUsers()}>
-              Search
+            <select
+              value={accountProvider}
+              onChange={(e) => setAccountProvider(e.target.value as AccountProviderFilter)}
+              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+            >
+              <option value="all">All sign-in methods</option>
+              <option value="google">Google only</option>
+              <option value="email">Email / password only</option>
+            </select>
+            <select
+              value={accountActivity}
+              onChange={(e) => setAccountActivity(e.target.value as AccountActivityFilter)}
+              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+            >
+              <option value="all">All activity</option>
+              <option value="has_docs">Has documents</option>
+              <option value="verified">Email verified</option>
+            </select>
+            <button type="button" className="header-btn primary" disabled={loading} onClick={() => loadUsers()}>
+              Apply filters
             </button>
-            <button type="button" className="header-btn" disabled={loading} onClick={() => { setUserSearch(''); loadUsers('') }}>
-              Show recent
+            <button
+              type="button"
+              className="header-btn"
+              disabled={loading}
+              onClick={() => {
+                setUserSearch('')
+                setAccountProvider('all')
+                setAccountActivity('all')
+                loadUsers({ query: '', provider: 'all', activity: 'all' })
+              }}
+            >
+              Reset
             </button>
           </div>
           {users.length === 0 ? (
             <p className="admin-hint">No users found.</p>
           ) : (
-            users.map((user) => (
-              <div key={user.id} className="admin-activity-row">
-                <div>
-                  <strong>{user.email}</strong>
-                  <div className="admin-hint">
-                    {user.name || 'No name'} · {user.plan} · joined {new Date(user.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {user.plan !== 'pro' && (
-                    <button type="button" className="header-btn primary" disabled={loading} onClick={() => assignPlan(user.email, 'pro')}>
-                      Make Pro
-                    </button>
-                  )}
-                  {user.plan === 'pro' && (
-                    <button type="button" className="header-btn" disabled={loading} onClick={() => assignPlan(user.email, 'free')}>
-                      Set Free
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Sign-in</th>
+                    <th>Docs</th>
+                    <th>Last seen</th>
+                    <th>Plan</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td>
+                        <div className="admin-user-cell">
+                          {user.image ? (
+                            <img src={user.image} alt="" className="admin-user-avatar" />
+                          ) : (
+                            <span className="admin-user-avatar placeholder">
+                              {(user.name || user.email).charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                          <div className="admin-user-meta">
+                            <span className="admin-email-cell">{user.email}</span>
+                            <span className="admin-hint" style={{ margin: 0 }}>
+                              {user.name || 'No display name'}
+                              {user.email_verified ? ' · verified' : ' · unverified'}
+                              {' · joined '}{new Date(user.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`admin-auth-badge${isGoogleUser(user) ? ' google' : ''}`}>
+                          {formatAuthProviders(user.auth_providers)}
+                        </span>
+                      </td>
+                      <td>{user.file_count}</td>
+                      <td>
+                        {user.last_seen
+                          ? new Date(user.last_seen).toLocaleString()
+                          : 'Never'}
+                      </td>
+                      <td>
+                        <span className={`admin-plan-badge ${user.plan}`}>{user.plan}</span>
+                      </td>
+                      <td className="admin-actions-cell">
+                        {user.plan !== 'pro' ? (
+                          <button type="button" className="header-btn primary" disabled={loading} onClick={() => assignPlan(user.email, 'pro')}>
+                            Make Pro
+                          </button>
+                        ) : (
+                          <button type="button" className="header-btn" disabled={loading} onClick={() => assignPlan(user.email, 'free')}>
+                            Set Free
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       )}

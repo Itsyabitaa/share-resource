@@ -856,3 +856,72 @@ export async function listRecentUsers(limit = 30) {
   `
   return result as Array<{ id: string; email: string; name: string | null; created_at: string }>
 }
+
+export type AdminUserRow = {
+  id: string
+  email: string
+  name: string | null
+  email_verified: boolean
+  image: string | null
+  created_at: string
+  auth_providers: string | null
+  file_count: number
+  last_seen: string | null
+}
+
+export async function listAdminUsers(options: {
+  query?: string
+  provider?: 'all' | 'google' | 'email'
+  activity?: 'all' | 'has_docs' | 'verified'
+  limit?: number
+}): Promise<AdminUserRow[]> {
+  const query = options.query?.trim() || ''
+  const provider = options.provider || 'all'
+  const activity = options.activity || 'all'
+  const limit = options.limit ?? 40
+  const pattern = `%${query}%`
+  const hasQuery = query.length > 0
+
+  const rows = await sql(
+    `
+    SELECT
+      u.id,
+      u.email,
+      u.name,
+      u."emailVerified" as email_verified,
+      u.image,
+      u."createdAt"::text as created_at,
+      (
+        SELECT STRING_AGG(DISTINCT a."providerId", ', ' ORDER BY a."providerId")
+        FROM account a
+        WHERE a."userId" = u.id
+      ) as auth_providers,
+      (SELECT COUNT(*)::int FROM files f WHERE f.user_id = u.id) as file_count,
+      (SELECT MAX(s."createdAt")::text FROM session s WHERE s."userId" = u.id) as last_seen
+    FROM "user" u
+    WHERE
+      ($1 = false OR u.email ILIKE $2 OR COALESCE(u.name, '') ILIKE $2)
+      AND (
+        $3 = 'all'
+        OR ($3 = 'google' AND EXISTS (
+          SELECT 1 FROM account a WHERE a."userId" = u.id AND a."providerId" = 'google'
+        ))
+        OR ($3 = 'email' AND NOT EXISTS (
+          SELECT 1 FROM account a WHERE a."userId" = u.id AND a."providerId" = 'google'
+        ))
+      )
+      AND (
+        $4 = 'all'
+        OR ($4 = 'verified' AND u."emailVerified" = true)
+        OR ($4 = 'has_docs' AND EXISTS (
+          SELECT 1 FROM files f WHERE f.user_id = u.id
+        ))
+      )
+    ORDER BY u."createdAt" DESC
+    LIMIT $5
+    `,
+    [hasQuery, pattern, provider, activity, limit]
+  )
+
+  return rows as AdminUserRow[]
+}
