@@ -100,6 +100,7 @@ export default function Home() {
     if (suggestedTitle && !title) {
       setTitle(suggestedTitle)
     }
+    event.target.value = ''
   }
 
   const onShare = async () => {

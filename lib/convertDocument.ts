@@ -60,8 +60,8 @@ async function docxToMarkdown(buffer: Buffer) {
 }
 
 async function wordToText(buffer: Buffer) {
-  const imported = await import('word-extractor')
-  const WordExtractor = imported.default
+  const imported: any = await import('word-extractor')
+  const WordExtractor = imported.default || imported
   const extractor = new WordExtractor()
   const doc = await extractor.extract(buffer)
   const parts = [doc.getHeaders?.(), doc.getBody?.(), doc.getFootnotes?.()]
@@ -71,7 +71,8 @@ async function wordToText(buffer: Buffer) {
 async function pdfToText(buffer: Buffer) {
   const { extractText } = await import('unpdf')
   const result = await extractText(new Uint8Array(buffer), { mergePages: true })
-  return (typeof result.text === 'string' ? result.text : result.text.join('\n\n')).trim()
+  const text = result.text
+  return (typeof text === 'string' ? text : String(text ?? '')).trim()
 }
 
 function rtfToText(rtf: string) {
