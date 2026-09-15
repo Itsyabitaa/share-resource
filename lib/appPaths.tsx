@@ -38,13 +38,22 @@ function joinPaths(basePath: string, path: string) {
   return `${normalizedBasePath}${normalizedPath}` || '/'
 }
 
+function isStaticAppRoute(path: string) {
+  return path === '/' || staticRoutes.includes(path)
+}
+
 export function getAppBasePath(pathname?: string, asPath?: string, query?: RouteQuery) {
   const cleanAsPath = stripQueryAndHash(asPath || pathname || '')
   const normalizedAsPath = cleanAsPath.replace(/\/+$/, '') || '/'
   const routePath = pathname || ''
 
-  if (routePath === '/' || routePath === '') {
-    return normalizeBasePath(normalizedAsPath)
+  // md-nest is mounted at domain root — static pages are never a URL prefix.
+  if (isStaticAppRoute(normalizedAsPath)) {
+    return ''
+  }
+
+  if (routePath && isStaticAppRoute(routePath)) {
+    return ''
   }
 
   const fileMatch = normalizedAsPath.match(/^(.*)\/(?:file|edit)\/[^/]+$/)
@@ -52,17 +61,11 @@ export function getAppBasePath(pathname?: string, asPath?: string, query?: Route
     return normalizeBasePath(fileMatch?.[1] || normalizedAsPath.replace(/\/(?:file|edit)\/[^/]+$/, ''))
   }
 
-  for (const route of staticRoutes) {
-    if (routePath === route && normalizedAsPath.endsWith(route)) {
-      return normalizeBasePath(normalizedAsPath.slice(0, -route.length))
-    }
-  }
-
   if (query && normalizedAsPath.includes('/file/')) {
     return normalizeBasePath(normalizedAsPath.replace(/\/file\/[^/]+$/, ''))
   }
 
-  return normalizeBasePath(normalizedAsPath)
+  return ''
 }
 
 export function buildSitePath(path: string, basePath = '') {
