@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useTheme } from '../lib/ThemeContext'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/router'
 import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
 
@@ -16,66 +16,76 @@ interface SidebarProps {
   onCreateFileInFolder?: (folderId: string) => void
 }
 
-export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder, onCreateFileInFolder }: SidebarProps) {
-  const { colors, theme } = useTheme()
+export default function Sidebar({
+  isOpen = false,
+  activeFolderId,
+  onSelectFolder,
+  onCreateFileInFolder,
+}: SidebarProps) {
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
+  const router = useRouter()
   const [folders, setFolders] = useState<Folder[]>([])
-  const [activeFiles, setActiveFiles] = useState<any[]>([])
+  const [fileCounts, setFileCounts] = useState<Record<string, number>>({ all: 0, unassigned: 0 })
   const [isCreating, setIsCreating] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
 
-  useEffect(() => {
-    if (session?.user) {
-      fetchFolders()
-    }
-  }, [session])
+  const isWorkspace = router.pathname === '/workspace'
 
-  useEffect(() => {
-    if (session?.user) {
-      if (activeFolderId) {
-        fetchFilesByFolder(activeFolderId)
-      } else {
-        fetchAllUserFiles()
-      }
-    }
-  }, [activeFolderId, session])
-
-  const fetchFilesByFolder = async (folderId: string) => {
+  const loadData = async () => {
     try {
-      const res = await fetch(apiPath(`/folders/${folderId}`))
-      if (res.ok) {
-        const data = await res.json()
-        setActiveFiles(data.files)
+      const [foldersRes, filesRes] = await Promise.all([
+        fetch(apiPath('/folders')),
+        fetch(apiPath('/user/files')),
+      ])
+
+      if (foldersRes.ok) {
+        const data = await foldersRes.json()
+        setFolders(data.folders || [])
+      }
+
+      if (filesRes.ok) {
+        const data = await filesRes.json()
+        const files = data.files || []
+        const counts: Record<string, number> = { all: files.length, unassigned: 0 }
+        for (const file of files) {
+          if (!file.folder_id) counts.unassigned += 1
+          else counts[file.folder_id] = (counts[file.folder_id] || 0) + 1
+        }
+        setFileCounts(counts)
       }
     } catch (error) {
-      console.error('Failed to fetch files for folder:', error)
+      console.error('Failed to load sidebar data:', error)
     }
   }
 
-  const fetchAllUserFiles = async () => {
-    try {
-      const res = await fetch(apiPath('/user/files'))
-      if (res.ok) {
-        const data = await res.json()
-        // Filter out files that belong to a folder, so this section acts as the root/unassigned directory
-        setActiveFiles(data.files.filter((f: any) => !f.folder_id))
-      }
-    } catch (error) {
-      console.error('Failed to fetch all user files:', error)
-    }
-  }
+  useEffect(() => {
+    if (session?.user) loadData()
+  }, [session?.user?.id])
 
-  const fetchFolders = async () => {
-    try {
-      const res = await fetch(apiPath('/folders'))
-      if (res.ok) {
-        const data = await res.json()
-        setFolders(data.folders)
-      }
-    } catch (error) {
-      console.error('Failed to fetch folders:', error)
+  useEffect(() => {
+    if (session?.user && isWorkspace) loadData()
+  }, [router.asPath, session?.user?.id, isWorkspace])
+
+  const activeKey = useMemo(() => {
+    if (!isWorkspace) return activeFolderId
+    if (typeof router.query.folder === 'string') return router.query.folder
+    return null
+  }, [isWorkspace, activeFolderId, router.query.folder])
+
+  const goWorkspace = (folderId: string | null) => {
+    onSelectFolder(folderId)
+    if (folderId === null) {
+      router.push(sitePath('/workspace'))
+      return
     }
+    if (folderId === 'unassigned') {
+      router.push(`${sitePath('/workspace')}?folder=unassigned`)
+      return
+    }
+    router.push(`${sitePath('/workspace')}?folder=${encodeURIComponent(folderId)}`)
   }
 
   const handleCreateFolder = async () => {
@@ -85,15 +95,15 @@ export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder
       const res = await fetch(apiPath('/folders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newFolderName.trim() })
+        body: JSON.stringify({ name: newFolderName.trim() }),
       })
 
       if (res.ok) {
         const data = await res.json()
-        setFolders([...folders, data.folder])
         setNewFolderName('')
         setIsCreating(false)
-        onSelectFolder(data.folder.id)
+        await loadData()
+        goWorkspace(data.folder.id)
       }
     } catch (error) {
       console.error('Failed to create folder:', error)
@@ -102,335 +112,175 @@ export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder
 
   const handleDeleteFolder = async (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Are you sure you want to delete this folder? Files inside will not be deleted, but will be unassigned from this folder.')) {
-      return
-    }
+    const folder = folders.find((item) => item.id === folderId)
+    if (!folder) return
+    if (!confirm(`Delete "${folder.name}"? Documents inside will stay in your workspace.`)) return
 
     try {
-      const res = await fetch(apiPath(`/folders/${folderId}`), {
-        method: 'DELETE'
-      })
-
+      const res = await fetch(apiPath(`/folders/${folderId}`), { method: 'DELETE' })
       if (res.ok) {
-        setFolders(folders.filter(f => f.id !== folderId))
-        if (activeFolderId === folderId) {
-          onSelectFolder(null)
-        }
+        if (activeKey === folderId) goWorkspace(null)
+        await loadData()
       }
     } catch (error) {
       console.error('Failed to delete folder:', error)
     }
   }
 
+  const startRename = (folder: Folder, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setRenamingId(folder.id)
+    setRenameValue(folder.name)
+  }
+
+  const commitRename = async (folderId: string) => {
+    const name = renameValue.trim()
+    setRenamingId(null)
+    if (!name) return
+
+    try {
+      const res = await fetch(apiPath(`/folders/${folderId}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (res.ok) await loadData()
+    } catch (error) {
+      console.error('Failed to rename folder:', error)
+    }
+  }
+
   if (!session?.user) return null
 
   return (
-    <div
-      className={`workspace-sidebar${isOpen ? ' is-open' : ''}`}
-      style={{
-        backgroundColor: theme === 'dark' ? '#1c1917' : '#f3f1ec',
-        borderRight: `1px solid ${theme === 'dark' ? '#292524' : '#e7e5e4'}`,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '16px 10px 24px'
-      }}
-    >
-      <h2 style={{
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: colors.text,
-        opacity: 0.7,
-        marginBottom: '15px',
-        paddingLeft: '10px'
-      }}>
-        Workspace
-      </h2>
-
-      {/* All Files section */}
-      <div>
+    <aside className={`workspace-sidebar${isOpen ? ' is-open' : ''}`}>
+      <div className="sidebar-section">
+        <p className="sidebar-label">Workspace</p>
         <button
-          onClick={() => onSelectFolder(null)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            width: '100%',
-            gap: '10px',
-            padding: '10px',
-            backgroundColor: activeFolderId === null ? (theme === 'dark' ? '#2a2a2a' : '#e5e5e5') : 'transparent',
-            color: colors.text,
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            textAlign: 'left',
-            marginBottom: activeFolderId === null ? '4px' : '20px',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            if (activeFolderId !== null) {
-              e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#e5e5e5'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeFolderId !== null) {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }
-          }}
+          type="button"
+          className={`sidebar-nav-item${activeKey === null && isWorkspace ? ' is-active' : ''}`}
+          onClick={() => goWorkspace(null)}
         >
-          <span style={{ fontSize: '18px' }}>📁</span>
-          <span style={{ fontWeight: activeFolderId === null ? '600' : 'normal' }}>All Files</span>
+          <span>All documents</span>
+          <span className="sidebar-count">{fileCounts.all}</span>
         </button>
+        <button
+          type="button"
+          className={`sidebar-nav-item${activeKey === 'unassigned' ? ' is-active' : ''}`}
+          onClick={() => goWorkspace('unassigned')}
+        >
+          <span>Unassigned</span>
+          <span className="sidebar-count">{fileCounts.unassigned}</span>
+        </button>
+        <button
+          type="button"
+          className="sidebar-nav-item accent"
+          onClick={() => router.push(sitePath('/workspace'))}
+        >
+          Open workspace
+        </button>
+      </div>
 
-        {/* Render files if All Files is active */}
-        {activeFolderId === null && (
-          <div style={{ paddingLeft: '28px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {activeFiles.length === 0 ? (
-              <div style={{ fontSize: '12px', opacity: 0.5, padding: '4px 0' }}>No files</div>
-            ) : (
-              activeFiles.map(file => (
-                <a
-                  key={file.id}
-                  href={sitePath(`/file/${file.id}`)}
-                  style={{
-                    display: 'block',
-                    padding: '6px 8px',
-                    fontSize: '13px',
-                    color: colors.text,
-                    textDecoration: 'none',
-                    borderRadius: '6px',
-                    opacity: 0.8,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    transition: 'background-color 0.2s, opacity 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#e5e5e5'
-                    e.currentTarget.style.opacity = '1'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.opacity = '0.8'
-                  }}
-                >
-                  📄 {file.title || 'Untitled'}
-                </a>
-              ))
-            )}
+      <div className="sidebar-section">
+        <div className="sidebar-section-head">
+          <p className="sidebar-label">Folders</p>
+          <button
+            type="button"
+            className="sidebar-icon-btn"
+            onClick={() => setIsCreating((open) => !open)}
+            title="New folder"
+            aria-label="New folder"
+          >
+            +
+          </button>
+        </div>
+
+        {isCreating && (
+          <div className="sidebar-create">
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateFolder()
+                if (e.key === 'Escape') {
+                  setIsCreating(false)
+                  setNewFolderName('')
+                }
+              }}
+              placeholder="Folder name"
+              autoFocus
+            />
+            <button type="button" className="header-btn primary" onClick={handleCreateFolder}>
+              Add
+            </button>
           </div>
         )}
-      </div>
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingLeft: '10px',
-        paddingRight: '10px',
-        marginBottom: '10px'
-      }}>
-        <h2 style={{
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: colors.text,
-          opacity: 0.7,
-          margin: 0
-        }}>
-          Folders
-        </h2>
-        <button
-          onClick={() => setIsCreating(!isCreating)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: colors.text,
-            cursor: 'pointer',
-            fontSize: '18px',
-            opacity: 0.7,
-            padding: 0
-          }}
-          title="New Folder"
-        >
-          +
-        </button>
-      </div>
-
-      {isCreating && (
-        <div style={{ padding: '0 10px', marginBottom: '10px' }}>
-          <input
-            type="text"
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateFolder()
-              if (e.key === 'Escape') {
-                setIsCreating(false)
-                setNewFolderName('')
-              }
-            }}
-            placeholder="Folder name..."
-            autoFocus
-            style={{
-              width: '100%',
-              padding: '8px',
-              borderRadius: '6px',
-              border: `1px solid ${theme === 'dark' ? '#333' : '#ccc'}`,
-              backgroundColor: theme === 'dark' ? '#222' : '#fff',
-              color: colors.text,
-              fontSize: '14px'
-            }}
-          />
-        </div>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {folders.map(folder => (
-          <div key={folder.id}>
-            <div
-              onClick={() => onSelectFolder(folder.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px',
-                backgroundColor: activeFolderId === folder.id ? (theme === 'dark' ? '#2a2a2a' : '#e5e5e5') : 'transparent',
-                color: colors.text,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (activeFolderId !== folder.id) {
-                  e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#e5e5e5'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeFolderId !== folder.id) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                <span style={{ fontSize: '18px', opacity: 0.7 }}>🗂️</span>
-                <span style={{ 
-                  fontWeight: activeFolderId === folder.id ? '600' : 'normal',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {folder.name}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                {activeFolderId === folder.id && onCreateFileInFolder && (
+        <div className="sidebar-folder-list">
+          {folders.length === 0 ? (
+            <p className="sidebar-empty">No folders yet</p>
+          ) : (
+            folders.map((folder) => (
+              <div key={folder.id} className="sidebar-folder-row">
+                {renamingId === folder.id ? (
+                  <input
+                    className="sidebar-rename-input"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitRename(folder.id)
+                      if (e.key === 'Escape') setRenamingId(null)
+                    }}
+                    onBlur={() => commitRename(folder.id)}
+                    autoFocus
+                  />
+                ) : (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onCreateFileInFolder(folder.id)
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: colors.text,
-                      opacity: 0.5,
-                      cursor: 'pointer',
-                      padding: '2px 5px',
-                      fontSize: '14px'
-                    }}
-                    title="Create file in this folder"
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                    type="button"
+                    className={`sidebar-nav-item${activeKey === folder.id ? ' is-active' : ''}`}
+                    onClick={() => goWorkspace(folder.id)}
                   >
-                    ➕
+                    <span>{folder.name}</span>
+                    <span className="sidebar-count">{fileCounts[folder.id] || 0}</span>
                   </button>
                 )}
-                {activeFolderId === folder.id && (
-                  <>
+
+                {activeKey === folder.id && renamingId !== folder.id && (
+                  <div className="sidebar-folder-tools">
+                    {onCreateFileInFolder && (
+                      <button
+                        type="button"
+                        className="sidebar-icon-btn"
+                        title="Create document in folder"
+                        onClick={() => onCreateFileInFolder(folder.id)}
+                      >
+                        +
+                      </button>
+                    )}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        const name = prompt('Rename folder', folder.name)
-                        if (!name?.trim()) return
-                        fetch(apiPath(`/folders/${folder.id}`), {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name: name.trim() }),
-                        }).then(res => {
-                          if (res.ok) fetchFolders()
-                        })
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: colors.text,
-                        opacity: 0.5,
-                        cursor: 'pointer',
-                        padding: '2px 5px'
-                      }}
+                      type="button"
+                      className="sidebar-icon-btn"
                       title="Rename folder"
+                      onClick={(e) => startRename(folder, e)}
                     >
                       ✎
                     </button>
                     <button
+                      type="button"
+                      className="sidebar-icon-btn danger"
+                      title="Delete folder"
                       onClick={(e) => handleDeleteFolder(folder.id, e)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: colors.text,
-                      opacity: 0.5,
-                      cursor: 'pointer',
-                      padding: '2px 5px'
-                    }}
-                    title="Delete Folder"
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
-                  >
-                    🗑️
-                  </button>
-                  </>
-                )}
-              </div>
-            </div>
-            {/* Render files if this folder is active */}
-            {activeFolderId === folder.id && (
-              <div style={{ paddingLeft: '28px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {activeFiles.length === 0 ? (
-                  <div style={{ fontSize: '12px', opacity: 0.5, padding: '4px 0' }}>No files</div>
-                ) : (
-                  activeFiles.map(file => (
-                    <a
-                      key={file.id}
-                      href={sitePath(`/file/${file.id}`)}
-                      style={{
-                        display: 'block',
-                        padding: '6px 8px',
-                        fontSize: '13px',
-                        color: colors.text,
-                        textDecoration: 'none',
-                        borderRadius: '6px',
-                        opacity: 0.8,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        transition: 'background-color 0.2s, opacity 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#e5e5e5'
-                        e.currentTarget.style.opacity = '1'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                        e.currentTarget.style.opacity = '0.8'
-                      }}
                     >
-                      📄 {file.title || 'Untitled'}
-                    </a>
-                  ))
+                      ×
+                    </button>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </aside>
   )
 }

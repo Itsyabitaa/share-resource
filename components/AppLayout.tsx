@@ -18,12 +18,27 @@ function LayoutInner({ children }: AppLayoutProps) {
   const { colors } = useTheme()
   const { isSidebarOpen, closeSidebar } = useSidebar()
   const { sitePath } = useAppPaths()
-  const [viewedFolderId, setViewedFolderId] = useState<string | null>(null)
-
   const isAuthPage = router.pathname === '/login' || router.pathname === '/signup'
 
+  const activeFolderId =
+    router.pathname === '/workspace' && typeof router.query.folder === 'string'
+      ? router.query.folder
+      : null
+
+  const handleSelectFolder = (folderId: string | null) => {
+    if (folderId === null) {
+      router.push(sitePath('/workspace'))
+      return
+    }
+    if (folderId === 'unassigned') {
+      router.push(`${sitePath('/workspace')}?folder=unassigned`)
+      return
+    }
+    router.push(`${sitePath('/workspace')}?folder=${encodeURIComponent(folderId)}`)
+  }
+
   const handleCreateFileInFolder = (folderId: string) => {
-    router.push(`${sitePath('/')}?targetFolderId=${folderId}`)
+    router.push(`${sitePath('/')}?targetFolderId=${encodeURIComponent(folderId)}`)
   }
 
   const handleResetCreate = () => {
@@ -48,8 +63,8 @@ function LayoutInner({ children }: AppLayoutProps) {
           )}
           <Sidebar
             isOpen={isSidebarOpen}
-            activeFolderId={viewedFolderId}
-            onSelectFolder={setViewedFolderId}
+            activeFolderId={activeFolderId}
+            onSelectFolder={handleSelectFolder}
             onCreateFileInFolder={handleCreateFileInFolder}
           />
         </>

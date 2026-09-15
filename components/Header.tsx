@@ -51,7 +51,12 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
     { href: sitePath('/about'), label: 'About', match: '/about' },
   ]
 
-  const isActive = (match: string) => router.pathname === match
+  const isActive = (match: string) => {
+    if (match === '/workspace') {
+      return router.pathname === '/workspace'
+    }
+    return router.pathname === match
+  }
 
   return (
     <header className="site-header">
