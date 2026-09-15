@@ -45,7 +45,7 @@ export default function Home() {
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
   const router = useRouter()
-  const { colors, theme } = useTheme()
+  const { colors } = useTheme()
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
 

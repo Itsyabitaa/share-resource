@@ -56,6 +56,18 @@ a {
   text-decoration: none;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 button,
 input,
 textarea {
@@ -178,7 +190,7 @@ body.dark .app-shell {
 }
 
 body.light .site-header {
-  --header-bg: #f7f6f3;
+  --header-bg: #f1eee6;
 }
 
 body.dark .site-header {

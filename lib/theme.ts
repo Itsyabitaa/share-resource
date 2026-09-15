@@ -1,7 +1,7 @@
 export type Theme = 'light' | 'dark'
 
 export const lightTheme = {
-  background: '#f7f6f3',
+  background: '#f1eee6',
   text: '#1c1917',
   primary: '#0f766e',
   secondary: '#57534e',
@@ -18,8 +18,8 @@ export const lightTheme = {
   buttonHover: '#115e59',
   inputBackground: '#ffffff',
   inputBorder: '#d6d3d1',
-  shadow: '0 8px 24px rgba(28, 25, 23, 0.06)',
-  cardBackground: '#ffffff',
+  shadow: '0 24px 80px rgba(48, 36, 21, 0.1)',
+  cardBackground: '#fffcf7',
   divider: '#e7e5e4'
 }
 

@@ -39,7 +39,7 @@ function LayoutInner({ children }: AppLayoutProps) {
   return (
     <div
       className={`app-shell${showSidebar ? ' sidebar-open' : ''}`}
-      style={{ backgroundColor: colors.background, color: colors.text }}
+      style={{ color: colors.text }}
     >
       {session?.user && (
         <>
