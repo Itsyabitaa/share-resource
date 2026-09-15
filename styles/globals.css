@@ -372,6 +372,85 @@ body.dark .footer-link {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
   gap: 24px;
+  min-width: 0;
+}
+
+.file-layout > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.markdown-body {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.markdown-body p,
+.markdown-body li,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body blockquote {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-body pre,
+.markdown-body code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-body pre {
+  white-space: pre-wrap;
+  overflow-x: auto;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(120, 113, 108, 0.1);
+}
+
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.markdown-body p {
+  margin: 0 0 1em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.25rem;
+  margin: 0 0 1em;
+}
+
+.markdown-body img,
+.markdown-body table {
+  max-width: 100%;
+}
+
+.markdown-body table {
+  display: block;
+  overflow-x: auto;
+}
+
+.doc-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 28px;
+  border-radius: 16px;
+}
+
+@media (max-width: 640px) {
+  .doc-card {
+    padding: 16px !important;
+  }
 }
 
 .notice-banner {

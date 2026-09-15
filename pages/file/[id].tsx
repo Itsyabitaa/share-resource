@@ -323,19 +323,16 @@ export default function FilePage({
           </div>
 
           {activeTab === 'document' ? (
-            <div style={{
-              backgroundColor: colors.background,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '16px',
-              padding: '40px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-              minHeight: '500px'
-            }}>
-              <div style={{
-                fontSize: '16px',
-                lineHeight: '1.8',
-                color: colors.text
-              }}>
+            <div
+              className="doc-card"
+              style={{
+                backgroundColor: colors.cardBackground,
+                border: `1px solid ${colors.border}`,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                minHeight: '320px'
+              }}
+            >
+              <div className="markdown-body" style={{ color: colors.text }}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {content}
                 </ReactMarkdown>
