@@ -160,6 +160,7 @@ body.dark .app-shell {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  padding-top: var(--header-height);
   transition: margin-left 0.25s ease;
 }
 
@@ -175,18 +176,21 @@ body.dark .app-shell {
 }
 
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 60;
   height: var(--header-height);
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 16px;
-  width: 100%;
   border-bottom: 1px solid rgba(120, 113, 108, 0.18);
-  background: color-mix(in srgb, var(--header-bg, #f7f6f3) 88%, transparent);
+  background: color-mix(in srgb, var(--header-bg, #f7f6f3) 94%, transparent);
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: left 0.25s ease;
 }
 
 body.light .site-header {
@@ -1891,6 +1895,10 @@ body.dark .dropzone-btn {
   .app-shell.sidebar-open .app-main {
     margin-left: var(--sidebar-width);
     width: calc(100% - var(--sidebar-width));
+  }
+
+  .app-shell.sidebar-open .site-header {
+    left: var(--sidebar-width);
   }
 }
 
