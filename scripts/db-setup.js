@@ -176,6 +176,38 @@ async function setup() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_file_id ON file_edits(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_created_at ON file_edits(created_at DESC)')
 
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20) NOT NULL DEFAULT 'active'`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS moderation_reason TEXT`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS moderated_at TIMESTAMP WITH TIME ZONE`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS moderated_by TEXT`)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS moderation_events (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      event_type VARCHAR(40) NOT NULL,
+      file_id UUID REFERENCES files(id) ON DELETE SET NULL,
+      user_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      actor_email TEXT,
+      message TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_warnings (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      file_id UUID REFERENCES files(id) ON DELETE SET NULL,
+      message TEXT NOT NULL,
+      created_by TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_moderation_status ON files(moderation_status)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_moderation_events_created_at ON moderation_events(created_at DESC)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_user_warnings_user_id ON user_warnings(user_id)')
+
   console.log('Schema is up to date. No tables were dropped.')
   await pool.end()
 }

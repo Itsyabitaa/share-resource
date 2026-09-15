@@ -1,6 +1,8 @@
 import { GetServerSideProps } from 'next'
-import { getAccessibleFile } from '../../lib/dbSchema'
+import { canAccessFile, getAccessibleFile, getFileById } from '../../lib/dbSchema'
 import { auth } from '../../lib/auth'
+import { isAdminEmail } from '../../lib/admin'
+import { COMMUNITY_TAKEDOWN_MESSAGE, isFileRemoved } from '../../lib/moderation'
 import { extractHeadings } from '../../lib/toc'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -55,12 +57,37 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await auth.api.getSession({
       headers: context.req.headers as any
     })
-    const fileData = await getAccessibleFile(id, session?.user?.id)
+    const fileData = await getFileById(id)
+    const isAdmin = isAdminEmail(session?.user?.email)
 
     if (!fileData) {
+      return { notFound: true }
+    }
+
+    if (isFileRemoved(fileData.moderation_status) && !isAdmin) {
       return {
-        notFound: true
+        props: {
+          moderated: true,
+          fileId: id,
+          title: fileData.title,
+          moderationMessage: fileData.moderation_reason || COMMUNITY_TAKEDOWN_MESSAGE,
+          isGuestPost: !fileData.user_id,
+          content: '',
+          author: fileData.author || null,
+          fileType: fileData.file_type,
+          createdAt: fileData.created_at,
+          updatedAt: fileData.updated_at,
+          isPublic: false,
+          expiresAt: null,
+          isOwner: false,
+          initialViewCount: 0,
+          initialShareCount: 0,
+        },
       }
+    }
+
+    if (!canAccessFile(fileData, session?.user?.id, { isAdmin })) {
+      return { notFound: true }
     }
 
     const response = await fetch(fileData.cloudinary_url)
@@ -68,6 +95,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     return {
       props: {
+        moderated: false,
         fileId: id,
         content,
         title: fileData.title,
@@ -80,7 +108,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         isOwner: !!session?.user?.id && session.user.id === fileData.user_id,
         initialViewCount: fileData.view_count ?? 0,
         initialShareCount: fileData.share_count ?? 0,
-      }
+        moderationMessage: fileData.moderation_reason || null,
+        moderationStatus: fileData.moderation_status || 'active',
+        isGuestPost: !fileData.user_id,
+      },
     }
   } catch (error) {
     console.error('Error fetching file:', error)
@@ -90,24 +121,40 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 }
 
-export default function FilePage({
-  fileId,
-  content,
-  title,
-  author,
-  fileType,
-  createdAt,
-  updatedAt,
-  isPublic,
-  expiresAt,
-  isOwner,
-  initialViewCount,
-  initialShareCount,
+function ModeratedFileScreen({
+  moderationMessage,
+  isGuestPost,
 }: {
+  moderationMessage?: string | null
+  isGuestPost?: boolean
+}) {
+  const { sitePath } = useAppPaths()
+
+  return (
+    <div className="page-shell" style={{ maxWidth: 640, margin: '48px auto', textAlign: 'center' }}>
+      <div className="moderation-notice removed">
+        <p className="composer-kicker">Unavailable</p>
+        <h1 className="page-title">Content removed</h1>
+        <p className="page-subtitle">{moderationMessage || COMMUNITY_TAKEDOWN_MESSAGE}</p>
+        {isGuestPost && (
+          <p style={{ opacity: 0.75, marginTop: 12 }}>
+            This was a guest post and is no longer available.
+          </p>
+        )}
+        <Link href={sitePath('/')} className="header-btn primary" style={{ display: 'inline-block', marginTop: 24 }}>
+          Back to md-nest
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+export default function FilePage(props: {
+  moderated?: boolean
   fileId: string
   content: string
   title: string
-  author?: string
+  author?: string | null
   fileType: string
   createdAt: string
   updatedAt: string
@@ -116,7 +163,35 @@ export default function FilePage({
   isOwner: boolean
   initialViewCount: number
   initialShareCount: number
+  moderationMessage?: string | null
+  moderationStatus?: string | null
+  isGuestPost?: boolean
 }) {
+  if (props.moderated) {
+    return (
+      <ModeratedFileScreen
+        moderationMessage={props.moderationMessage}
+        isGuestPost={props.isGuestPost}
+      />
+    )
+  }
+
+  const {
+    fileId,
+    content,
+    title,
+    author,
+    fileType,
+    createdAt,
+    updatedAt,
+    isPublic,
+    expiresAt,
+    isOwner,
+    initialViewCount,
+    initialShareCount,
+    moderationMessage,
+    moderationStatus,
+  } = props
   const { colors } = useTheme()
   const [copied, setCopied] = useState(false)
   const [copiedMd, setCopiedMd] = useState(false)

@@ -1,6 +1,7 @@
 import sql from './neonClient'
 import { v4 as uuidv4 } from 'uuid'
 import type { StorageTier, UserPlan } from './storagePolicy'
+import { isFileRemoved } from './moderation'
 
 export async function createTables() {
   try {
@@ -109,6 +110,10 @@ export type FileRecord = {
   view_count?: number
   share_count?: number
   edit_count?: number
+  moderation_status?: string | null
+  moderation_reason?: string | null
+  moderated_at?: string | null
+  moderated_by?: string | null
 }
 
 export type FileEditRecord = {
@@ -141,10 +146,15 @@ export function isFileExpired(expiresAt?: string | Date | null): boolean {
 }
 
 export function canAccessFile(
-  file: Pick<FileRecord, 'is_public' | 'user_id' | 'expires_at'>,
-  userId?: string | null
+  file: Pick<FileRecord, 'is_public' | 'user_id' | 'expires_at' | 'moderation_status'>,
+  userId?: string | null,
+  options?: { isAdmin?: boolean }
 ): boolean {
   if (isFileExpired(file.expires_at)) {
+    return false
+  }
+
+  if (isFileRemoved(file.moderation_status) && !options?.isAdmin) {
     return false
   }
 
@@ -179,7 +189,11 @@ export async function getFileById(id: string): Promise<FileRecord | undefined> {
         folder_id,
         COALESCE(view_count, 0)::int as view_count,
         COALESCE(share_count, 0)::int as share_count,
-        COALESCE(edit_count, 0)::int as edit_count
+        COALESCE(edit_count, 0)::int as edit_count,
+        COALESCE(moderation_status, 'active') as moderation_status,
+        moderation_reason,
+        moderated_at::text as moderated_at,
+        moderated_by
       FROM files WHERE id = ${id}
     `
     return result[0] as FileRecord | undefined
@@ -233,6 +247,7 @@ export async function getPublicFiles(options: {
       ) c ON f.id = c.file_id
       WHERE f.is_public = true
         AND (f.expires_at IS NULL OR f.expires_at > NOW())
+        AND COALESCE(f.moderation_status, 'active') != 'removed'
     `
 
     const params: any[] = []
