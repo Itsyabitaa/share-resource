@@ -177,6 +177,7 @@ export default function Sidebar({
   const [isAdmin, setIsAdmin] = useState(false)
 
   const isWorkspace = router.pathname === '/workspace'
+  const isDashboard = router.pathname === '/dashboard'
   const isAdminPage = router.pathname === '/admin'
   const adminTab = typeof router.query.tab === 'string' ? router.query.tab : 'overview'
 
@@ -325,6 +326,19 @@ export default function Sidebar({
     <aside className={`workspace-sidebar${isOpen ? ' is-open' : ''}`}>
       <div className="sidebar-section">
         <p className="sidebar-label">Workspace</p>
+        <button
+          type="button"
+          className={`sidebar-nav-item${isDashboard ? ' is-active' : ''}`}
+          onClick={() => {
+            router.push(sitePath('/dashboard'))
+            afterNavigate()
+          }}
+        >
+          <span className="sidebar-nav-leading">
+            <IconDashboard />
+            <span>My dashboard</span>
+          </span>
+        </button>
         <button
           type="button"
           className={`sidebar-nav-item${activeKey === null && isWorkspace ? ' is-active' : ''}`}

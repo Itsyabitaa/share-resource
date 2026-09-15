@@ -869,6 +869,114 @@ body.dark .sidebar-admin-section .sidebar-admin-item.is-active {
   background: rgba(234, 179, 8, 0.08);
 }
 
+.user-dashboard {
+  width: 100%;
+  max-width: 1120px;
+  padding-bottom: 48px;
+}
+
+.user-dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.user-dashboard-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-plan-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.user-plan-badge.pro {
+  background: rgba(15, 118, 110, 0.14);
+  color: var(--brand);
+}
+
+.user-plan-badge.free {
+  background: rgba(120, 113, 108, 0.14);
+}
+
+.user-dashboard-alert {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: rgba(220, 38, 38, 0.06);
+  font-size: 0.92rem;
+}
+
+.user-dashboard-alert.warn {
+  border-color: rgba(217, 119, 6, 0.3);
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.user-dashboard-alert a {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.user-dashboard-section {
+  margin-bottom: 24px;
+}
+
+.user-dashboard-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.user-dashboard-expiring {
+  margin-bottom: 16px;
+}
+
+.user-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-doc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 113, 108, 0.14);
+}
+
+.user-doc-main {
+  min-width: 0;
+}
+
+.user-dashboard-quick {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .user-dashboard-split {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-dashboard {
   width: 100%;
   max-width: none;

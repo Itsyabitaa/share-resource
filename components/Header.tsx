@@ -45,7 +45,12 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
 
   const navItems = [
     { href: sitePath('/'), label: 'Create', match: '/' },
-    ...(session?.user ? [{ href: sitePath('/workspace'), label: 'Workspace', match: '/workspace' }] : []),
+    ...(session?.user
+      ? [
+          { href: sitePath('/dashboard'), label: 'Dashboard', match: '/dashboard' },
+          { href: sitePath('/workspace'), label: 'Workspace', match: '/workspace' },
+        ]
+      : []),
     { href: sitePath('/explore'), label: 'Explore', match: '/explore' },
     { href: sitePath('/pricing'), label: 'Pricing', match: '/pricing' },
     { href: sitePath('/about'), label: 'About', match: '/about' },
@@ -155,6 +160,9 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
                       {session.user.email}
                     </div>
                   </div>
+                  <Link href={sitePath('/dashboard')} onClick={() => setShowProfileMenu(false)}>
+                    <span className="nav-link" style={{ display: 'block' }}>Dashboard</span>
+                  </Link>
                   <Link href={sitePath('/settings')} onClick={() => setShowProfileMenu(false)}>
                     <span className="nav-link" style={{ display: 'block' }}>Settings</span>
                   </Link>

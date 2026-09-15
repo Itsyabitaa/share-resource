@@ -15,7 +15,7 @@ interface AppPathProviderProps {
 
 const AppPathContext = createContext<AppPathHelpers | null>(null)
 
-const staticRoutes = ['/explore', '/about', '/login', '/signup', '/settings', '/workspace', '/pricing', '/admin']
+const staticRoutes = ['/explore', '/about', '/login', '/signup', '/settings', '/workspace', '/dashboard', '/pricing', '/admin']
 
 function stripQueryAndHash(value: string) {
   return value.split('?')[0].split('#')[0]
