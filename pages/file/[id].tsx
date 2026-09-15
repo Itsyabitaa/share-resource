@@ -80,34 +80,13 @@ export default function FilePage({
   isOwner: boolean
 }) {
   const { colors } = useTheme()
+  const [copied, setCopied] = useState(false)
   const [copiedMd, setCopiedMd] = useState(false)
-  const headings = extractHeadings(content)
-
-  const handleCopyMarkdown = async () => {
-    await navigator.clipboard.writeText(content)
-    setCopiedMd(true)
-    setTimeout(() => setCopiedMd(false), 2000)
-  }
-
-  const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${title || 'document'}.md`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleDeleteFile = async () => {
-    if (!confirm('Delete this document permanently?')) return
-    const res = await fetch(apiPath(`/files/${fileId}`), { method: 'DELETE' })
-    if (res.ok) router.push(sitePath('/workspace'))
-  }
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
+  const headings = extractHeadings(content)
 
   const [likeCount, setLikeCount] = useState(0)
   const [commentCount, setCommentCount] = useState(0)
@@ -147,6 +126,28 @@ export default function FilePage({
     navigator.clipboard.writeText(currentUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCopyMarkdown = async () => {
+    await navigator.clipboard.writeText(content)
+    setCopiedMd(true)
+    setTimeout(() => setCopiedMd(false), 2000)
+  }
+
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${title || 'document'}.md`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDeleteFile = async () => {
+    if (!confirm('Delete this document permanently?')) return
+    const res = await fetch(apiPath(`/files/${fileId}`), { method: 'DELETE' })
+    if (res.ok) router.push(sitePath('/workspace'))
   }
 
   const handleLike = async () => {
