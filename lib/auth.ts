@@ -1,5 +1,8 @@
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
+
+neonConfig.webSocketConstructor = ws;
 
 function getAuthBaseURL() {
     const configured = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL
@@ -23,6 +26,7 @@ function getTrustedOrigins() {
     const candidates = [
         process.env.BETTER_AUTH_URL,
         process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
+        "https://mdnest.vercel.app",
         process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.replace(/^https?:\/\//, '')}` : undefined,
         process.env.VERCEL_PROJECT_PRODUCTION_URL
             ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/^https?:\/\//, '')}`
@@ -41,6 +45,10 @@ let pool: Pool | undefined
 
 function getPool() {
     if (!pool) {
+        if (!process.env.DATABASE_URL) {
+            throw new Error("DATABASE_URL is not set")
+        }
+
         pool = new Pool({
             connectionString: process.env.DATABASE_URL,
         })
@@ -81,7 +89,7 @@ function createAuth() {
 
 let authInstance: ReturnType<typeof createAuth> | undefined
 
-function getAuth() {
+export function getAuthInstance() {
     if (!authInstance) {
         authInstance = createAuth()
     }
@@ -90,9 +98,12 @@ function getAuth() {
 
 export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
     get(_target, prop, receiver) {
-        const instance = getAuth() as any
+        const instance = getAuthInstance() as any
         const value = instance[prop]
         return typeof value === 'function' ? value.bind(instance) : Reflect.get(instance, prop, receiver)
+    },
+    has(_target, prop) {
+        return prop in getAuthInstance()
     },
 })
 

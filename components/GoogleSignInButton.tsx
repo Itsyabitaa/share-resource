@@ -38,6 +38,17 @@ export default function GoogleSignInButton({
                 const message = getAuthErrorMessage(result.error, 'Google sign-in failed.')
                 onError?.(message)
                 setLoading(false)
+                return
+            }
+
+            const redirectUrl =
+                (result.data as { url?: string } | undefined)?.url ||
+                (result.data as { redirect?: boolean; url?: string } | undefined)?.redirect === true
+                    ? (result.data as { url?: string }).url
+                    : undefined
+
+            if (redirectUrl) {
+                window.location.href = redirectUrl
             }
         } catch (err: unknown) {
             const message = getAuthErrorMessage(err, 'Google sign-in failed.')

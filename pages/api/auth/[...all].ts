@@ -1,7 +1,7 @@
-import { auth } from "../../../lib/auth";
+import { getAuthInstance } from "../../../lib/auth";
 import { toNodeHandler } from "better-auth/node";
 
-export default toNodeHandler(auth);
+export default toNodeHandler(getAuthInstance());
 
 export const config = {
     api: {
