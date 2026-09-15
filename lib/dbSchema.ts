@@ -752,12 +752,38 @@ export async function getAllUserFiles(userId: string) {
   }
 }
 
-export async function getUserPlan(userId: string): Promise<UserPlan> {
+function isMissingPlanColumn(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  return /column "plan"/i.test(message) || /does not exist/i.test(message)
+}
+
+export async function resolveOwnedFolderId(
+  folderId: unknown,
+  userId?: string
+): Promise<string | undefined> {
+  if (!userId || typeof folderId !== 'string' || !folderId.trim()) {
+    return undefined
+  }
+
   const result = await sql`
-    SELECT plan FROM "user" WHERE id = ${userId}
+    SELECT id FROM folders WHERE id = ${folderId} AND user_id = ${userId}
   `
-  const plan = result[0]?.plan
-  return plan === 'pro' ? 'pro' : 'free'
+  return result[0]?.id
+}
+
+export async function getUserPlan(userId: string): Promise<UserPlan> {
+  try {
+    const result = await sql`
+      SELECT plan FROM "user" WHERE id = ${userId}
+    `
+    return result[0]?.plan === 'pro' ? 'pro' : 'free'
+  } catch (error) {
+    if (isMissingPlanColumn(error)) {
+      console.warn('user.plan column missing — defaulting to free. Run npm run db:setup.')
+      return 'free'
+    }
+    throw error
+  }
 }
 
 export async function setUserPlan(userId: string, plan: UserPlan) {

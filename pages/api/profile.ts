@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../lib/auth'
+import { getUserPlan } from '../../lib/dbSchema'
 import sql from '../../lib/neonClient'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,17 +18,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'GET') {
             // Get current profile
             const result = await sql`
-        SELECT name, email, plan FROM "user" WHERE id = ${userId}
+        SELECT name, email FROM "user" WHERE id = ${userId}
       `
 
             if (result.length === 0) {
                 return res.status(404).json({ error: 'User not found' })
             }
 
+            const plan = await getUserPlan(userId)
+
             return res.status(200).json({
                 name: result[0].name || '',
                 email: result[0].email,
-                plan: result[0].plan === 'pro' ? 'pro' : 'free',
+                plan,
             })
         }
 
