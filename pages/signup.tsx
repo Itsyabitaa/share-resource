@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { signUp } from '../lib/auth-client'
+import { getAuthErrorMessage } from '../lib/authErrors'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
@@ -33,8 +34,7 @@ export default function Signup() {
 
             // Check if there was an error
             if (result.error) {
-                console.log('Signup error object:', result.error)
-                const errorMessage = result.error.message || result.error.toString() || 'Signup failed. Please try again.'
+                const errorMessage = getAuthErrorMessage(result.error, 'Signup failed. Please try again.')
                 setError(errorMessage)
                 setToast({ message: errorMessage, type: 'error' })
                 setLoading(false)
@@ -46,8 +46,8 @@ export default function Signup() {
             setTimeout(() => {
                 window.location.href = sitePath('/')
             }, 1000)
-        } catch (err: any) {
-            const errorMessage = err.message || 'Signup failed. Please try again.'
+        } catch (err: unknown) {
+            const errorMessage = getAuthErrorMessage(err, 'Signup failed. Please try again.')
             setError(errorMessage)
             setToast({ message: errorMessage, type: 'error' })
             setLoading(false)

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { signIn } from '../lib/auth-client'
+import { getAuthErrorMessage } from '../lib/authErrors'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
@@ -31,7 +32,7 @@ export default function Login() {
 
             // Check if there was an error
             if (result.error) {
-                const errorMessage = result.error.message || 'Login failed. Please check your credentials.'
+                const errorMessage = getAuthErrorMessage(result.error, 'Login failed. Please check your credentials.')
                 setError(errorMessage)
                 setToast({ message: errorMessage, type: 'error' })
                 setLoading(false)
@@ -45,8 +46,8 @@ export default function Login() {
             setTimeout(() => {
                 window.location.href = safeRedirect
             }, 1000)
-        } catch (err: any) {
-            const errorMessage = err.message || 'Login failed. Please check your credentials.'
+        } catch (err: unknown) {
+            const errorMessage = getAuthErrorMessage(err, 'Login failed. Please check your credentials.')
             setError(errorMessage)
             setToast({ message: errorMessage, type: 'error' })
             setLoading(false)
