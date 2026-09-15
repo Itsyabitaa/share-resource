@@ -148,6 +148,7 @@ function shouldKeepStandalone(trimmed: string): boolean {
     MD_QUOTE.test(trimmed) ||
     MD_FENCE.test(trimmed) ||
     MD_HR.test(trimmed) ||
+    /^[=_-]{3,}$/.test(trimmed) ||
     isBulletLine(trimmed) ||
     isOrderedLine(trimmed) ||
     isHeadingCandidate(trimmed) ||
@@ -158,6 +159,9 @@ function shouldKeepStandalone(trimmed: string): boolean {
 }
 
 function isSoftWrapCandidate(current: string, next: string): boolean {
+  if (/^[=_-]{3,}$/.test(next) || MD_HR.test(next)) return false
+  if (/^[=_-]{3,}$/.test(current)) return false
+
   // Don't join if current already ends a sentence and next looks like a new sentence/title
   const endsSentence = /[.!?]"?$/.test(current)
   const nextStartsLower = /^[a-z]/.test(next)
@@ -321,17 +325,20 @@ function classifyHeading(
   foundTitle: boolean,
   isFirstContent: boolean
 ): { level: number; text: string } | null {
-  // ALL CAPS multi-word title
+  // ALL CAPS title (one strong word, or multi-word)
   if (
     trimmed.length >= 4 &&
     trimmed.length <= 80 &&
     trimmed === trimmed.toUpperCase() &&
     /[A-Z]/.test(trimmed) &&
-    trimmed.split(/\s+/).length >= 2 &&
     /^[A-Z0-9][A-Z0-9\s\-–—:&/]+$/.test(trimmed) &&
     !/[.!?]$/.test(trimmed)
   ) {
-    return { level: foundTitle ? 2 : 1, text: toTitleCase(trimmed) }
+    const words = trimmed.split(/\s+/).length
+    if (words >= 2 || trimmed.length >= 5) {
+      const text = words >= 2 ? toTitleCase(trimmed) : trimmed.charAt(0) + trimmed.slice(1).toLowerCase()
+      return { level: foundTitle || !isFirstContent ? 2 : 1, text }
+    }
   }
 
   // "Section Title:" short label
@@ -381,10 +388,11 @@ function isHeadingCandidate(trimmed: string): boolean {
   if (trimmed.length < 3 || trimmed.length > 90) return false
   if (/[.!?]$/.test(trimmed)) return false
   if (isBulletLine(trimmed) || isOrderedLine(trimmed)) return false
+  if (/^[=_-]{3,}$/.test(trimmed)) return false
   if (
     trimmed === trimmed.toUpperCase() &&
     /[A-Z]/.test(trimmed) &&
-    trimmed.split(/\s+/).length >= 2
+    (trimmed.split(/\s+/).length >= 2 || trimmed.length >= 5)
   ) {
     return true
   }

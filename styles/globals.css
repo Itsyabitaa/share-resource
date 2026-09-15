@@ -721,9 +721,10 @@ body.dark .chip.is-on {
   border-color: var(--brand);
 }
 
-.ghost-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.ghost-btn.is-on {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--chip-on);
 }
 
 .composer-stage-footer {
