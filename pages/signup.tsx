@@ -142,7 +142,7 @@ export default function Signup() {
                     <>
                         <GoogleSignInButton
                             callbackURL={safeRedirect}
-                            errorCallbackURL={sitePath('/login?error=google')}
+                            errorCallbackURL={sitePath('/login')}
                             onError={(message) => {
                                 setError(message)
                                 setToast({ message, type: 'error' })

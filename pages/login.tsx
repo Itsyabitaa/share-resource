@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { signIn } from '../lib/auth-client'
-import { getAuthErrorMessage } from '../lib/authErrors'
+import { getAuthErrorMessage, getSocialLoginUrlErrorMessage } from '../lib/authErrors'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
@@ -24,10 +24,17 @@ export default function Login() {
     const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : sitePath('/')
 
     useEffect(() => {
-        if (router.query.error === 'google') {
-            setError('Google sign-in was cancelled or failed. Please try again.')
-        }
-    }, [router.query.error])
+        if (!router.isReady) return
+
+        const message = getSocialLoginUrlErrorMessage(router.query)
+        if (!message) return
+
+        setError(message)
+        setToast({ message, type: 'error' })
+
+        const { error: _error, error_description: _errorDescription, ...rest } = router.query
+        router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true })
+    }, [router.isReady, router.query.error, router.query.error_description])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -142,11 +149,26 @@ export default function Login() {
                     </p>
                 </div>
 
+                {error && (
+                    <div className="auth-error-banner" style={{
+                        backgroundColor: theme === 'dark' ? 'rgba(255, 68, 68, 0.1)' : 'rgba(255, 0, 0, 0.06)',
+                        color: theme === 'dark' ? '#ffb4b4' : '#b91c1c',
+                        padding: '0.875rem 1rem',
+                        borderRadius: '10px',
+                        marginBottom: '1.25rem',
+                        fontSize: '0.9rem',
+                        border: theme === 'dark' ? '1px solid rgba(255, 68, 68, 0.25)' : '1px solid rgba(220, 38, 38, 0.2)',
+                        animation: 'slideIn 0.3s ease',
+                    }}>
+                        {error}
+                    </div>
+                )}
+
                 {isGoogleAuthEnabled() && (
                     <>
                         <GoogleSignInButton
                             callbackURL={safeRedirect}
-                            errorCallbackURL={sitePath('/login?error=google')}
+                            errorCallbackURL={sitePath('/login')}
                             onError={(message) => {
                                 setError(message)
                                 setToast({ message, type: 'error' })
@@ -241,21 +263,6 @@ export default function Login() {
                             }}
                         />
                     </div>
-
-                    {error && (
-                        <div style={{
-                            backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                            color: colors.text,
-                            padding: '0.875rem 1rem',
-                            borderRadius: '10px',
-                            marginBottom: '1.5rem',
-                            fontSize: '0.9rem',
-                            borderLeft: `4px solid ${theme === 'dark' ? '#ff4444' : '#ff0000'}`,
-                            animation: 'slideIn 0.3s ease'
-                        }}>
-                            {error}
-                        </div>
-                    )}
 
                     <button
                         type="submit"
