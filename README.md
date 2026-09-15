@@ -47,12 +47,24 @@ First-time Google sign-in creates an account automatically (same as email signup
 
 Run `npm run db:setup` after pulling to add the `user.plan` column. Set `PRO_PROMO_CODE` or `ENABLE_SELF_SERVE_PRO=true` to allow upgrades from the pricing page.
 
-### Admin (grant Pro)
+### Admin dashboard
 
 1. Set `ADMIN_EMAILS=your@email.com` in `.env.local` and Vercel (comma-separated for multiple admins).
-2. Sign in with that email.
-3. Open **Account → Admin** or visit `/admin`.
-4. Search users by email/name, or enter an email and choose **Pro** / **Free**.
+2. Run `npm run db:setup` to add moderation tables.
+3. Sign in with that email and open **Account → Admin** or `/admin`.
+
+**Dashboard tabs:**
+- **Overview** — users, documents, views, shares, removals
+- **Viral posts** — trending by views/shares/likes
+- **Moderation** — warn, set private, takedown, or restore posts
+- **Activity** — edits, uploads, moderation events
+- **Pro plans** — grant or revoke Pro by email
+
+**Moderation actions:**
+- **Warn** — flags the post and records a user warning (signed-in authors)
+- **Private** — hides from Explore; only the owner can open it
+- **Takedown** — removes the post; visitors see a community guidelines message (guest posts too)
+- **Restore** — clears moderation status
 
 Optional CLI (uses `ADMIN_SECRET`):
 
