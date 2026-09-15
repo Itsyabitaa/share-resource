@@ -82,6 +82,12 @@ function createAuth() {
         emailAndPassword: {
             enabled: true,
         },
+        account: {
+            accountLinking: {
+                enabled: true,
+                trustedProviders: socialProviders ? ['google'] : [],
+            },
+        },
         ...(socialProviders ? { socialProviders } : {}),
         trustedOrigins: getTrustedOrigins(),
     })

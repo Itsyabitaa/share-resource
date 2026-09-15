@@ -45,11 +45,31 @@ async function setup() {
       "accessToken" TEXT,
       "refreshToken" TEXT,
       "idToken" TEXT,
-      "expiresAt" TIMESTAMP,
+      "accessTokenExpiresAt" TIMESTAMP,
+      "refreshTokenExpiresAt" TIMESTAMP,
+      scope TEXT,
       password TEXT,
       "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
       "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
     )
+  `)
+
+  await pool.query(`ALTER TABLE account ADD COLUMN IF NOT EXISTS "accessTokenExpiresAt" TIMESTAMP`)
+  await pool.query(`ALTER TABLE account ADD COLUMN IF NOT EXISTS "refreshTokenExpiresAt" TIMESTAMP`)
+  await pool.query(`ALTER TABLE account ADD COLUMN IF NOT EXISTS scope TEXT`)
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'account' AND column_name = 'expiresAt'
+      ) THEN
+        UPDATE account
+        SET "accessTokenExpiresAt" = "expiresAt"
+        WHERE "accessTokenExpiresAt" IS NULL
+          AND "expiresAt" IS NOT NULL;
+      END IF;
+    END $$;
   `)
 
   await pool.query(`
@@ -173,6 +193,8 @@ async function setup() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_likes_file_id ON likes(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_file_id ON comments(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_account_user_id ON account("userId")')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_account_provider ON account("providerId", "accountId")')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_file_id ON file_edits(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_created_at ON file_edits(created_at DESC)')
 
