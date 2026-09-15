@@ -5,6 +5,7 @@ import { useTheme } from '../lib/ThemeContext'
 import { useSidebar } from '../lib/SidebarContext'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import Footer from './Footer'
 import { AppPathProvider, getAppBasePath, useAppPaths } from '../lib/appPaths'
 
 interface AppLayoutProps {
@@ -57,6 +58,7 @@ function LayoutInner({ children }: AppLayoutProps) {
       <div className="app-main">
         <Header onResetCreate={handleResetCreate} />
         {children}
+        <Footer />
       </div>
     </div>
   )

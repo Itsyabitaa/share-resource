@@ -67,7 +67,7 @@ export default function FilePage({
   fileType: string
   createdAt: string
 }) {
-  const { colors, theme } = useTheme()
+  const { colors } = useTheme()
   const [copied, setCopied] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()

@@ -147,6 +147,7 @@ body.dark .brand {
   align-items: center;
   gap: 12px;
   padding: 0 16px;
+  width: 100%;
   border-bottom: 1px solid rgba(120, 113, 108, 0.18);
   background: color-mix(in srgb, var(--header-bg, #f7f6f3) 88%, transparent);
   backdrop-filter: blur(14px);
