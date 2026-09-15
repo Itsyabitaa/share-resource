@@ -19,6 +19,33 @@ interface Comment {
   author_name?: string
 }
 
+interface TimelineEntry {
+  id: string
+  kind: 'create' | 'content' | 'metadata'
+  label: string
+  at: string
+  title?: string | null
+}
+
+interface DocStats {
+  viewCount: number
+  shareCount: number
+  editCount: number
+  createdAt: string
+  updatedAt: string
+  timeline: TimelineEntry[]
+}
+
+function formatWhen(iso: string) {
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string
 
@@ -45,9 +72,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         author: fileData.author,
         fileType: fileData.file_type,
         createdAt: fileData.created_at,
+        updatedAt: fileData.updated_at,
         isPublic: !!fileData.is_public,
         expiresAt: fileData.expires_at || null,
         isOwner: !!session?.user?.id && session.user.id === fileData.user_id,
+        initialViewCount: fileData.view_count ?? 0,
+        initialShareCount: fileData.share_count ?? 0,
       }
     }
   } catch (error) {
@@ -65,9 +95,12 @@ export default function FilePage({
   author,
   fileType,
   createdAt,
+  updatedAt,
   isPublic,
   expiresAt,
   isOwner,
+  initialViewCount,
+  initialShareCount,
 }: {
   fileId: string
   content: string
@@ -75,9 +108,12 @@ export default function FilePage({
   author?: string
   fileType: string
   createdAt: string
+  updatedAt: string
   isPublic: boolean
   expiresAt: string | null
   isOwner: boolean
+  initialViewCount: number
+  initialShareCount: number
 }) {
   const { colors } = useTheme()
   const [copied, setCopied] = useState(false)
@@ -96,11 +132,41 @@ export default function FilePage({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'document' | 'comments'>('document')
+  const [viewCount, setViewCount] = useState(initialViewCount)
+  const [shareCount, setShareCount] = useState(initialShareCount)
+  const [docStats, setDocStats] = useState<DocStats | null>(null)
 
   useEffect(() => {
     setCurrentUrl(window.location.href)
     loadSocialData()
+    loadDocStats()
   }, [fileId])
+
+  const loadDocStats = async () => {
+    try {
+      await fetch(apiPath(`/files/${fileId}/track`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'view' }),
+      }).then(async (res) => {
+        if (res.ok) {
+          const data = await res.json()
+          if (typeof data.viewCount === 'number') setViewCount(data.viewCount)
+          if (typeof data.shareCount === 'number') setShareCount(data.shareCount)
+        }
+      })
+
+      const statsRes = await fetch(apiPath(`/files/${fileId}/stats`))
+      if (statsRes.ok) {
+        const stats = await statsRes.json()
+        setDocStats(stats)
+        setViewCount(stats.viewCount ?? viewCount)
+        setShareCount(stats.shareCount ?? shareCount)
+      }
+    } catch (error) {
+      console.error('Error loading document stats:', error)
+    }
+  }
 
   const loadSocialData = async () => {
     try {
@@ -122,10 +188,24 @@ export default function FilePage({
     }
   }
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(currentUrl)
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(currentUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+
+    try {
+      const res = await fetch(apiPath(`/files/${fileId}/track`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'share' }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data.shareCount === 'number') setShareCount(data.shareCount)
+      }
+    } catch (error) {
+      console.error('Error tracking share:', error)
+    }
   }
 
   const handleCopyMarkdown = async () => {
@@ -253,6 +333,12 @@ export default function FilePage({
               {userHasLiked ? '♥' : '♡'} {likeCount}
             </button>
             <span className="header-btn" style={{ cursor: 'default' }}>
+              👁 {viewCount}
+            </span>
+            <span className="header-btn" style={{ cursor: 'default' }}>
+              🔗 {shareCount}
+            </span>
+            <span className="header-btn" style={{ cursor: 'default' }}>
               💬 {commentCount}
             </span>
             <button
@@ -329,11 +415,21 @@ export default function FilePage({
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '18px' }}>📅</span>
-                    <span>{new Date(createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}</span>
+                    <span>Created {formatWhen(createdAt)}</span>
+                  </div>
+                  {updatedAt !== createdAt && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '18px' }}>✏️</span>
+                      <span>Updated {formatWhen(updatedAt)}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>👁</span>
+                    <span>{viewCount} {viewCount === 1 ? 'view' : 'views'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '18px' }}>🔗</span>
+                    <span>{shareCount} {shareCount === 1 ? 'share' : 'shares'}</span>
                   </div>
                 </div>
 
@@ -683,8 +779,41 @@ export default function FilePage({
                 paddingBottom: '12px',
                 borderBottom: `1px solid ${colors.border}`
               }}>
+                <span style={{ color: colors.secondary, fontSize: '14px' }}>Views</span>
+                <span style={{ fontWeight: '600', fontSize: '14px' }}>{viewCount}</span>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '12px',
+                borderBottom: `1px solid ${colors.border}`
+              }}>
+                <span style={{ color: colors.secondary, fontSize: '14px' }}>Link copies</span>
+                <span style={{ fontWeight: '600', fontSize: '14px' }}>{shareCount}</span>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '12px',
+                borderBottom: `1px solid ${colors.border}`
+              }}>
                 <span style={{ color: colors.secondary, fontSize: '14px' }}>Created</span>
-                <span style={{ fontWeight: '600', fontSize: '14px' }}>{new Date(createdAt).toLocaleDateString()}</span>
+                <span style={{ fontWeight: '600', fontSize: '14px', textAlign: 'right' }}>{formatWhen(createdAt)}</span>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingBottom: '12px',
+                borderBottom: `1px solid ${colors.border}`
+              }}>
+                <span style={{ color: colors.secondary, fontSize: '14px' }}>Last updated</span>
+                <span style={{ fontWeight: '600', fontSize: '14px', textAlign: 'right' }}>{formatWhen(updatedAt)}</span>
               </div>
 
               <div style={{
@@ -699,6 +828,26 @@ export default function FilePage({
                 </div>
               </div>
             </div>
+
+            {(docStats?.timeline?.length ?? 0) > 0 && (
+              <div className="doc-timeline" style={{ marginTop: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, opacity: 0.7 }}>Timeline</div>
+                <ol className="doc-timeline-list">
+                  {docStats!.timeline.map((entry) => (
+                    <li key={entry.id} className="doc-timeline-item">
+                      <span className="doc-timeline-dot" aria-hidden />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{entry.label}</div>
+                        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>{formatWhen(entry.at)}</div>
+                        {entry.title && entry.kind !== 'create' && (
+                          <div style={{ fontSize: 12, opacity: 0.55, marginTop: 2 }}>{entry.title}</div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             <button
               onClick={handleLike}

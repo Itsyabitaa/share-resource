@@ -97,6 +97,20 @@ async function setup() {
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS storage_tier VARCHAR(20) DEFAULT 'guest'`)
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false`)
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS hashtags TEXT[]`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS view_count INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS share_count INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS edit_count INTEGER NOT NULL DEFAULT 0`)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS file_edits (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      file_id UUID NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+      user_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+      title VARCHAR(255),
+      edit_type VARCHAR(20) NOT NULL DEFAULT 'content',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_credentials (
@@ -143,6 +157,8 @@ async function setup() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_likes_file_id ON likes(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_comments_file_id ON comments(file_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_folders_user_id ON folders(user_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_file_id ON file_edits(file_id)')
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_file_edits_created_at ON file_edits(created_at DESC)')
 
   console.log('Schema is up to date. No tables were dropped.')
   await pool.end()

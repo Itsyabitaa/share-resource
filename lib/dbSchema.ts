@@ -84,6 +84,7 @@ export async function insertFile(
       VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
       RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags, user_id, expires_at, storage_tier, folder_id
     `
+    await recordFileEdit(id, userId || null, title, 'create')
     return result[0]
   } catch (error) {
     console.error('Error inserting file:', error)
@@ -104,6 +105,33 @@ export type FileRecord = {
   user_id?: string | null
   expires_at?: string | null
   folder_id?: string | null
+  view_count?: number
+  share_count?: number
+  edit_count?: number
+}
+
+export type FileEditRecord = {
+  id: string
+  file_id: string
+  user_id?: string | null
+  title?: string | null
+  edit_type: 'create' | 'content' | 'metadata'
+  created_at: string
+}
+
+export type FileStats = {
+  viewCount: number
+  shareCount: number
+  editCount: number
+  createdAt: string
+  updatedAt: string
+  timeline: Array<{
+    id: string
+    kind: 'create' | 'content' | 'metadata'
+    label: string
+    at: string
+    title?: string | null
+  }>
 }
 
 export function isFileExpired(expiresAt?: string | Date | null): boolean {
@@ -147,7 +175,10 @@ export async function getFileById(id: string): Promise<FileRecord | undefined> {
         is_public,
         user_id,
         expires_at::text as expires_at,
-        folder_id
+        folder_id,
+        COALESCE(view_count, 0)::int as view_count,
+        COALESCE(share_count, 0)::int as share_count,
+        COALESCE(edit_count, 0)::int as edit_count
       FROM files WHERE id = ${id}
     `
     return result[0] as FileRecord | undefined
@@ -495,6 +526,14 @@ export async function updateOwnedFile(
   const cloudinaryUrl = updates.cloudinaryUrl ?? current[0].cloudinary_url
   const fileSize = updates.fileSize ?? current[0].file_size
 
+  const contentChanged =
+    updates.cloudinaryUrl !== undefined && updates.cloudinaryUrl !== current[0].cloudinary_url
+  const metadataChanged =
+    (updates.title !== undefined && updates.title !== current[0].title) ||
+    (updates.author !== undefined && updates.author !== current[0].author) ||
+    (updates.isPublic !== undefined && updates.isPublic !== current[0].is_public) ||
+    (updates.hashtags !== undefined && JSON.stringify(updates.hashtags) !== JSON.stringify(current[0].hashtags ?? []))
+
   const result = await sql`
     UPDATE files
     SET
@@ -505,13 +544,136 @@ export async function updateOwnedFile(
       folder_id = ${folderId},
       cloudinary_url = ${cloudinaryUrl},
       file_size = ${fileSize},
-      updated_at = NOW()
+      updated_at = NOW(),
+      edit_count = CASE
+        WHEN ${contentChanged || metadataChanged} THEN COALESCE(edit_count, 0) + 1
+        ELSE COALESCE(edit_count, 0)
+      END
     WHERE id = ${fileId} AND user_id = ${userId}
     RETURNING
       id, title, author, cloudinary_url, is_public, hashtags, folder_id, user_id,
-      created_at::text as created_at, updated_at::text as updated_at
+      created_at::text as created_at, updated_at::text as updated_at,
+      COALESCE(view_count, 0)::int as view_count,
+      COALESCE(share_count, 0)::int as share_count,
+      COALESCE(edit_count, 0)::int as edit_count
   `
+
+  if (result[0]) {
+    if (contentChanged) {
+      await recordFileEdit(fileId, userId, title, 'content')
+    } else if (metadataChanged) {
+      await recordFileEdit(fileId, userId, title, 'metadata')
+    }
+  }
+
   return result[0]
+}
+
+export async function recordFileEdit(
+  fileId: string,
+  userId: string | null,
+  title: string | undefined,
+  editType: 'create' | 'content' | 'metadata'
+) {
+  try {
+    await sql`
+      INSERT INTO file_edits (file_id, user_id, title, edit_type)
+      VALUES (${fileId}, ${userId}, ${title || null}, ${editType})
+    `
+  } catch (error) {
+    console.error('Error recording file edit:', error)
+  }
+}
+
+export async function incrementFileView(fileId: string): Promise<number> {
+  const result = await sql`
+    UPDATE files
+    SET view_count = COALESCE(view_count, 0) + 1
+    WHERE id = ${fileId}
+    RETURNING COALESCE(view_count, 0)::int as view_count
+  `
+  return result[0]?.view_count ?? 0
+}
+
+export async function incrementFileShare(fileId: string): Promise<number> {
+  const result = await sql`
+    UPDATE files
+    SET share_count = COALESCE(share_count, 0) + 1
+    WHERE id = ${fileId}
+    RETURNING COALESCE(share_count, 0)::int as share_count
+  `
+  return result[0]?.share_count ?? 0
+}
+
+function timelineLabel(kind: string, editIndex: number): string {
+  if (kind === 'create') return 'Created'
+  if (kind === 'metadata') return editIndex > 0 ? `${ordinal(editIndex)} settings update` : 'Settings updated'
+  if (editIndex === 1) return '1st edit'
+  if (editIndex === 2) return '2nd edit'
+  if (editIndex === 3) return '3rd edit'
+  return `${editIndex}th edit`
+}
+
+function ordinal(n: number): string {
+  if (n === 1) return '1st'
+  if (n === 2) return '2nd'
+  if (n === 3) return '3rd'
+  return `${n}th`
+}
+
+export async function getFileStats(fileId: string): Promise<FileStats | null> {
+  try {
+    const file = await getFileById(fileId)
+    if (!file) return null
+
+    const edits = await sql`
+      SELECT
+        id,
+        file_id,
+        user_id,
+        title,
+        edit_type,
+        created_at::text as created_at
+      FROM file_edits
+      WHERE file_id = ${fileId}
+      ORDER BY created_at ASC
+    ` as FileEditRecord[]
+
+    let contentEditNum = 0
+    let metadataEditNum = 0
+    const timeline = edits.map((entry) => {
+      let label = 'Edited'
+      if (entry.edit_type === 'create') {
+        label = 'Created'
+      } else if (entry.edit_type === 'content') {
+        contentEditNum += 1
+        label = timelineLabel('content', contentEditNum)
+      } else if (entry.edit_type === 'metadata') {
+        metadataEditNum += 1
+        label = timelineLabel('metadata', metadataEditNum)
+      }
+
+      return {
+        id: entry.id,
+        kind: entry.edit_type,
+        label,
+        at: entry.created_at,
+        title: entry.title,
+      }
+    })
+
+    return {
+      viewCount: file.view_count ?? 0,
+      shareCount: file.share_count ?? 0,
+      editCount: file.edit_count ?? 0,
+      createdAt: file.created_at,
+      updatedAt: file.updated_at,
+      timeline,
+    }
+  } catch (error) {
+    console.error('Error getting file stats:', error)
+    throw error
+  }
 }
 
 export async function deleteOwnedFile(fileId: string, userId: string) {
