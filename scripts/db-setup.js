@@ -100,6 +100,22 @@ async function setup() {
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS view_count INTEGER NOT NULL DEFAULT 0`)
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS share_count INTEGER NOT NULL DEFAULT 0`)
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS edit_count INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'free'`)
+  await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP WITH TIME ZONE`)
+
+  // Apply 30-day retention to legacy signed-in files that were stored permanently.
+  await pool.query(`
+    UPDATE files f
+    SET
+      expires_at = f.created_at + INTERVAL '30 days',
+      storage_tier = 'free'
+    WHERE f.user_id IS NOT NULL
+      AND f.expires_at IS NULL
+      AND f.storage_tier IN ('registered', 'free')
+      AND NOT EXISTS (
+        SELECT 1 FROM "user" u WHERE u.id = f.user_id AND u.plan = 'pro'
+      )
+  `)
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS file_edits (

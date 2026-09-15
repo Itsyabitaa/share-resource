@@ -7,6 +7,8 @@ import { getAuthErrorMessage } from '../lib/authErrors'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
+import GoogleSignInButton from '../components/GoogleSignInButton'
+import { isGoogleAuthEnabled } from '../lib/googleAuth'
 
 export default function Signup() {
     const [name, setName] = useState('')
@@ -18,6 +20,9 @@ export default function Signup() {
     const router = useRouter()
     const { colors, theme } = useTheme()
     const { sitePath } = useAppPaths()
+
+    const redirect = typeof router.query.redirect === 'string' ? router.query.redirect : ''
+    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : sitePath('/')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -132,6 +137,21 @@ export default function Signup() {
                         Join us and start sharing your markdown
                     </p>
                 </div>
+
+                {isGoogleAuthEnabled() && (
+                    <>
+                        <GoogleSignInButton
+                            callbackURL={safeRedirect}
+                            errorCallbackURL={sitePath('/login?error=google')}
+                            onError={(message) => {
+                                setError(message)
+                                setToast({ message, type: 'error' })
+                            }}
+                            label="Sign up with Google"
+                        />
+                        <div className="auth-divider">or continue with email</div>
+                    </>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '1.5rem' }}>

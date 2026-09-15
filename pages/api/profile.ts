@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'GET') {
             // Get current profile
             const result = await sql`
-        SELECT name, email FROM "user" WHERE id = ${userId}
+        SELECT name, email, plan FROM "user" WHERE id = ${userId}
       `
 
             if (result.length === 0) {
@@ -26,7 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             return res.status(200).json({
                 name: result[0].name || '',
-                email: result[0].email
+                email: result[0].email,
+                plan: result[0].plan === 'pro' ? 'pro' : 'free',
             })
         }
 

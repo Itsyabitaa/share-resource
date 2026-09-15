@@ -34,6 +34,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
     { href: sitePath('/'), label: 'Create', match: '/' },
     ...(session?.user ? [{ href: sitePath('/workspace'), label: 'Workspace', match: '/workspace' }] : []),
     { href: sitePath('/explore'), label: 'Explore', match: '/explore' },
+    { href: sitePath('/pricing'), label: 'Pricing', match: '/pricing' },
     { href: sitePath('/about'), label: 'About', match: '/about' },
   ]
 
@@ -138,6 +139,9 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
                   </div>
                   <Link href={sitePath('/settings')} onClick={() => setShowProfileMenu(false)}>
                     <span className="nav-link" style={{ display: 'block' }}>Settings</span>
+                  </Link>
+                  <Link href={sitePath('/pricing')} onClick={() => setShowProfileMenu(false)}>
+                    <span className="nav-link" style={{ display: 'block' }}>Pricing</span>
                   </Link>
                   <button
                     type="button"

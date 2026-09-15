@@ -1,5 +1,6 @@
 import sql from './neonClient'
 import { v4 as uuidv4 } from 'uuid'
+import type { StorageTier, UserPlan } from './storagePolicy'
 
 export async function createTables() {
   try {
@@ -74,7 +75,7 @@ export async function insertFile(
   hashtags: string[] = [],
   userId?: string,
   expiresAt?: Date,
-  storageTier: 'guest' | 'registered' = 'guest',
+  storageTier: StorageTier = 'guest',
   folderId?: string
 ) {
   try {
@@ -738,7 +739,8 @@ export async function getAllUserFiles(userId: string) {
         created_at::text as created_at,
         folder_id,
         is_public,
-        expires_at::text as expires_at
+        expires_at::text as expires_at,
+        storage_tier
       FROM files 
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
@@ -748,4 +750,28 @@ export async function getAllUserFiles(userId: string) {
     console.error('Error getting all user files:', error)
     throw error
   }
+}
+
+export async function getUserPlan(userId: string): Promise<UserPlan> {
+  const result = await sql`
+    SELECT plan FROM "user" WHERE id = ${userId}
+  `
+  const plan = result[0]?.plan
+  return plan === 'pro' ? 'pro' : 'free'
+}
+
+export async function setUserPlan(userId: string, plan: UserPlan) {
+  await sql`
+    UPDATE "user"
+    SET plan = ${plan}, "updatedAt" = NOW()
+    WHERE id = ${userId}
+  `
+}
+
+export async function applyProStorageToUserFiles(userId: string) {
+  await sql`
+    UPDATE files
+    SET expires_at = NULL, storage_tier = 'pro', updated_at = NOW()
+    WHERE user_id = ${userId}
+  `
 }

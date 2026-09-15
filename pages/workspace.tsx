@@ -66,7 +66,11 @@ export default function WorkspacePage() {
   return (
     <div className="page-shell wide" style={{ color: colors.text }}>
       <h1 className="page-title">My documents</h1>
-      <p className="page-subtitle">Search, open, move, or delete your nest.</p>
+      <p className="page-subtitle">
+        Search, open, move, or delete your nest. Free documents expire after 30 days —{' '}
+        <a href={sitePath('/pricing')} style={{ color: 'inherit', fontWeight: 600 }}>upgrade to Pro</a>
+        {' '}for permanent storage.
+      </p>
 
       <input
         value={search}
@@ -103,7 +107,7 @@ export default function WorkspacePage() {
               </a>
               <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>
                 {file.is_public ? 'Public' : 'Private'}
-                {file.expires_at ? ` · expires ${new Date(file.expires_at).toLocaleDateString()}` : ' · kept'}
+                {file.expires_at ? ` · expires ${new Date(file.expires_at).toLocaleDateString()}` : ' · permanent'}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button className="header-btn" type="button" onClick={() => router.push(sitePath(`/edit/${file.id}`))}>

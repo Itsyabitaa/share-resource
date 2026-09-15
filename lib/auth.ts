@@ -48,7 +48,25 @@ function getPool() {
     return pool
 }
 
+function getSocialProviders() {
+    const clientId = process.env.GOOGLE_CLIENT_ID
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+
+    if (!clientId || !clientSecret) {
+        return undefined
+    }
+
+    return {
+        google: {
+            clientId,
+            clientSecret,
+        },
+    }
+}
+
 function createAuth() {
+    const socialProviders = getSocialProviders()
+
     return betterAuth({
         database: getPool(),
         secret: process.env.BETTER_AUTH_SECRET!,
@@ -56,6 +74,7 @@ function createAuth() {
         emailAndPassword: {
             enabled: true,
         },
+        ...(socialProviders ? { socialProviders } : {}),
         trustedOrigins: getTrustedOrigins(),
     })
 }

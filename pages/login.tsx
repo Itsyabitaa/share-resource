@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
@@ -7,6 +7,8 @@ import { getAuthErrorMessage } from '../lib/authErrors'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
+import GoogleSignInButton from '../components/GoogleSignInButton'
+import { isGoogleAuthEnabled } from '../lib/googleAuth'
 
 export default function Login() {
     const [email, setEmail] = useState('')
@@ -17,6 +19,15 @@ export default function Login() {
     const router = useRouter()
     const { colors, theme } = useTheme()
     const { sitePath } = useAppPaths()
+
+    const redirect = typeof router.query.redirect === 'string' ? router.query.redirect : ''
+    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : sitePath('/')
+
+    useEffect(() => {
+        if (router.query.error === 'google') {
+            setError('Google sign-in was cancelled or failed. Please try again.')
+        }
+    }, [router.query.error])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -41,8 +52,6 @@ export default function Login() {
 
             // Success
             setToast({ message: 'Successfully logged in! Redirecting...', type: 'success' })
-            const redirect = typeof router.query.redirect === 'string' ? router.query.redirect : ''
-            const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : sitePath('/')
             setTimeout(() => {
                 window.location.href = safeRedirect
             }, 1000)
@@ -132,6 +141,20 @@ export default function Login() {
                         Sign in to continue to your account
                     </p>
                 </div>
+
+                {isGoogleAuthEnabled() && (
+                    <>
+                        <GoogleSignInButton
+                            callbackURL={safeRedirect}
+                            errorCallbackURL={sitePath('/login?error=google')}
+                            onError={(message) => {
+                                setError(message)
+                                setToast({ message, type: 'error' })
+                            }}
+                        />
+                        <div className="auth-divider">or continue with email</div>
+                    </>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '1.5rem' }}>

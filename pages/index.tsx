@@ -44,6 +44,7 @@ export default function Home() {
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
+  const [userPlan, setUserPlan] = useState<'free' | 'pro' | null>(null)
   const router = useRouter()
   const { colors } = useTheme()
   const { data: session } = useSession()
@@ -80,7 +81,21 @@ export default function Home() {
         })
         .catch(err => console.error('Failed to load credentials:', err))
     }
-  }, [session])
+  }, [session, apiPath])
+
+  useEffect(() => {
+    if (!session?.user) {
+      setUserPlan(null)
+      return
+    }
+
+    fetch(apiPath('/plan'))
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.plan) setUserPlan(data.plan)
+      })
+      .catch(() => {})
+  }, [session?.user, apiPath])
 
   const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -124,7 +139,19 @@ export default function Home() {
         <div className="composer-note warn">
           Guest nests last 3 days.{' '}
           <Link href={sitePath('/signup')}>Create a free account</Link>
-          {' '}to keep them.
+          {' '}for 30-day storage, or{' '}
+          <Link href={sitePath('/pricing')}>see Pro</Link>
+          {' '}for permanent storage.
+        </div>
+      ) : userPlan === 'free' ? (
+        <div className="composer-note warn">
+          Free accounts keep documents for 30 days.{' '}
+          <Link href={sitePath('/pricing')}>Upgrade to Pro</Link>
+          {' '}for permanent storage.
+        </div>
+      ) : userPlan === 'pro' ? (
+        <div className="composer-note ok">
+          Pro account — your documents are stored permanently.
         </div>
       ) : useCustomCredentials ? (
         <div className="composer-note ok">

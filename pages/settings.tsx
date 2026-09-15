@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
 import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
+import type { UserPlan } from '../lib/storagePolicy'
 
 export default function Settings() {
     const router = useRouter()
@@ -19,6 +21,7 @@ export default function Settings() {
 
     // Profile state
     const [profileName, setProfileName] = useState('')
+    const [userPlan, setUserPlan] = useState<UserPlan>('free')
 
     // Form state
     const [useCustomCredentials, setUseCustomCredentials] = useState(false)
@@ -48,6 +51,7 @@ export default function Settings() {
             if (response.ok) {
                 const data = await response.json()
                 setProfileName(data.name || '')
+                setUserPlan(data.plan === 'pro' ? 'pro' : 'free')
             }
         } catch (error) {
             console.error('Failed to load profile:', error)
@@ -221,6 +225,33 @@ export default function Settings() {
             <div className="page-shell" style={{ paddingTop: '1.5rem' }}>
                 <h1 className="page-title">Settings</h1>
 
+                <div style={{
+                    backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+                    padding: '2rem',
+                    borderRadius: '12px',
+                    border: theme === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e5e5',
+                    marginBottom: '2rem',
+                }}>
+                    <h2 style={{
+                        color: colors.text,
+                        fontSize: '1.5rem',
+                        fontWeight: '600',
+                        marginBottom: '1rem',
+                    }}>
+                        Plan
+                    </h2>
+                    <p style={{ color: colors.text, opacity: 0.85, marginBottom: '1rem' }}>
+                        {userPlan === 'pro'
+                            ? 'You are on Pro — all your documents are stored permanently.'
+                            : 'You are on the Free plan — documents expire after 30 days.'}
+                    </p>
+                    {userPlan !== 'pro' && (
+                        <Link href={sitePath('/pricing')} className="header-btn primary">
+                            Upgrade to Pro
+                        </Link>
+                    )}
+                </div>
+
                 {/* Profile Section */}
                 <div style={{
                     backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
@@ -328,7 +359,8 @@ export default function Settings() {
                         marginBottom: '2rem',
                     }}>
                         <p style={{ color: colors.text, fontSize: '0.95rem', margin: 0 }}>
-                            <strong>Default Storage:</strong> Your files are stored using our shared infrastructure (permanent storage).
+                            <strong>Default Storage:</strong> Your files are stored using our shared infrastructure
+                            ({userPlan === 'pro' ? 'permanent on Pro' : '30-day retention on Free'}).
                         </p>
                         <p style={{ color: colors.text, fontSize: '0.95rem', margin: '0.5rem 0 0 0' }}>
                             <strong>Custom Storage:</strong> Use your own Cloudinary account for file delivery. Documents still use the shared md-nest database.

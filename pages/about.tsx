@@ -1,7 +1,10 @@
+import Link from 'next/link'
 import { useTheme } from '../lib/ThemeContext'
+import { useAppPaths } from '../lib/appPaths'
 
 export default function AboutPage() {
   const { colors } = useTheme()
+  const { sitePath } = useAppPaths()
 
   return (
     <div className="page-shell" style={{ color: colors.text }}>
@@ -22,7 +25,10 @@ export default function AboutPage() {
           md-nest is a markdown sharing platform. Write in the editor, upload a file, and get a link you can send to anyone.
         </p>
         <p style={{ opacity: 0.9 }}>
-          Guests get a 3-day nest. Signed-in writers keep documents permanently, organize them in folders, and choose what stays private.
+          Guests get a 3-day nest. Free accounts keep documents for 30 days with folders and a workspace.
+          Pro accounts get permanent storage. See{' '}
+          <Link href={sitePath('/pricing')} style={{ color: 'inherit', fontWeight: 600 }}>pricing</Link>
+          {' '}for details.
         </p>
       </section>
 

@@ -71,7 +71,7 @@ export const handleSave = async (
   const apiPath = paths?.apiPath ?? ((path: string) => path)
 
   if (!isAuthenticated && typeof window !== 'undefined') {
-    const ok = window.confirm('Guest links expire in 3 days. Continue? Sign up to keep documents permanently.')
+    const ok = window.confirm('Guest links expire in 3 days. Continue? Sign up for 30-day storage or upgrade to Pro for permanent storage.')
     if (!ok) return
   }
 

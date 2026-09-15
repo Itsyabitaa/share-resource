@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { insertFile } from '../../lib/dbSchema'
+import { getUserPlan, insertFile } from '../../lib/dbSchema'
 import { getCloudinaryConfig } from '../../lib/userCredentials'
 import { uploadMarkdown } from '../../lib/cloudinaryOps'
 import { auth } from '../../lib/auth'
 import { rateLimit, clientKey } from '../../lib/rateLimit'
+import { computeFileStorage } from '../../lib/storagePolicy'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -32,8 +33,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Content is required' })
     }
 
-    const storageTier: 'guest' | 'registered' = userId ? 'registered' : 'guest'
-    const expiresAt = userId ? undefined : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    const userPlan = userId ? await getUserPlan(userId) : null
+    const { storageTier, expiresAt, message } = computeFileStorage(userPlan)
     const config = await getCloudinaryConfig(userId)
     const uploadResult = await uploadMarkdown(content, config)
 
@@ -46,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isPublic,
       hashtags,
       userId,
-      expiresAt,
+      expiresAt || undefined,
       storageTier,
       folderId
     )
@@ -57,9 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       url: fileData.cloudinary_url,
       storageTier: fileData.storage_tier,
       expiresAt: fileData.expires_at,
-      message: userId
-        ? 'File saved permanently'
-        : 'File saved temporarily (expires in 3 days)'
+      message,
     })
   } catch (err) {
     console.error('Unexpected error:', err)

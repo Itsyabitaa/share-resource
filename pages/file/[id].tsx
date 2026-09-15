@@ -10,6 +10,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from '../../lib/auth-client'
 import { useAppPaths } from '../../lib/appPaths'
+import Link from 'next/link'
+import { daysUntilExpiry } from '../../lib/storagePolicy'
 
 interface Comment {
   id: string
@@ -123,6 +125,7 @@ export default function FilePage({
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
   const headings = extractHeadings(content)
+  const daysLeft = daysUntilExpiry(expiresAt)
 
   const [likeCount, setLikeCount] = useState(0)
   const [commentCount, setCommentCount] = useState(0)
@@ -395,7 +398,13 @@ export default function FilePage({
                   {expiresAt && (
                     <span className="header-btn" style={{ cursor: 'default' }}>
                       Expires {new Date(expiresAt).toLocaleDateString()}
+                      {daysLeft !== null && daysLeft <= 7 ? ` (${daysLeft}d left)` : ''}
                     </span>
+                  )}
+                  {isOwner && expiresAt && (
+                    <Link href={sitePath('/pricing')} className="header-btn primary">
+                      Upgrade to Pro
+                    </Link>
                   )}
                 </div>
 
