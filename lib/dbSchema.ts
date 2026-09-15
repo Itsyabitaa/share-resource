@@ -846,3 +846,13 @@ export async function searchUsers(query: string, limit = 25) {
   `
   return result as Array<{ id: string; email: string; name: string | null; created_at: string }>
 }
+
+export async function listRecentUsers(limit = 30) {
+  const result = await sql`
+    SELECT id, email, name, "createdAt"::text as created_at
+    FROM "user"
+    ORDER BY "createdAt" DESC
+    LIMIT ${limit}
+  `
+  return result as Array<{ id: string; email: string; name: string | null; created_at: string }>
+}

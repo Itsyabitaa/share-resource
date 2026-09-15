@@ -611,6 +611,31 @@ body.dark .sidebar-rename-input {
   opacity: 0.55;
 }
 
+.sidebar-divider {
+  height: 1px;
+  margin: 4px 10px;
+  background: rgba(120, 113, 108, 0.16);
+}
+
+body.dark .sidebar-divider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-admin-section .sidebar-admin-item.is-active {
+  background: rgba(180, 83, 9, 0.12);
+  color: #b45309;
+}
+
+body.dark .sidebar-admin-section .sidebar-admin-item.is-active {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.sidebar-admin-section .sidebar-admin-item.is-active .sidebar-nav-leading svg {
+  color: inherit;
+  opacity: 1;
+}
+
 .workspace-page {
   padding-bottom: 48px;
 }
@@ -927,6 +952,12 @@ body.dark .sidebar-rename-input {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+.admin-toolbar-wrap input,
+.admin-toolbar-wrap select {
+  flex: 1;
+  min-width: 140px;
 }
 
 .admin-toolbar input,

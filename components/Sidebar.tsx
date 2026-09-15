@@ -94,6 +94,61 @@ function IconInbox({ size = 16 }: { size?: number }) {
   )
 }
 
+function IconDashboard({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 4h7v9H4V4zM13 4h7v5h-7V4zM13 11h7v9h-7v-9zM4 15h7v5H4v-5z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconPosts({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 4h12v16H6V4z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+      <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconTrending({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 18l6-6 4 4 6-8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 8h5v5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconActivity({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconUsers({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M16 19a4 4 0 0 0-8 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M4 19a6 6 0 0 1 12 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+type AdminTab = 'overview' | 'posts' | 'viral' | 'activity' | 'accounts'
+
+const adminNav: { tab: AdminTab; label: string; Icon: typeof IconDashboard }[] = [
+  { tab: 'overview', label: 'Dashboard', Icon: IconDashboard },
+  { tab: 'posts', label: 'Posts', Icon: IconPosts },
+  { tab: 'viral', label: 'Viral', Icon: IconTrending },
+  { tab: 'activity', label: 'Activity', Icon: IconActivity },
+  { tab: 'accounts', label: 'Accounts', Icon: IconUsers },
+]
+
 export default function Sidebar({
   isOpen = false,
   activeFolderId,
@@ -110,8 +165,11 @@ export default function Sidebar({
   const [newFolderName, setNewFolderName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const isWorkspace = router.pathname === '/workspace'
+  const isAdminPage = router.pathname === '/admin'
+  const adminTab = typeof router.query.tab === 'string' ? router.query.tab : 'overview'
 
   const loadData = async () => {
     try {
@@ -141,6 +199,18 @@ export default function Sidebar({
   }
 
   useEffect(() => {
+    if (!session?.user) {
+      setIsAdmin(false)
+      return
+    }
+
+    fetch(apiPath('/profile'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setIsAdmin(!!data?.isAdmin))
+      .catch(() => setIsAdmin(false))
+  }, [session?.user?.id, apiPath])
+
+  useEffect(() => {
     if (session?.user) loadData()
   }, [session?.user?.id])
 
@@ -158,6 +228,12 @@ export default function Sidebar({
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches) {
       closeSidebar()
     }
+  }
+
+  const goAdmin = (tab: AdminTab) => {
+    const href = tab === 'overview' ? sitePath('/admin') : `${sitePath('/admin')}?tab=${tab}`
+    router.push(href)
+    afterNavigate()
   }
 
   const goWorkspace = (folderId: string | null) => {
@@ -411,6 +487,31 @@ export default function Sidebar({
           )}
         </div>
       </div>
+
+      {isAdmin && (
+        <>
+          <div className="sidebar-divider" />
+          <div className="sidebar-section sidebar-admin-section">
+            <p className="sidebar-label">Admin</p>
+            {adminNav.map(({ tab, label, Icon }) => {
+              const isActive = isAdminPage && (adminTab === tab || (tab === 'overview' && !router.query.tab))
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`sidebar-nav-item sidebar-admin-item${isActive ? ' is-active' : ''}`}
+                  onClick={() => goAdmin(tab)}
+                >
+                  <span className="sidebar-nav-leading">
+                    <Icon />
+                    <span>{label}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
     </aside>
   )
 }

@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession } from '../lib/auth-client'
 import { useTheme } from '../lib/ThemeContext'
 import { useAppPaths } from '../lib/appPaths'
 import Toast from '../components/Toast'
-import type { AdminFileRow, ActivityRow } from '../lib/moderationDb'
+import type { AdminFileRow, ActivityRow, AdminFileSort, AdminFileStatusFilter } from '../lib/moderationDb'
 import { COMMUNITY_TAKEDOWN_MESSAGE } from '../lib/moderation'
 
 type AdminUser = {
@@ -16,7 +16,37 @@ type AdminUser = {
   created_at: string
 }
 
-type Tab = 'overview' | 'viral' | 'moderation' | 'activity' | 'plans'
+type Tab = 'overview' | 'posts' | 'viral' | 'activity' | 'accounts'
+
+const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
+  overview: {
+    title: 'Dashboard',
+    subtitle: 'Site-wide stats and health at a glance.',
+  },
+  posts: {
+    title: 'Posts',
+    subtitle: 'Search, filter, and moderate every document.',
+  },
+  viral: {
+    title: 'Viral posts',
+    subtitle: 'Trending content ranked by engagement.',
+  },
+  activity: {
+    title: 'Activity',
+    subtitle: 'Uploads, edits, and moderation events.',
+  },
+  accounts: {
+    title: 'Accounts',
+    subtitle: 'Search users and manage Pro plans.',
+  },
+}
+
+function parseTab(value: unknown): Tab {
+  if (value === 'posts' || value === 'viral' || value === 'activity' || value === 'accounts') {
+    return value
+  }
+  return 'overview'
+}
 
 export default function AdminPage() {
   const { data: session, isPending } = useSession()
@@ -24,16 +54,18 @@ export default function AdminPage() {
   const { apiPath, sitePath } = useAppPaths()
   const router = useRouter()
 
+  const tab = parseTab(router.query.tab)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
-  const [tab, setTab] = useState<Tab>('overview')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const [stats, setStats] = useState<Record<string, number> | null>(null)
   const [viralPosts, setViralPosts] = useState<AdminFileRow[]>([])
   const [activity, setActivity] = useState<ActivityRow[]>([])
-  const [modSearch, setModSearch] = useState('')
-  const [modFiles, setModFiles] = useState<AdminFileRow[]>([])
+  const [postSearch, setPostSearch] = useState('')
+  const [postStatus, setPostStatus] = useState<AdminFileStatusFilter>('all')
+  const [postSort, setPostSort] = useState<AdminFileSort>('newest')
+  const [postFiles, setPostFiles] = useState<AdminFileRow[]>([])
   const [modReason, setModReason] = useState(COMMUNITY_TAKEDOWN_MESSAGE)
 
   const [userSearch, setUserSearch] = useState('')
@@ -70,24 +102,55 @@ export default function AdminPage() {
     }
   }, [apiPath])
 
-  useEffect(() => {
-    if (isAdmin) loadDashboard()
-  }, [isAdmin, loadDashboard])
-
-  const searchModerationFiles = async () => {
+  const loadPosts = useCallback(async () => {
     setLoading(true)
     try {
-      const q = modSearch.trim()
-      const url = q
-        ? apiPath(`/admin/files?q=${encodeURIComponent(q)}`)
-        : apiPath('/admin/files')
-      const res = await fetch(url)
+      const params = new URLSearchParams()
+      if (postSearch.trim()) params.set('q', postSearch.trim())
+      params.set('status', postStatus)
+      params.set('sort', postSort)
+      const res = await fetch(apiPath(`/admin/files?${params.toString()}`))
       const data = await res.json()
-      if (res.ok) setModFiles(data.files || [])
+      if (res.ok) setPostFiles(data.files || [])
     } finally {
       setLoading(false)
     }
-  }
+  }, [apiPath, postSearch, postStatus, postSort])
+
+  const loadViral = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(apiPath('/admin/files?mode=viral'))
+      const data = await res.json()
+      if (res.ok) setViralPosts(data.files || [])
+    } finally {
+      setLoading(false)
+    }
+  }, [apiPath])
+
+  const loadUsers = useCallback(async (query = userSearch) => {
+    setLoading(true)
+    try {
+      const q = query.trim()
+      const url = q
+        ? apiPath(`/admin/users?q=${encodeURIComponent(q)}`)
+        : apiPath('/admin/users')
+      const res = await fetch(url)
+      const data = await res.json()
+      if (res.ok) setUsers(data.users || [])
+    } finally {
+      setLoading(false)
+    }
+  }, [apiPath, userSearch])
+
+  useEffect(() => {
+    if (!isAdmin) return
+    if (tab === 'overview') loadDashboard()
+    if (tab === 'posts') loadPosts()
+    if (tab === 'viral') loadViral()
+    if (tab === 'activity') loadDashboard()
+    if (tab === 'accounts') loadUsers('')
+  }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers])
 
   const moderateFile = async (fileId: string, action: 'remove' | 'private' | 'warn' | 'restore') => {
     setLoading(true)
@@ -108,21 +171,11 @@ export default function AdminPage() {
         return
       }
       setToast({ message: data.message || 'Action applied', type: 'success' })
-      await Promise.all([loadDashboard(), searchModerationFiles()])
+      if (tab === 'posts') await loadPosts()
+      else if (tab === 'viral') await loadViral()
+      else await loadDashboard()
     } catch {
       setToast({ message: 'Moderation failed', type: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const searchUsers = async () => {
-    if (!userSearch.trim()) return
-    setLoading(true)
-    try {
-      const res = await fetch(apiPath(`/admin/users?q=${encodeURIComponent(userSearch.trim())}`))
-      const data = await res.json()
-      if (res.ok) setUsers(data.users || [])
     } finally {
       setLoading(false)
     }
@@ -142,11 +195,13 @@ export default function AdminPage() {
         return
       }
       setToast({ message: data.message || 'Plan updated', type: 'success' })
-      if (userSearch.trim()) await searchUsers()
+      await loadUsers()
     } finally {
       setLoading(false)
     }
   }
+
+  const pageMeta = useMemo(() => tabMeta[tab], [tab])
 
   if (!session || isAdmin === null) return null
 
@@ -154,18 +209,13 @@ export default function AdminPage() {
     return (
       <div className="page-shell" style={{ color: colors.text }}>
         <h1 className="page-title">Admin</h1>
-        <p>Add your email to <code>ADMIN_EMAILS</code> in Vercel env vars.</p>
+        <p>
+          Signed in as <strong>{session.user.email}</strong>. Add this exact email to{' '}
+          <code>ADMIN_EMAILS</code> in Vercel, then redeploy.
+        </p>
       </div>
     )
   }
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'viral', label: 'Viral posts' },
-    { id: 'moderation', label: 'Moderation' },
-    { id: 'activity', label: 'Activity' },
-    { id: 'plans', label: 'Pro plans' },
-  ]
 
   return (
     <div className="page-shell wide admin-dashboard" style={{ color: colors.text }}>
@@ -174,31 +224,23 @@ export default function AdminPage() {
       <header className="admin-header">
         <div>
           <p className="composer-kicker">Admin</p>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Monitor activity, viral posts, and community guidelines.</p>
+          <h1 className="page-title">{pageMeta.title}</h1>
+          <p className="page-subtitle">{pageMeta.subtitle}</p>
         </div>
-        <button type="button" className="header-btn" disabled={loading} onClick={loadDashboard}>
+        <button
+          type="button"
+          className="header-btn"
+          disabled={loading}
+          onClick={() => {
+            if (tab === 'posts') loadPosts()
+            else if (tab === 'viral') loadViral()
+            else if (tab === 'accounts') loadUsers()
+            else loadDashboard()
+          }}
+        >
           Refresh
         </button>
       </header>
-
-      <nav className="admin-tabs">
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`admin-tab${tab === item.id ? ' is-active' : ''}`}
-            onClick={() => {
-              setTab(item.id)
-              if (item.id === 'moderation' && modFiles.length === 0) {
-                searchModerationFiles()
-              }
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
 
       {tab === 'overview' && stats && (
         <div className="admin-stat-grid">
@@ -220,31 +262,42 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'viral' && (
+      {tab === 'posts' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <h2>Trending / viral posts</h2>
-          <p className="admin-hint">Ranked by views, shares, likes, and comments.</p>
-          <AdminFileTable
-            files={viralPosts}
-            sitePath={sitePath}
-            onModerate={moderateFile}
-            loading={loading}
-          />
-        </section>
-      )}
-
-      {tab === 'moderation' && (
-        <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <h2>Moderate content</h2>
-          <div className="admin-toolbar">
+          <div className="admin-toolbar admin-toolbar-wrap">
             <input
-              value={modSearch}
-              onChange={(e) => setModSearch(e.target.value)}
-              placeholder="Search posts by title, author, or owner email"
+              value={postSearch}
+              onChange={(e) => setPostSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadPosts()}
+              placeholder="Search by title, author, or owner email"
               style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
             />
-            <button type="button" className="header-btn" disabled={loading} onClick={searchModerationFiles}>
-              Search
+            <select
+              value={postStatus}
+              onChange={(e) => setPostStatus(e.target.value as AdminFileStatusFilter)}
+              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="warned">Warned</option>
+              <option value="removed">Removed</option>
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+              <option value="guest">Guest posts</option>
+            </select>
+            <select
+              value={postSort}
+              onChange={(e) => setPostSort(e.target.value as AdminFileSort)}
+              style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="viral">Viral score</option>
+              <option value="views">Most views</option>
+              <option value="shares">Most shares</option>
+            </select>
+            <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
+              Apply filters
             </button>
           </div>
           <label className="admin-field">
@@ -257,18 +310,28 @@ export default function AdminPage() {
             />
           </label>
           <AdminFileTable
-            files={modFiles}
+            files={postFiles}
             sitePath={sitePath}
             onModerate={moderateFile}
             loading={loading}
-            showModeration
+          />
+        </section>
+      )}
+
+      {tab === 'viral' && (
+        <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+          <p className="admin-hint">Ranked by views, shares, likes, and comments.</p>
+          <AdminFileTable
+            files={viralPosts}
+            sitePath={sitePath}
+            onModerate={moderateFile}
+            loading={loading}
           />
         </section>
       )}
 
       {tab === 'activity' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <h2>Recent activity</h2>
           <div className="admin-activity-list">
             {activity.length === 0 ? (
               <p className="admin-hint">No activity yet.</p>
@@ -291,14 +354,13 @@ export default function AdminPage() {
         </section>
       )}
 
-      {tab === 'plans' && (
+      {tab === 'accounts' && (
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-          <h2>Pro accounts</h2>
-          <div className="admin-toolbar">
+          <div className="admin-toolbar admin-toolbar-wrap">
             <input
               value={planEmail}
               onChange={(e) => setPlanEmail(e.target.value)}
-              placeholder="user@example.com"
+              placeholder="Grant Pro by email"
               style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
             />
             <select
@@ -318,37 +380,47 @@ export default function AdminPage() {
               Save plan
             </button>
           </div>
-          <div className="admin-toolbar">
+          <div className="admin-toolbar admin-toolbar-wrap">
             <input
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadUsers()}
               placeholder="Search users by email or name"
               style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
             />
-            <button type="button" className="header-btn" disabled={loading || !userSearch.trim()} onClick={searchUsers}>
-              Search users
+            <button type="button" className="header-btn" disabled={loading} onClick={() => loadUsers()}>
+              Search
+            </button>
+            <button type="button" className="header-btn" disabled={loading} onClick={() => { setUserSearch(''); loadUsers('') }}>
+              Show recent
             </button>
           </div>
-          {users.map((user) => (
-            <div key={user.id} className="admin-activity-row">
-              <div>
-                <strong>{user.email}</strong>
-                <div className="admin-hint">{user.name || 'No name'} · {user.plan}</div>
+          {users.length === 0 ? (
+            <p className="admin-hint">No users found.</p>
+          ) : (
+            users.map((user) => (
+              <div key={user.id} className="admin-activity-row">
+                <div>
+                  <strong>{user.email}</strong>
+                  <div className="admin-hint">
+                    {user.name || 'No name'} · {user.plan} · joined {new Date(user.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {user.plan !== 'pro' && (
+                    <button type="button" className="header-btn primary" disabled={loading} onClick={() => assignPlan(user.email, 'pro')}>
+                      Make Pro
+                    </button>
+                  )}
+                  {user.plan === 'pro' && (
+                    <button type="button" className="header-btn" disabled={loading} onClick={() => assignPlan(user.email, 'free')}>
+                      Set Free
+                    </button>
+                  )}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {user.plan !== 'pro' && (
-                  <button type="button" className="header-btn primary" disabled={loading} onClick={() => assignPlan(user.email, 'pro')}>
-                    Make Pro
-                  </button>
-                )}
-                {user.plan === 'pro' && (
-                  <button type="button" className="header-btn" disabled={loading} onClick={() => assignPlan(user.email, 'free')}>
-                    Set Free
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </section>
       )}
     </div>

@@ -28,11 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const plan = await getUserPlan(userId)
 
+            const sessionEmail = session?.user?.email
+            const dbEmail = result[0].email
+
             return res.status(200).json({
                 name: result[0].name || '',
-                email: result[0].email,
+                email: dbEmail,
                 plan,
-                isAdmin: isAdminEmail(result[0].email),
+                isAdmin: isAdminEmail(sessionEmail) || isAdminEmail(dbEmail),
             })
         }
 

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../../lib/auth'
 import { isAdminAuthorized } from '../../../lib/admin'
-import { getUserPlan, searchUsers } from '../../../lib/dbSchema'
+import { getUserPlan, listRecentUsers, searchUsers } from '../../../lib/dbSchema'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''
 
   try {
-    const users = query ? await searchUsers(query) : []
+    const users = query ? await searchUsers(query) : await listRecentUsers(30)
     const withPlans = await Promise.all(
       users.map(async (user) => ({
         ...user,

@@ -263,6 +263,96 @@ export async function getAdminActivity(limit = 40): Promise<ActivityRow[]> {
   return rows as ActivityRow[]
 }
 
+export type AdminFileStatusFilter =
+  | 'all'
+  | 'active'
+  | 'warned'
+  | 'removed'
+  | 'public'
+  | 'private'
+  | 'guest'
+
+export type AdminFileSort = 'newest' | 'oldest' | 'viral' | 'views' | 'shares'
+
+const adminFileSortClause: Record<AdminFileSort, string> = {
+  newest: 'f.created_at DESC',
+  oldest: 'f.created_at ASC',
+  viral: 'viral_score DESC, f.created_at DESC',
+  views: 'view_count DESC, f.created_at DESC',
+  shares: 'share_count DESC, f.created_at DESC',
+}
+
+export async function listAdminFiles(options: {
+  query?: string
+  status?: AdminFileStatusFilter
+  sort?: AdminFileSort
+  limit?: number
+}): Promise<AdminFileRow[]> {
+  const query = options.query?.trim() || ''
+  const status = options.status || 'all'
+  const sort = options.sort || 'newest'
+  const limit = options.limit ?? 50
+  const pattern = `%${query}%`
+  const hasQuery = query.length > 0
+  const orderBy = adminFileSortClause[sort] || adminFileSortClause.newest
+
+  const rows = await sql(
+    `
+    SELECT
+      f.id,
+      f.title,
+      f.author,
+      f.is_public,
+      f.user_id,
+      u.email as user_email,
+      f.storage_tier,
+      f.created_at::text as created_at,
+      COALESCE(f.view_count, 0)::int as view_count,
+      COALESCE(f.share_count, 0)::int as share_count,
+      COALESCE(f.edit_count, 0)::int as edit_count,
+      COALESCE(l.like_count, 0)::int as like_count,
+      COALESCE(c.comment_count, 0)::int as comment_count,
+      COALESCE(f.moderation_status, 'active') as moderation_status,
+      f.moderation_reason,
+      (
+        COALESCE(f.view_count, 0)
+        + COALESCE(f.share_count, 0) * 3
+        + COALESCE(l.like_count, 0) * 2
+        + COALESCE(c.comment_count, 0) * 2
+      )::int as viral_score
+    FROM files f
+    LEFT JOIN "user" u ON u.id = f.user_id
+    LEFT JOIN (
+      SELECT file_id, COUNT(*)::int as like_count FROM likes GROUP BY file_id
+    ) l ON l.file_id = f.id
+    LEFT JOIN (
+      SELECT file_id, COUNT(*)::int as comment_count FROM comments GROUP BY file_id
+    ) c ON c.file_id = f.id
+    WHERE
+      (
+        $1 = false
+        OR f.title ILIKE $2
+        OR COALESCE(f.author, '') ILIKE $2
+        OR COALESCE(u.email, '') ILIKE $2
+      )
+      AND (
+        $3 = 'all'
+        OR ($3 = 'active' AND COALESCE(f.moderation_status, 'active') = 'active')
+        OR ($3 = 'warned' AND f.moderation_status = 'warned')
+        OR ($3 = 'removed' AND f.moderation_status = 'removed')
+        OR ($3 = 'public' AND f.is_public = true)
+        OR ($3 = 'private' AND f.is_public = false)
+        OR ($3 = 'guest' AND f.user_id IS NULL)
+      )
+    ORDER BY ${orderBy}
+    LIMIT $4
+    `,
+    [hasQuery, pattern, status, limit]
+  )
+
+  return rows as AdminFileRow[]
+}
+
 export async function searchAdminFiles(query: string, limit = 30): Promise<AdminFileRow[]> {
   const pattern = `%${query.trim()}%`
   const rows = await sql`
