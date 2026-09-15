@@ -163,7 +163,41 @@ export async function applyModerationAction(
   return { status: 'active' as const }
 }
 
-export async function getAdminDashboardStats() {
+export type AdminDashboardStats = {
+  users: number
+  files: number
+  public_files: number
+  removed_files: number
+  warned_files: number
+  total_views: number
+  total_shares: number
+  total_warnings: number
+}
+
+export type AdminAnalytics = AdminDashboardStats & {
+  pro_users: number
+  free_users: number
+  verified_users: number
+  google_users: number
+  email_users: number
+  users_7d: number
+  users_30d: number
+  guest_files: number
+  signed_in_files: number
+  private_files: number
+  active_files: number
+  pro_tier_files: number
+  free_tier_files: number
+  guest_tier_files: number
+  files_7d: number
+  files_30d: number
+  total_edits: number
+  total_likes: number
+  total_comments: number
+  moderation_events: number
+}
+
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
   const [stats] = await sql`
     SELECT
       (SELECT COUNT(*)::int FROM "user") as users,
@@ -175,7 +209,46 @@ export async function getAdminDashboardStats() {
       (SELECT COALESCE(SUM(share_count), 0)::int FROM files) as total_shares,
       (SELECT COUNT(*)::int FROM user_warnings) as total_warnings
   `
-  return stats
+  return stats as AdminDashboardStats
+}
+
+export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+  const [stats] = await sql`
+    SELECT
+      (SELECT COUNT(*)::int FROM "user") as users,
+      (SELECT COUNT(*)::int FROM files) as files,
+      (SELECT COUNT(*)::int FROM files WHERE is_public = true AND COALESCE(moderation_status, 'active') != 'removed') as public_files,
+      (SELECT COUNT(*)::int FROM files WHERE moderation_status = 'removed') as removed_files,
+      (SELECT COUNT(*)::int FROM files WHERE moderation_status = 'warned') as warned_files,
+      (SELECT COALESCE(SUM(view_count), 0)::int FROM files) as total_views,
+      (SELECT COALESCE(SUM(share_count), 0)::int FROM files) as total_shares,
+      (SELECT COUNT(*)::int FROM user_warnings) as total_warnings,
+      (SELECT COUNT(*)::int FROM "user" WHERE COALESCE(plan, 'free') = 'pro') as pro_users,
+      (SELECT COUNT(*)::int FROM "user" WHERE COALESCE(plan, 'free') != 'pro') as free_users,
+      (SELECT COUNT(*)::int FROM "user" WHERE "emailVerified" = true) as verified_users,
+      (SELECT COUNT(*)::int FROM "user" u WHERE EXISTS (
+        SELECT 1 FROM account a WHERE a."userId" = u.id AND a."providerId" = 'google'
+      )) as google_users,
+      (SELECT COUNT(*)::int FROM "user" u WHERE NOT EXISTS (
+        SELECT 1 FROM account a WHERE a."userId" = u.id AND a."providerId" = 'google'
+      )) as email_users,
+      (SELECT COUNT(*)::int FROM "user" WHERE "createdAt" >= NOW() - INTERVAL '7 days') as users_7d,
+      (SELECT COUNT(*)::int FROM "user" WHERE "createdAt" >= NOW() - INTERVAL '30 days') as users_30d,
+      (SELECT COUNT(*)::int FROM files WHERE user_id IS NULL) as guest_files,
+      (SELECT COUNT(*)::int FROM files WHERE user_id IS NOT NULL) as signed_in_files,
+      (SELECT COUNT(*)::int FROM files WHERE is_public = false) as private_files,
+      (SELECT COUNT(*)::int FROM files WHERE COALESCE(moderation_status, 'active') = 'active') as active_files,
+      (SELECT COUNT(*)::int FROM files WHERE COALESCE(storage_tier, 'guest') = 'pro') as pro_tier_files,
+      (SELECT COUNT(*)::int FROM files WHERE storage_tier = 'free') as free_tier_files,
+      (SELECT COUNT(*)::int FROM files WHERE user_id IS NULL OR COALESCE(storage_tier, 'guest') = 'guest') as guest_tier_files,
+      (SELECT COUNT(*)::int FROM files WHERE created_at >= NOW() - INTERVAL '7 days') as files_7d,
+      (SELECT COUNT(*)::int FROM files WHERE created_at >= NOW() - INTERVAL '30 days') as files_30d,
+      (SELECT COALESCE(SUM(edit_count), 0)::int FROM files) as total_edits,
+      (SELECT COUNT(*)::int FROM likes) as total_likes,
+      (SELECT COUNT(*)::int FROM comments) as total_comments,
+      (SELECT COUNT(*)::int FROM moderation_events) as moderation_events
+  `
+  return stats as AdminAnalytics
 }
 
 export async function getViralPosts(limit = 12): Promise<AdminFileRow[]> {

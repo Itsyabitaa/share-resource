@@ -3,7 +3,7 @@ import { auth } from '../../../lib/auth'
 import { isAdminAuthorized } from '../../../lib/admin'
 import {
   getAdminActivity,
-  getAdminDashboardStats,
+  getAdminAnalytics,
   getViralPosts,
 } from '../../../lib/moderationDb'
 
@@ -21,13 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const [stats, viralPosts, activity] = await Promise.all([
-      getAdminDashboardStats(),
+    const [analytics, viralPosts, activity] = await Promise.all([
+      getAdminAnalytics(),
       getViralPosts(15),
       getAdminActivity(50),
     ])
 
-    return res.status(200).json({ stats, viralPosts, activity })
+    return res.status(200).json({ stats: analytics, analytics, viralPosts, activity })
   } catch (error) {
     console.error('Admin dashboard error:', error)
     return res.status(500).json({ error: 'Failed to load dashboard' })

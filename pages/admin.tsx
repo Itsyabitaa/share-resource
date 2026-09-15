@@ -1,11 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession } from '../lib/auth-client'
 import { useTheme } from '../lib/ThemeContext'
 import { useAppPaths } from '../lib/appPaths'
 import Toast from '../components/Toast'
-import type { AdminFileRow, ActivityRow, AdminFileSort, AdminFileStatusFilter } from '../lib/moderationDb'
+import type {
+  AdminAnalytics,
+  AdminFileRow,
+  ActivityRow,
+  AdminFileSort,
+  AdminFileStatusFilter,
+} from '../lib/moderationDb'
 import { COMMUNITY_TAKEDOWN_MESSAGE } from '../lib/moderation'
 
 type AdminUser = {
@@ -42,12 +48,16 @@ function isGoogleUser(user: AdminUser) {
   return (user.auth_providers || '').includes('google')
 }
 
-type Tab = 'overview' | 'posts' | 'viral' | 'activity' | 'accounts'
+type Tab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts'
 
 const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
   overview: {
     title: 'Dashboard',
-    subtitle: 'Site-wide stats and health at a glance.',
+    subtitle: 'Quick summary — top metrics, viral posts, and latest activity.',
+  },
+  analytics: {
+    title: 'Analytics',
+    subtitle: 'Full breakdown of users, content, engagement, growth, and moderation.',
   },
   posts: {
     title: 'Posts',
@@ -68,7 +78,13 @@ const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
 }
 
 function parseTab(value: unknown): Tab {
-  if (value === 'posts' || value === 'viral' || value === 'activity' || value === 'accounts') {
+  if (
+    value === 'analytics' ||
+    value === 'posts' ||
+    value === 'viral' ||
+    value === 'activity' ||
+    value === 'accounts'
+  ) {
     return value
   }
   return 'overview'
@@ -85,7 +101,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const [stats, setStats] = useState<Record<string, number> | null>(null)
+  const [stats, setStats] = useState<AdminAnalytics | null>(null)
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null)
   const [viralPosts, setViralPosts] = useState<AdminFileRow[]>([])
   const [activity, setActivity] = useState<ActivityRow[]>([])
   const [postSearch, setPostSearch] = useState('')
@@ -121,7 +138,8 @@ export default function AdminPage() {
       const res = await fetch(apiPath('/admin/dashboard'))
       const data = await res.json()
       if (res.ok) {
-        setStats(data.stats)
+        setStats(data.stats || null)
+        setAnalytics(data.analytics || data.stats || null)
         setViralPosts(data.viralPosts || [])
         setActivity(data.activity || [])
       }
@@ -181,10 +199,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isAdmin) return
-    if (tab === 'overview') loadDashboard()
+    if (tab === 'overview' || tab === 'analytics' || tab === 'activity') loadDashboard()
     if (tab === 'posts') loadPosts()
     if (tab === 'viral') loadViral()
-    if (tab === 'activity') loadDashboard()
     if (tab === 'accounts') loadUsers()
   }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers])
 
@@ -406,22 +423,159 @@ export default function AdminPage() {
       </div>
 
       {tab === 'overview' && stats && (
-        <div className="admin-stat-grid">
-          {[
-            ['Users', stats.users],
-            ['Documents', stats.files],
-            ['Public', stats.public_files],
-            ['Removed', stats.removed_files],
-            ['Warned', stats.warned_files],
-            ['Total views', stats.total_views],
-            ['Total shares', stats.total_shares],
-            ['Warnings sent', stats.total_warnings],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
-              <span>{label}</span>
-              <strong>{value}</strong>
+        <>
+          <section className="admin-analytics-block">
+            <h2 className="admin-block-title">At a glance</h2>
+            <div className="admin-stat-grid">
+              {[
+                ['Users', stats.users],
+                ['Documents', stats.files],
+                ['Public', stats.public_files],
+                ['Removed', stats.removed_files],
+                ['Warned', stats.warned_files],
+                ['Total views', stats.total_views],
+                ['Total shares', stats.total_shares],
+                ['Warnings sent', stats.total_warnings],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
-          ))}
+          </section>
+
+          <div className="admin-dashboard-split">
+            <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+              <div className="admin-panel-head">
+                <h2>Trending now</h2>
+                <Link href={sitePath('/admin?tab=viral')} className="admin-link-btn">View all</Link>
+              </div>
+              <AdminFileTable
+                files={viralPosts.slice(0, 5)}
+                sitePath={sitePath}
+                onModerate={moderateFile}
+                loading={loading}
+                showModeration={false}
+              />
+            </section>
+
+            <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+              <div className="admin-panel-head">
+                <h2>Latest activity</h2>
+                <Link href={sitePath('/admin?tab=activity')} className="admin-link-btn">View all</Link>
+              </div>
+              <div className="admin-activity-list">
+                {activity.slice(0, 6).map((item) => (
+                  <div key={`${item.kind}-${item.id}`} className="admin-activity-row">
+                    <div className="admin-activity-main">
+                      <strong>{item.label}</strong>
+                      <div className="admin-hint">
+                        {item.kind.replace(/_/g, ' ')}
+                        {item.actor_email ? ` · ${item.actor_email}` : ''}
+                      </div>
+                    </div>
+                    <time>{new Date(item.at).toLocaleString()}</time>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </>
+      )}
+
+      {tab === 'analytics' && analytics && (
+        <div className="admin-analytics-layout">
+          <AnalyticsPanel title="Users" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <div className="admin-stat-grid compact">
+              {[
+                ['Total', analytics.users],
+                ['Pro', analytics.pro_users],
+                ['Google', analytics.google_users],
+                ['Verified', analytics.verified_users],
+                ['New (7d)', analytics.users_7d],
+                ['New (30d)', analytics.users_30d],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            <AnalyticsBar label="Google sign-in" value={analytics.google_users} total={analytics.users} tone="google" />
+            <AnalyticsBar label="Email / password" value={analytics.email_users} total={analytics.users} />
+            <AnalyticsBar label="Pro plan" value={analytics.pro_users} total={analytics.users} tone="pro" />
+            <AnalyticsBar label="Free plan" value={analytics.free_users} total={analytics.users} />
+            <AnalyticsBar label="Email verified" value={analytics.verified_users} total={analytics.users} tone="verified" />
+          </AnalyticsPanel>
+
+          <AnalyticsPanel title="Content" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <div className="admin-stat-grid compact">
+              {[
+                ['Total docs', analytics.files],
+                ['Public', analytics.public_files],
+                ['Private', analytics.private_files],
+                ['Guest posts', analytics.guest_files],
+                ['Signed-in', analytics.signed_in_files],
+                ['Active', analytics.active_files],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            <AnalyticsBar label="Public" value={analytics.public_files} total={analytics.files} tone="pro" />
+            <AnalyticsBar label="Private" value={analytics.private_files} total={analytics.files} />
+            <AnalyticsBar label="Guest uploads" value={analytics.guest_files} total={analytics.files} tone="warn" />
+            <AnalyticsBar label="Signed-in uploads" value={analytics.signed_in_files} total={analytics.files} />
+            <AnalyticsBar label="Removed" value={analytics.removed_files} total={analytics.files} tone="danger" />
+            <AnalyticsBar label="Warned" value={analytics.warned_files} total={analytics.files} tone="warn" />
+          </AnalyticsPanel>
+
+          <AnalyticsPanel title="Storage tiers" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <AnalyticsBar label="Pro storage" value={analytics.pro_tier_files} total={analytics.files} tone="pro" />
+            <AnalyticsBar label="Free storage" value={analytics.free_tier_files} total={analytics.files} />
+            <AnalyticsBar label="Guest storage" value={analytics.guest_tier_files} total={analytics.files} tone="warn" />
+          </AnalyticsPanel>
+
+          <AnalyticsPanel title="Engagement" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <div className="admin-stat-grid compact">
+              {[
+                ['Views', analytics.total_views],
+                ['Shares', analytics.total_shares],
+                ['Edits', analytics.total_edits],
+                ['Likes', analytics.total_likes],
+                ['Comments', analytics.total_comments],
+                ['Mod events', analytics.moderation_events],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+            {analytics.files > 0 && (
+              <p className="admin-hint">
+                Avg {Math.round(analytics.total_views / analytics.files)} views ·{' '}
+                {Math.round(analytics.total_shares / analytics.files)} shares per document
+              </p>
+            )}
+          </AnalyticsPanel>
+
+          <AnalyticsPanel title="Growth" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <AnalyticsBar label="New users (7 days)" value={analytics.users_7d} total={Math.max(analytics.users_30d, 1)} tone="pro" />
+            <AnalyticsBar label="New users (30 days)" value={analytics.users_30d} total={Math.max(analytics.users, 1)} tone="pro" />
+            <AnalyticsBar label="New documents (7 days)" value={analytics.files_7d} total={Math.max(analytics.files_30d, 1)} tone="google" />
+            <AnalyticsBar label="New documents (30 days)" value={analytics.files_30d} total={Math.max(analytics.files, 1)} tone="google" />
+          </AnalyticsPanel>
+
+          <AnalyticsPanel title="Moderation health" cardBackground={colors.cardBackground} borderColor={colors.border}>
+            <AnalyticsBar label="Active posts" value={analytics.active_files} total={analytics.files} tone="pro" />
+            <AnalyticsBar label="Removed" value={analytics.removed_files} total={analytics.files} tone="danger" />
+            <AnalyticsBar label="Warned" value={analytics.warned_files} total={analytics.files} tone="warn" />
+            <AnalyticsBar label="User warnings sent" value={analytics.total_warnings} total={Math.max(analytics.total_warnings, analytics.users, 1)} tone="warn" />
+          </AnalyticsPanel>
         </div>
       )}
 
@@ -544,6 +698,50 @@ export default function AdminPage() {
           )}
         </section>
       )}
+    </div>
+  )
+}
+
+function AnalyticsPanel({
+  title,
+  children,
+  cardBackground,
+  borderColor,
+}: {
+  title: string
+  children: ReactNode
+  cardBackground: string
+  borderColor: string
+}) {
+  return (
+    <section className="admin-panel admin-analytics-panel" style={{ background: cardBackground, borderColor }}>
+      <h2>{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+function AnalyticsBar({
+  label,
+  value,
+  total,
+  tone = 'brand',
+}: {
+  label: string
+  value: number
+  total: number
+  tone?: 'brand' | 'pro' | 'google' | 'verified' | 'warn' | 'danger'
+}) {
+  const width = total > 0 ? Math.max(4, Math.round((value / total) * 100)) : 0
+  return (
+    <div className="admin-bar-row">
+      <div className="admin-bar-label">
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+      <div className="admin-bar-track">
+        <div className={`admin-bar-fill ${tone}`} style={{ width: `${width}%` }} />
+      </div>
     </div>
   )
 }

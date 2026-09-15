@@ -139,10 +139,19 @@ function IconUsers({ size = 16 }: { size?: number }) {
   )
 }
 
-type AdminTab = 'overview' | 'posts' | 'viral' | 'activity' | 'accounts'
+function IconAnalytics({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 19V9M12 19V5M19 19v-7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+type AdminTab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts'
 
 const adminNav: { tab: AdminTab; label: string; Icon: typeof IconDashboard }[] = [
   { tab: 'overview', label: 'Dashboard', Icon: IconDashboard },
+  { tab: 'analytics', label: 'Analytics', Icon: IconAnalytics },
   { tab: 'posts', label: 'Posts', Icon: IconPosts },
   { tab: 'viral', label: 'Viral', Icon: IconTrending },
   { tab: 'activity', label: 'Activity', Icon: IconActivity },
