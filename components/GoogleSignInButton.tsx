@@ -41,12 +41,7 @@ export default function GoogleSignInButton({
                 return
             }
 
-            const redirectUrl =
-                (result.data as { url?: string } | undefined)?.url ||
-                (result.data as { redirect?: boolean; url?: string } | undefined)?.redirect === true
-                    ? (result.data as { url?: string }).url
-                    : undefined
-
+            const redirectUrl = (result.data as { url?: string } | null)?.url
             if (redirectUrl) {
                 window.location.href = redirectUrl
             }
