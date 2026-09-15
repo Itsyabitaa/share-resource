@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
+import Link from 'next/link'
 import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
+import { useSidebar } from '../lib/SidebarContext'
 
 export interface Folder {
   id: string
@@ -16,6 +18,82 @@ interface SidebarProps {
   onCreateFileInFolder?: (folderId: string) => void
 }
 
+function IconFolder({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3 7a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function IconPlus({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconEdit({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0-4.24-4.24L4 15.76V20z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function IconTrash({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function IconDocs({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M8 4h8l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path d="M16 4v4h4" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconInbox({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 6h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinejoin="round"
+      />
+      <path d="M4 10h5l2 3h2l2-3h5" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export default function Sidebar({
   isOpen = false,
   activeFolderId,
@@ -24,6 +102,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
+  const { closeSidebar } = useSidebar()
   const router = useRouter()
   const [folders, setFolders] = useState<Folder[]>([])
   const [fileCounts, setFileCounts] = useState<Record<string, number>>({ all: 0, unassigned: 0 })
@@ -75,17 +154,22 @@ export default function Sidebar({
     return null
   }, [isWorkspace, activeFolderId, router.query.folder])
 
+  const afterNavigate = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches) {
+      closeSidebar()
+    }
+  }
+
   const goWorkspace = (folderId: string | null) => {
     onSelectFolder(folderId)
     if (folderId === null) {
       router.push(sitePath('/workspace'))
-      return
-    }
-    if (folderId === 'unassigned') {
+    } else if (folderId === 'unassigned') {
       router.push(`${sitePath('/workspace')}?folder=unassigned`)
-      return
+    } else {
+      router.push(`${sitePath('/workspace')}?folder=${encodeURIComponent(folderId)}`)
     }
-    router.push(`${sitePath('/workspace')}?folder=${encodeURIComponent(folderId)}`)
+    afterNavigate()
   }
 
   const handleCreateFolder = async () => {
@@ -161,7 +245,10 @@ export default function Sidebar({
           className={`sidebar-nav-item${activeKey === null && isWorkspace ? ' is-active' : ''}`}
           onClick={() => goWorkspace(null)}
         >
-          <span>All documents</span>
+          <span className="sidebar-nav-leading">
+            <IconDocs />
+            <span>All documents</span>
+          </span>
           <span className="sidebar-count">{fileCounts.all}</span>
         </button>
         <button
@@ -169,16 +256,38 @@ export default function Sidebar({
           className={`sidebar-nav-item${activeKey === 'unassigned' ? ' is-active' : ''}`}
           onClick={() => goWorkspace('unassigned')}
         >
-          <span>Unassigned</span>
+          <span className="sidebar-nav-leading">
+            <IconInbox />
+            <span>Unassigned</span>
+          </span>
           <span className="sidebar-count">{fileCounts.unassigned}</span>
         </button>
-        <button
-          type="button"
-          className="sidebar-nav-item accent"
-          onClick={() => router.push(sitePath('/workspace'))}
-        >
-          Open workspace
-        </button>
+        {isWorkspace ? (
+          <Link
+            href={sitePath('/')}
+            className="sidebar-nav-item accent"
+            onClick={afterNavigate}
+          >
+            <span className="sidebar-nav-leading">
+              <IconPlus size={16} />
+              <span>New document</span>
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="sidebar-nav-item accent"
+            onClick={() => {
+              router.push(sitePath('/workspace'))
+              afterNavigate()
+            }}
+          >
+            <span className="sidebar-nav-leading">
+              <IconFolder />
+              <span>Open workspace</span>
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="sidebar-section">
@@ -190,8 +299,9 @@ export default function Sidebar({
             onClick={() => setIsCreating((open) => !open)}
             title="New folder"
             aria-label="New folder"
+            aria-expanded={isCreating}
           >
-            +
+            <IconPlus />
           </button>
         </div>
 
@@ -211,7 +321,7 @@ export default function Sidebar({
               placeholder="Folder name"
               autoFocus
             />
-            <button type="button" className="header-btn primary" onClick={handleCreateFolder}>
+            <button type="button" className="sidebar-create-btn" onClick={handleCreateFolder}>
               Add
             </button>
           </div>
@@ -219,65 +329,86 @@ export default function Sidebar({
 
         <div className="sidebar-folder-list">
           {folders.length === 0 ? (
-            <p className="sidebar-empty">No folders yet</p>
+            <p className="sidebar-empty">No folders yet — tap + to create one</p>
           ) : (
-            folders.map((folder) => (
-              <div key={folder.id} className="sidebar-folder-row">
-                {renamingId === folder.id ? (
-                  <input
-                    className="sidebar-rename-input"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commitRename(folder.id)
-                      if (e.key === 'Escape') setRenamingId(null)
-                    }}
-                    onBlur={() => commitRename(folder.id)}
-                    autoFocus
-                  />
-                ) : (
+            folders.map((folder) => {
+              const isActive = activeKey === folder.id
+              const isRenaming = renamingId === folder.id
+
+              if (isRenaming) {
+                return (
+                  <div key={folder.id} className="sidebar-folder-item is-renaming">
+                    <input
+                      className="sidebar-rename-input"
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename(folder.id)
+                        if (e.key === 'Escape') setRenamingId(null)
+                      }}
+                      onBlur={() => commitRename(folder.id)}
+                      autoFocus
+                    />
+                  </div>
+                )
+              }
+
+              return (
+                <div
+                  key={folder.id}
+                  className={`sidebar-folder-item${isActive ? ' is-active' : ''}`}
+                >
                   <button
                     type="button"
-                    className={`sidebar-nav-item${activeKey === folder.id ? ' is-active' : ''}`}
+                    className="sidebar-folder-main"
                     onClick={() => goWorkspace(folder.id)}
                   >
-                    <span>{folder.name}</span>
-                    <span className="sidebar-count">{fileCounts[folder.id] || 0}</span>
+                    <span className="sidebar-folder-leading">
+                      <IconFolder />
+                      <span className="sidebar-folder-name">{folder.name}</span>
+                    </span>
+                    <span className="sidebar-folder-meta">
+                      <span className="sidebar-count">{fileCounts[folder.id] || 0}</span>
+                      <span className="sidebar-folder-actions">
+                        {onCreateFileInFolder && (
+                          <button
+                            type="button"
+                            className="sidebar-icon-btn"
+                            title="Create document in folder"
+                            aria-label={`Create document in ${folder.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onCreateFileInFolder(folder.id)
+                              afterNavigate()
+                            }}
+                          >
+                            <IconPlus />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="sidebar-icon-btn"
+                          title="Rename folder"
+                          aria-label={`Rename ${folder.name}`}
+                          onClick={(e) => startRename(folder, e)}
+                        >
+                          <IconEdit />
+                        </button>
+                        <button
+                          type="button"
+                          className="sidebar-icon-btn danger"
+                          title="Delete folder"
+                          aria-label={`Delete ${folder.name}`}
+                          onClick={(e) => handleDeleteFolder(folder.id, e)}
+                        >
+                          <IconTrash />
+                        </button>
+                      </span>
+                    </span>
                   </button>
-                )}
-
-                {activeKey === folder.id && renamingId !== folder.id && (
-                  <div className="sidebar-folder-tools">
-                    {onCreateFileInFolder && (
-                      <button
-                        type="button"
-                        className="sidebar-icon-btn"
-                        title="Create document in folder"
-                        onClick={() => onCreateFileInFolder(folder.id)}
-                      >
-                        +
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="sidebar-icon-btn"
-                      title="Rename folder"
-                      onClick={(e) => startRename(folder, e)}
-                    >
-                      ✎
-                    </button>
-                    <button
-                      type="button"
-                      className="sidebar-icon-btn danger"
-                      title="Delete folder"
-                      onClick={(e) => handleDeleteFolder(folder.id, e)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+                </div>
+              )
+            })
           )}
         </div>
       </div>
