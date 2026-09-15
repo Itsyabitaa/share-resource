@@ -60,7 +60,8 @@ async function docxToMarkdown(buffer: Buffer) {
 }
 
 async function wordToText(buffer: Buffer) {
-  const WordExtractor = (await import('word-extractor')).default
+  const imported = await import('word-extractor')
+  const WordExtractor = imported.default
   const extractor = new WordExtractor()
   const doc = await extractor.extract(buffer)
   const parts = [doc.getHeaders?.(), doc.getBody?.(), doc.getFootnotes?.()]
