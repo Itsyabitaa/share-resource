@@ -385,6 +385,11 @@ export default function FilePage(props: {
 
   return (
     <div className="file-page">
+      {moderationStatus === 'warned' && moderationMessage && (
+        <div className="moderation-notice warned">
+          <strong>Community guidelines warning:</strong> {moderationMessage}
+        </div>
+      )}
       <div className="file-toolbar">
         <div className="file-toolbar-inner">
           <div className="file-toolbar-left">
