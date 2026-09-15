@@ -6,6 +6,16 @@ import mammoth from 'mammoth'
 import { formatToMarkdown, isAlreadyMarkdown } from '../../utils/markdownFormatter'
 import { rateLimit, clientKey } from '../../lib/rateLimit'
 
+type MammothMarkdown = {
+  convertToMarkdown: (input: { path: string }) => Promise<{ value: string }>
+}
+
+async function docxToMarkdown(filePath: string) {
+  const convert = (mammoth as unknown as MammothMarkdown).convertToMarkdown
+  const result = await convert({ path: filePath })
+  return result.value || ''
+}
+
 export const config = {
   api: {
     bodyParser: false,
@@ -59,11 +69,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             content = formatToMarkdown(content)
           }
           break
-        case '.docx': {
-          const result = await mammoth.convertToMarkdown({ path: filePath })
-          content = result.value || ''
+        case '.docx':
+          content = await docxToMarkdown(filePath)
           break
-        }
         case '.doc':
           return res.status(400).json({
             error: 'Legacy .doc files are not supported. Save as .docx and try again.'
