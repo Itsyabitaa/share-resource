@@ -2271,9 +2271,9 @@ body.dark .dropzone-btn {
   .sidebar-backdrop {
     display: block;
     position: fixed;
-    inset: var(--header-height) 0 0 0;
-    background: rgba(15, 15, 15, 0.45);
-    z-index: 40;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 74;
   }
 
   .file-layout {

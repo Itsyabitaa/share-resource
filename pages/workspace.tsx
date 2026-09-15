@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession } from '../lib/auth-client'
@@ -39,11 +39,20 @@ export default function WorkspacePage() {
   const [movingId, setMovingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const activeFolderId =
     typeof router.query.folder === 'string' ? router.query.folder : null
 
   const activeFolder = folders.find((folder) => folder.id === activeFolderId) || null
+
+  useEffect(() => {
+    if (router.query.focusSearch === '1') {
+      searchInputRef.current?.focus()
+      const { focusSearch: _, ...rest } = router.query
+      router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true })
+    }
+  }, [router.query.focusSearch])
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -250,6 +259,7 @@ export default function WorkspacePage() {
         <section className="workspace-main">
           <div className="workspace-toolbar">
             <input
+              ref={searchInputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search documents..."
