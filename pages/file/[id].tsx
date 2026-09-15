@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next'
-import { canAccessFile, getAccessibleFile, getFileById } from '../../lib/dbSchema'
+import { canAccessFile, getFileById } from '../../lib/dbSchema'
 import { auth } from '../../lib/auth'
 import { isAdminEmail } from '../../lib/admin'
 import { COMMUNITY_TAKEDOWN_MESSAGE, isFileRemoved } from '../../lib/moderation'
