@@ -101,7 +101,6 @@ export default function Login() {
                 width: '100%',
                 maxWidth: '440px',
                 backgroundColor: theme === 'dark' ? '#1c1917' : '#ffffff',
-                padding: undefined,
                 borderRadius: '16px',
                 boxShadow: theme === 'dark'
                     ? '0 20px 60px rgba(0, 0, 0, 0.8)'

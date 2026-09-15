@@ -12,7 +12,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider>
       <Head>
         <title>md-nest</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#0f766e" />
+        <meta name="application-name" content="md-nest" />
+        <meta name="description" content="md-nest — write, share, and keep markdown documents." />
       </Head>
       <SidebarProvider>
         <AppLayout>

@@ -80,9 +80,8 @@ body.dark ::-webkit-scrollbar-thumb {
   color: var(--brand);
 }
 
-.brand-stacked {
-  flex-direction: column;
-  gap: 12px;
+.brand-stacked .brand-wordmark {
+  font-size: 1.7rem;
 }
 
 .brand-mark {
