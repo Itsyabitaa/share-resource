@@ -862,14 +862,23 @@ body.dark .dropzone-btn {
 }
 
 .composer-stage .CodeMirror {
-  border: none;
-  background: transparent;
+  border: none !important;
+  background: transparent !important;
   color: inherit;
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;
   line-height: 1.7;
-  min-height: 420px;
+  min-height: 420px !important;
   padding-top: 8px;
+  box-shadow: none !important;
+}
+
+.composer-stage .CodeMirror-scroll {
+  min-height: 420px;
+}
+
+.composer-stage .EasyMDEContainer .CodeMirror {
+  border-radius: 0;
 }
 
 .composer-stage .CodeMirror-cursor {
