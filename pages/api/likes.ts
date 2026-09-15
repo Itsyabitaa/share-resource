@@ -1,11 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { toggleLike, getLikeStats } from '../../lib/dbSchema'
+import { toggleLike, getLikeStats, getAccessibleFile } from '../../lib/dbSchema'
 import { getUser } from '../../lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
         if (req.method === 'POST') {
-            // Toggle like (add or remove)
             const user = await getUser(req)
 
             if (!user) {
@@ -14,8 +13,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const { fileId } = req.body
 
-            if (!fileId) {
+            if (!fileId || typeof fileId !== 'string') {
                 return res.status(400).json({ error: 'File ID is required' })
+            }
+
+            const file = await getAccessibleFile(fileId, user.id)
+
+            if (!file) {
+                return res.status(404).json({ error: 'File not found' })
             }
 
             const result = await toggleLike(fileId, user.id)
@@ -27,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 userHasLiked: stats.userHasLiked
             })
         } else if (req.method === 'GET') {
-            // Get like stats
             const { fileId } = req.query
 
             if (!fileId || typeof fileId !== 'string') {
@@ -35,6 +39,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             const user = await getUser(req)
+            const file = await getAccessibleFile(fileId, user?.id)
+
+            if (!file) {
+                return res.status(404).json({ error: 'File not found' })
+            }
+
             const stats = await getLikeStats(fileId, user?.id)
 
             return res.status(200).json({
@@ -47,8 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (error) {
         console.error('Error in likes API:', error)
         return res.status(500).json({
-            error: 'Internal server error',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Internal server error'
         })
     }
 }

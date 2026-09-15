@@ -1,8 +1,8 @@
 import { GetServerSideProps } from 'next'
-import { getFileById, getSocialStats } from '../../lib/dbSchema'
+import { getAccessibleFile } from '../../lib/dbSchema'
+import { auth } from '../../lib/auth'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
 import { useTheme } from '../../lib/ThemeContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
@@ -21,7 +21,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string
 
   try {
-    const fileData = await getFileById(id)
+    const session = await auth.api.getSession({
+      headers: context.req.headers as any
+    })
+    const fileData = await getAccessibleFile(id, session?.user?.id)
 
     if (!fileData) {
       return {
@@ -492,10 +495,7 @@ export default function FilePage({
                 lineHeight: '1.8',
                 color: colors.text
               }}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {content}
                 </ReactMarkdown>
               </div>

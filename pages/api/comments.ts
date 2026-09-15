@@ -1,21 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { addComment, getComments, deleteComment } from '../../lib/dbSchema'
+import { addComment, getComments, deleteComment, getAccessibleFile } from '../../lib/dbSchema'
 import { getUser } from '../../lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
         if (req.method === 'GET') {
-            // Get all comments for a file
             const { fileId } = req.query
 
             if (!fileId || typeof fileId !== 'string') {
                 return res.status(400).json({ error: 'File ID is required' })
             }
 
+            const user = await getUser(req)
+            const file = await getAccessibleFile(fileId, user?.id)
+
+            if (!file) {
+                return res.status(404).json({ error: 'File not found' })
+            }
+
             const comments = await getComments(fileId)
             return res.status(200).json({ comments })
         } else if (req.method === 'POST') {
-            // Add a new comment
             const user = await getUser(req)
 
             if (!user) {
@@ -36,10 +41,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return res.status(400).json({ error: 'Comment must be 1000 characters or less' })
             }
 
+            const file = await getAccessibleFile(fileId, user.id)
+
+            if (!file) {
+                return res.status(404).json({ error: 'File not found' })
+            }
+
             const comment = await addComment(fileId, user.id, content.trim())
             return res.status(201).json({ comment })
         } else if (req.method === 'DELETE') {
-            // Delete a comment (only by the comment author)
             const user = await getUser(req)
 
             if (!user) {
@@ -65,8 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (error) {
         console.error('Error in comments API:', error)
         return res.status(500).json({
-            error: 'Internal server error',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Internal server error'
         })
     }
 }

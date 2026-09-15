@@ -91,7 +91,47 @@ export async function insertFile(
   }
 }
 
-export async function getFileById(id: string) {
+export type FileRecord = {
+  id: string
+  title: string
+  author?: string | null
+  cloudinary_url: string
+  file_type: string
+  file_size?: number | null
+  created_at: string
+  updated_at: string
+  is_public: boolean
+  user_id?: string | null
+  expires_at?: string | null
+}
+
+export function isFileExpired(expiresAt?: string | Date | null): boolean {
+  if (!expiresAt) return false
+  return new Date(expiresAt).getTime() < Date.now()
+}
+
+export function canAccessFile(
+  file: Pick<FileRecord, 'is_public' | 'user_id' | 'expires_at'>,
+  userId?: string | null
+): boolean {
+  if (isFileExpired(file.expires_at)) {
+    return false
+  }
+
+  if (file.is_public) {
+    return true
+  }
+
+  // Registered private files are owner-only. Guest files have no owner, so the
+  // unguessable URL remains the capability until expiry.
+  if (file.user_id) {
+    return !!userId && file.user_id === userId
+  }
+
+  return true
+}
+
+export async function getFileById(id: string): Promise<FileRecord | undefined> {
   try {
     const result = await sql`
       SELECT 
@@ -102,14 +142,25 @@ export async function getFileById(id: string) {
         file_type,
         file_size,
         created_at::text as created_at,
-        updated_at::text as updated_at
+        updated_at::text as updated_at,
+        is_public,
+        user_id,
+        expires_at::text as expires_at
       FROM files WHERE id = ${id}
     `
-    return result[0]
+    return result[0] as FileRecord | undefined
   } catch (error) {
     console.error('Error getting file:', error)
     throw error
   }
+}
+
+export async function getAccessibleFile(id: string, userId?: string | null): Promise<FileRecord | null> {
+  const file = await getFileById(id)
+  if (!file || !canAccessFile(file, userId)) {
+    return null
+  }
+  return file
 }
 
 export async function getAllFiles() {
