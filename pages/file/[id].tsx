@@ -7,7 +7,6 @@ import { useTheme } from '../../lib/ThemeContext'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useSession } from '../../lib/auth-client'
-import { useSidebar } from '../../lib/SidebarContext'
 import { useAppPaths } from '../../lib/appPaths'
 
 interface Comment {
@@ -68,12 +67,11 @@ export default function FilePage({
   fileType: string
   createdAt: string
 }) {
-  const { colors, theme, toggleTheme } = useTheme()
+  const { colors, theme } = useTheme()
   const [copied, setCopied] = useState(false)
   const [currentUrl, setCurrentUrl] = useState('')
   const router = useRouter()
   const { data: session } = useSession()
-  const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { apiPath, sitePath } = useAppPaths()
 
   const [likeCount, setLikeCount] = useState(0)
@@ -192,205 +190,47 @@ export default function FilePage({
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: colors.background,
-      color: colors.text,
-      transition: 'background-color 0.3s ease, color 0.3s ease'
-    }}>
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        backgroundColor: colors.background,
-        borderBottom: `1px solid ${colors.border}`,
-        backdropFilter: 'blur(12px)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-      }}>
-        <div style={{
-          maxWidth: 1400,
-          margin: '0 auto',
-          padding: '16px 32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            {session?.user && (
-              <button
-                onClick={toggleSidebar}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: colors.text,
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                  padding: '0 5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  opacity: 0.8
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-                title={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-              >
-                ☰
-              </button>
-            )}
+    <div className="file-page">
+      <div className="file-toolbar">
+        <div className="file-toolbar-inner">
+          <div className="file-toolbar-left">
             <button
-              onClick={() => router.back()}
-              style={{
-                padding: '10px 20px',
-                fontSize: '15px',
-                backgroundColor: 'transparent',
-                color: colors.text,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s ease',
-                fontWeight: '500'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.border
-                e.currentTarget.style.transform = 'translateX(-2px)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.transform = 'translateX(0)'
-              }}
+              onClick={() => router.push(sitePath('/'))}
+              className="header-btn"
+              type="button"
             >
-              ← Back to Files
+              ← Files
             </button>
 
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '8px 16px',
-              backgroundColor: colors.background,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '8px',
-              fontSize: '14px'
-            }}>
-              <span style={{ fontWeight: '600', color: colors.secondary }}>📄</span>
-              <span>{fileType.toUpperCase()}</span>
-            </div>
+            <span className="header-btn" style={{ cursor: 'default', opacity: 0.8 }}>
+              {fileType.toUpperCase()}
+            </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              backgroundColor: colors.background,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '8px'
-            }}>
-              <button
-                onClick={handleLike}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'none',
-                  border: 'none',
-                  color: userHasLiked ? '#ef4444' : colors.text,
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>{userHasLiked ? '❤️' : '🤍'}</span>
-                <span>{likeCount}</span>
-              </button>
-
-              <div style={{ width: '1px', height: '20px', backgroundColor: colors.border }} />
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px' }}>
-                <span style={{ fontSize: '18px' }}>💬</span>
-                <span>{commentCount}</span>
-              </div>
-            </div>
-
+          <div className="file-toolbar-right">
+            <button
+              onClick={handleLike}
+              className="header-btn"
+              type="button"
+              style={{ color: userHasLiked ? '#ef4444' : undefined }}
+            >
+              {userHasLiked ? '♥' : '♡'} {likeCount}
+            </button>
+            <span className="header-btn" style={{ cursor: 'default' }}>
+              💬 {commentCount}
+            </span>
             <button
               onClick={handleCopyLink}
-              style={{
-                padding: '10px 20px',
-                fontSize: '14px',
-                backgroundColor: copied ? '#10b981' : colors.background,
-                color: copied ? '#fff' : colors.text,
-                border: `1px solid ${copied ? '#10b981' : colors.border}`,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s ease',
-                fontWeight: '500'
-              }}
-              onMouseEnter={(e) => {
-                if (!copied) {
-                  e.currentTarget.style.backgroundColor = colors.border
-                  e.currentTarget.style.transform = 'translateY(-1px)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!copied) {
-                  e.currentTarget.style.backgroundColor = colors.background
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }
-              }}
+              className={`header-btn${copied ? ' primary' : ''}`}
+              type="button"
             >
-              {copied ? '✓ Copied!' : '🔗 Share Link'}
-            </button>
-
-            <button
-              onClick={toggleTheme}
-              style={{
-                padding: '10px 12px',
-                fontSize: '18px',
-                backgroundColor: colors.background,
-                color: colors.text,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.border
-                e.currentTarget.style.transform = 'rotate(15deg)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = colors.background
-                e.currentTarget.style.transform = 'rotate(0)'
-              }}
-            >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              {copied ? 'Copied' : 'Copy link'}
             </button>
           </div>
         </div>
       </div>
 
-      <div style={{
-        maxWidth: 1400,
-        margin: '0 auto',
-        padding: '32px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 400px',
-        gap: '32px'
-      }}>
+      <div className="file-layout">
         <div>
           <div style={{
             marginBottom: 32,

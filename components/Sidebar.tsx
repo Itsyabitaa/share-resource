@@ -10,12 +10,13 @@ export interface Folder {
 }
 
 interface SidebarProps {
+  isOpen?: boolean
   activeFolderId: string | null
   onSelectFolder: (folderId: string | null) => void
   onCreateFileInFolder?: (folderId: string) => void
 }
 
-export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileInFolder }: SidebarProps) {
+export default function Sidebar({ isOpen = false, activeFolderId, onSelectFolder, onCreateFileInFolder }: SidebarProps) {
   const { colors, theme } = useTheme()
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
@@ -124,19 +125,16 @@ export default function Sidebar({ activeFolderId, onSelectFolder, onCreateFileIn
   if (!session?.user) return null
 
   return (
-    <div style={{
-      width: '260px',
-      height: '100vh',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      backgroundColor: theme === 'dark' ? '#171717' : '#f9f9f9',
-      borderRight: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
-      display: 'flex',
-      flexDirection: 'column',
-      padding: '20px 10px',
-      overflowY: 'auto'
-    }}>
+    <div
+      className={`workspace-sidebar${isOpen ? ' is-open' : ''}`}
+      style={{
+        backgroundColor: theme === 'dark' ? '#1c1917' : '#f3f1ec',
+        borderRight: `1px solid ${theme === 'dark' ? '#292524' : '#e7e5e4'}`,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '16px 10px 24px'
+      }}
+    >
       <h2 style={{
         fontSize: '14px',
         fontWeight: 'bold',

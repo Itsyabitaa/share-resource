@@ -1,321 +1,203 @@
-import React, { useState } from 'react'
-import { useTheme } from '../lib/ThemeContext'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useTheme } from '../lib/ThemeContext'
 import { useSession, signOut } from '../lib/auth-client'
 import { useSidebar } from '../lib/SidebarContext'
 import { useAppPaths } from '../lib/appPaths'
+import BrandMark from './BrandMark'
 
 export interface HeaderProps {
   onResetCreate?: () => void
 }
 
 export default function Header({ onResetCreate }: HeaderProps = {}) {
-  const { theme, toggleTheme, colors } = useTheme()
+  const { theme, toggleTheme } = useTheme()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const router = useRouter()
   const { data: session } = useSession()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { sitePath } = useAppPaths()
 
-  // Debug logging
-  console.log('Header - Session data:', session)
-  console.log('Header - Has user?:', !!session?.user)
+  useEffect(() => {
+    setMobileNavOpen(false)
+    setShowProfileMenu(false)
+  }, [router.pathname])
 
   const handleSignOut = async () => {
     await signOut()
     window.location.href = sitePath('/')
   }
 
+  const navItems = [
+    { href: sitePath('/'), label: 'Create', match: '/' },
+    { href: sitePath('/explore'), label: 'Explore', match: '/explore' },
+    { href: sitePath('/about'), label: 'About', match: '/about' },
+  ]
+
+  const isActive = (match: string) => router.pathname === match
+
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 30
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+    <header className="site-header">
+      <div className="header-left">
         {session?.user && (
-          <button 
+          <button
+            className="icon-btn"
             onClick={toggleSidebar}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: colors.text,
-              fontSize: '20px',
-              cursor: 'pointer',
-              padding: '0 5px',
-              display: 'flex',
-              alignItems: 'center',
-              opacity: 0.8
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-            title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            aria-label={isSidebarOpen ? 'Close workspace' : 'Open workspace'}
+            title={isSidebarOpen ? 'Close workspace' : 'Open workspace'}
+            type="button"
           >
             ☰
           </button>
         )}
-        <h1 style={{ color: colors.text, margin: 0 }}>md-Nest</h1>
-        <nav style={{ display: 'flex', gap: '15px' }}>
-          <Link href={sitePath('/')} onClick={() => onResetCreate && onResetCreate()} style={{
-            color: router.pathname === '/' ? colors.primary : colors.text,
-            textDecoration: 'none',
-            fontWeight: router.pathname === '/' ? '600' : '400',
-            padding: '8px 12px',
-            borderRadius: '5px',
-            transition: 'all 0.2s ease'
-          }}>
-            Create
-          </Link>
-          <Link href={sitePath('/explore')} style={{
-            color: router.pathname === '/explore' ? colors.primary : colors.text,
-            textDecoration: 'none',
-            fontWeight: router.pathname === '/explore' ? '600' : '400',
-            padding: '8px 12px',
-            borderRadius: '5px',
-            transition: 'all 0.2s ease'
-          }}>
-            Explore
-          </Link>
-          <Link href={sitePath('/about')} style={{
-            color: router.pathname === '/about' ? colors.primary : colors.text,
-            textDecoration: 'none',
-            fontWeight: router.pathname === '/about' ? '600' : '400',
-            padding: '8px 12px',
-            borderRadius: '5px',
-            transition: 'all 0.2s ease'
-          }}>
-            About
-          </Link>
+
+        <BrandMark
+          href={sitePath('/')}
+          size={30}
+        />
+
+        <nav className="header-nav" aria-label="Primary">
+          {navItems.map(item => (
+            <Link
+              key={item.match}
+              href={item.href}
+              className={`nav-link${isActive(item.match) ? ' is-active' : ''}`}
+              onClick={() => {
+                if (item.match === '/' && onResetCreate) {
+                  onResetCreate()
+                }
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {/* Dark mode toggle - moved to the left */}
+      <div className="header-right">
         <button
+          className="icon-btn"
           onClick={toggleTheme}
-          style={{
-            padding: '8px 16px',
-            fontSize: '14px',
-            backgroundColor: colors.buttonBackground,
-            color: colors.buttonText,
-            border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = colors.buttonBackground
-          }}
+          type="button"
+          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
         >
-          {theme === 'light' ? '🌙' : '☀️'} {theme === 'light' ? 'Dark' : 'Light'}
+          {theme === 'light' ? '☾' : '☀'}
         </button>
 
-        {/* Profile or Sign In button - moved to the right */}
         {session?.user ? (
           <div style={{ position: 'relative' }}>
             <button
+              className="header-btn"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                backgroundColor: colors.buttonBackground,
-                color: colors.buttonText,
-                border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = colors.buttonBackground
-              }}
+              type="button"
+              aria-expanded={showProfileMenu}
             >
               <span style={{
-                width: '24px',
-                height: '24px',
+                width: 22,
+                height: 22,
                 borderRadius: '50%',
-                backgroundColor: theme === 'dark' ? '#ffffff' : '#000000',
-                color: theme === 'dark' ? '#000000' : '#ffffff',
-                display: 'flex',
+                background: 'var(--brand)',
+                color: '#fff',
+                display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: '600'
+                fontSize: 12,
+                fontWeight: 700
               }}>
                 {(session.user.name || session.user.email || 'U')[0].toUpperCase()}
               </span>
-              Profile
-              <span style={{ fontSize: '10px' }}>▼</span>
+              <span className="label">Account</span>
             </button>
 
             {showProfileMenu && (
               <>
-                {/* Backdrop to close menu when clicking outside */}
                 <div
                   onClick={() => setShowProfileMenu(false)}
-                  style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 999
-                  }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 999 }}
                 />
-
-                {/* Dropdown menu */}
-                <div style={{
+                <div className="profile-menu" style={{
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
                   right: 0,
-                  backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-                  border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`,
-                  borderRadius: '10px',
-                  boxShadow: theme === 'dark'
-                    ? '0 10px 40px rgba(0, 0, 0, 0.5)'
-                    : '0 10px 40px rgba(0, 0, 0, 0.1)',
-                  minWidth: '220px',
+                  minWidth: 220,
                   zIndex: 1000,
-                  overflow: 'hidden',
-                  animation: 'slideDown 0.2s ease'
+                  borderRadius: 12,
+                  padding: 8,
+                  border: '1px solid rgba(120,113,108,0.22)',
+                  background: theme === 'dark' ? '#1c1917' : '#fff',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.16)'
                 }}>
-                  <div style={{
-                    padding: '16px',
-                    borderBottom: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#e5e5e5'}`
-                  }}>
-                    <div style={{
-                      color: colors.text,
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      marginBottom: '4px'
-                    }}>
-                      {session.user.name || 'User'}
-                    </div>
-                    <div style={{
-                      color: colors.text,
-                      opacity: 0.6,
-                      fontSize: '13px'
-                    }}>
+                  <div style={{ padding: '10px 12px 12px', borderBottom: '1px solid rgba(120,113,108,0.18)' }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{session.user.name || 'User'}</div>
+                    <div style={{ opacity: 0.6, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {session.user.email}
                     </div>
                   </div>
-
-                  <div style={{ padding: '8px' }}>
-                    <Link href={sitePath('/settings')} onClick={() => setShowProfileMenu(false)}>
-                      <button
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          fontSize: '14px',
-                          backgroundColor: 'transparent',
-                          color: colors.text,
-                          border: 'none',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.2s ease',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                        }}
-                      >
-                        <span>⚙️</span>
-                        Settings
-                      </button>
-                    </Link>
-
-                    <button
-                      onClick={handleSignOut}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        fontSize: '14px',
-                        backgroundColor: 'transparent',
-                        color: colors.text,
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = theme === 'dark' ? '#2a2a2a' : '#f5f5f5'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                    >
-                      <span>🚪</span>
-                      Sign Out
-                    </button>
-                  </div>
+                  <Link href={sitePath('/settings')} onClick={() => setShowProfileMenu(false)}>
+                    <span className="nav-link" style={{ display: 'block' }}>Settings</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="nav-link"
+                    style={{ width: '100%', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    Sign out
+                  </button>
                 </div>
               </>
             )}
           </div>
         ) : (
-          <Link href={sitePath('/login')}>
-            <button
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                backgroundColor: theme === 'dark' ? '#ffffff' : '#000000',
-                color: theme === 'dark' ? '#000000' : '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.9'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1'
-              }}
-            >
-              Sign In
-            </button>
+          <Link href={sitePath('/login')} className="header-btn primary desktop-only">
+            Sign in
           </Link>
         )}
+
+        <button
+          className="icon-btn nav-toggle"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded={mobileNavOpen}
+          onClick={() => setMobileNavOpen(open => !open)}
+        >
+          {mobileNavOpen ? '✕' : '⋯'}
+        </button>
       </div>
 
-      <style jsx>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
-    </div>
+      {mobileNavOpen && (
+        <div className="header-drawer" style={{
+          position: 'absolute',
+          top: 'var(--header-height)',
+          left: 0,
+          right: 0,
+          zIndex: 70,
+          background: theme === 'dark' ? '#121110' : '#f7f6f3'
+        }}>
+          {navItems.map(item => (
+            <Link
+              key={item.match}
+              href={item.href}
+              className={`nav-link${isActive(item.match) ? ' is-active' : ''}`}
+              onClick={() => {
+                setMobileNavOpen(false)
+                if (item.match === '/' && onResetCreate) {
+                  onResetCreate()
+                }
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+          {!session?.user && (
+            <Link href={sitePath('/login')} className="header-btn primary" style={{ marginTop: 8 }}>
+              Sign in
+            </Link>
+          )}
+        </div>
+      )}
+    </header>
   )
 }
