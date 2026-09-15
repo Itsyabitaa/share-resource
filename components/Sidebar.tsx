@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { useSession, signOut } from '../lib/auth-client'
+import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
 import { useSidebar } from '../lib/SidebarContext'
 
@@ -107,6 +107,15 @@ function IconCollapse({ size = 18 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" />
       <path d="M9 4v16" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  )
+}
+
+function IconSearch({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     </svg>
   )
 }
@@ -339,11 +348,6 @@ export default function Sidebar({
     }
   }
 
-  const handleSignOut = async () => {
-    await signOut()
-    window.location.href = sitePath('/')
-  }
-
   if (!session?.user) return null
 
   const userInitial = (session.user.name || session.user.email || 'U')[0].toUpperCase()
@@ -355,15 +359,29 @@ export default function Sidebar({
         <Link href={sitePath('/')} className="sidebar-brand" onClick={afterNavigate}>
           md-nest
         </Link>
-        <button
-          type="button"
-          className="sidebar-icon-btn sidebar-collapse-btn"
-          onClick={toggleSidebar}
-          aria-label="Close sidebar"
-          title="Close sidebar"
-        >
-          <IconCollapse />
-        </button>
+        <div className="sidebar-top-actions">
+          <button
+            type="button"
+            className="sidebar-icon-btn"
+            onClick={() => {
+              router.push(`${sitePath('/workspace')}?focusSearch=1`)
+              afterNavigate()
+            }}
+            aria-label="Search documents"
+            title="Search documents"
+          >
+            <IconSearch />
+          </button>
+          <button
+            type="button"
+            className="sidebar-icon-btn sidebar-collapse-btn"
+            onClick={toggleSidebar}
+            aria-label="Close sidebar"
+            title="Close sidebar"
+          >
+            <IconCollapse />
+          </button>
+        </div>
       </div>
 
       <Link href={sitePath('/')} className="sidebar-primary-btn" onClick={afterNavigate}>
@@ -564,7 +582,14 @@ export default function Sidebar({
       </div>
 
       <div className="sidebar-footer">
-        <button type="button" className="sidebar-user-card" onClick={() => { router.push(sitePath('/settings')); afterNavigate() }}>
+        <button
+          type="button"
+          className="sidebar-user-card"
+          onClick={() => {
+            router.push(sitePath('/settings'))
+            afterNavigate()
+          }}
+        >
           {session.user.image ? (
             <img src={session.user.image} alt="" className="sidebar-user-avatar" />
           ) : (
@@ -574,9 +599,6 @@ export default function Sidebar({
             <span className="sidebar-user-name">{displayName}</span>
             <span className="sidebar-user-plan">{userPlan === 'pro' ? 'Pro' : 'Free'}</span>
           </span>
-        </button>
-        <button type="button" className="sidebar-footer-link" onClick={handleSignOut}>
-          Sign out
         </button>
       </div>
     </aside>
