@@ -243,11 +243,12 @@ export default function FilePage({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <h1 style={{
-                  fontSize: '32px',
-                  fontWeight: '800',
+                  fontSize: 'clamp(1.4rem, 4vw, 2rem)',
+                  fontWeight: '700',
                   color: colors.text,
                   marginBottom: '12px',
-                  lineHeight: '1.3'
+                  lineHeight: '1.3',
+                  overflowWrap: 'anywhere'
                 }}>
                   {title}
                 </h1>
@@ -287,7 +288,7 @@ export default function FilePage({
                       padding: '10px 20px',
                       fontSize: '15px',
                       backgroundColor: activeTab === 'document' ? colors.primary : 'transparent',
-                      color: activeTab === 'document' ? '#000' : colors.text,
+                      color: activeTab === 'document' ? colors.buttonText : colors.text,
                       border: `2px solid ${activeTab === 'document' ? colors.primary : colors.border}`,
                       borderRadius: '10px',
                       cursor: 'pointer',
@@ -303,7 +304,7 @@ export default function FilePage({
                       padding: '10px 20px',
                       fontSize: '15px',
                       backgroundColor: activeTab === 'comments' ? colors.primary : 'transparent',
-                      color: activeTab === 'comments' ? '#000' : colors.text,
+                      color: activeTab === 'comments' ? colors.buttonText : colors.text,
                       border: `2px solid ${activeTab === 'comments' ? colors.primary : colors.border}`,
                       borderRadius: '10px',
                       cursor: 'pointer',

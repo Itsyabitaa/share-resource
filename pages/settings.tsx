@@ -3,8 +3,6 @@ import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
 import { useSession } from '../lib/auth-client'
 import Toast from '../components/Toast'
-import Header from '../components/Header'
-import Footer from '../components/Footer'
 import { useAppPaths } from '../lib/appPaths'
 
 export default function Settings() {
@@ -218,21 +216,7 @@ export default function Settings() {
             minHeight: '100vh',
             backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f5f5f5',
         }}>
-            <Header />
-
-            {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
-
-            <div style={{
-                maxWidth: '800px',
-                margin: '0 auto',
-                padding: '2rem',
-            }}>
+        <div className="page-shell" style={{ paddingTop: '1.5rem' }}>
                 <h1 style={{
                     color: colors.text,
                     fontSize: '2rem',

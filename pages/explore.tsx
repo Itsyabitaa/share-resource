@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTheme } from '../lib/ThemeContext'
-import Header from '../components/Header'
 import { useAppPaths } from '../lib/appPaths'
 
 interface FileData {
@@ -94,31 +93,13 @@ export default function Explore() {
   }
 
   return (
-    <div style={{
-      maxWidth: 1200,
-      margin: '0 auto',
-      padding: 20,
-      backgroundColor: colors.background,
-      color: colors.text,
-      minHeight: '100vh',
-      transition: 'background-color 0.3s ease, color 0.3s ease'
-    }}>
-      <Header />
-
-      <div style={{ marginBottom: 30 }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          marginBottom: '10px',
-          color: colors.text
-        }}>
-          Explore Public Documents
+    <div className="page-shell wide" style={{ color: colors.text }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 className="page-title">
+          Explore public documents
         </h1>
-        <p style={{
-          fontSize: '1.1rem',
-          color: colors.secondary,
-          marginBottom: '30px'
-        }}>
-          Discover and read markdown documents shared by the community
+        <p className="page-subtitle">
+          Discover markdown shared by the md-nest community
         </p>
       </div>
 
@@ -211,11 +192,7 @@ export default function Explore() {
             }
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '20px'
-          }}>
+          <div className="explore-grid">
             {files.map((file) => (
               <div
                 key={file.id}
