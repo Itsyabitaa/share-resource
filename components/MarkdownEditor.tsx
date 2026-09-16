@@ -85,7 +85,7 @@ export default function MarkdownEditor({
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
-    minHeight: 'min(360px, 45vh)'
+    minHeight: '360px'
   }), [])
 
   return (
