@@ -92,10 +92,10 @@ export default function Home() {
       return
     }
 
-    fetch(apiPath('/plan'))
+    fetch(apiPath('/plan'), { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.plan) setUserPlan(data.plan)
+        if (data?.plan === 'pro' || data?.plan === 'free') setUserPlan(data.plan)
       })
       .catch(() => {})
   }, [session?.user, apiPath])

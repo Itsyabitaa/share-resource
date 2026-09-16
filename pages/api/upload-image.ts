@@ -15,13 +15,45 @@ export const config = {
 
 const IMAGE_MIME = new Set([
   'image/jpeg',
+  'image/jpg',
+  'image/pjpeg',
   'image/png',
   'image/webp',
   'image/gif',
   'image/bmp',
   'image/heic',
   'image/heif',
+  'application/octet-stream',
 ])
+
+function isAllowedImageUpload(file: {
+  mimetype?: string
+  originalFilename?: string
+  newFilename?: string
+}) {
+  const mime = (file.mimetype || '').toLowerCase()
+  if (mime && IMAGE_MIME.has(mime)) {
+    const name = (file.originalFilename || file.newFilename || '').toLowerCase()
+    if (mime === 'application/octet-stream' && name) {
+      return /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/.test(name)
+    }
+    if (mime === 'application/octet-stream' && !name) return false
+    return true
+  }
+
+  const name = (file.originalFilename || file.newFilename || '').toLowerCase()
+  return /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/.test(name)
+}
+
+function assertCloudinaryReady(config: {
+  cloud_name?: string
+  api_key?: string
+  api_secret?: string
+}) {
+  if (!config.cloud_name || !config.api_key || !config.api_secret) {
+    throw new Error('Image upload is not configured on the server (Cloudinary).')
+  }
+}
 
 function firstUploadedFile(files: Record<string, unknown>) {
   const raw = files.file as { filepath?: string } | { filepath?: string }[] | undefined
@@ -60,8 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     filePath = file.filepath
-    const mime = (file as { mimetype?: string }).mimetype || ''
-    if (mime && !IMAGE_MIME.has(mime)) {
+    if (!isAllowedImageUpload(file as { mimetype?: string; originalFilename?: string; newFilename?: string })) {
       return res.status(400).json({ error: 'Unsupported image type. Use JPG, PNG, or WEBP.' })
     }
 
@@ -79,12 +110,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const config = await getCloudinaryConfig(session.user.id)
+    assertCloudinaryReady(config)
     const uploaded = await uploadImageFile(filePath, config)
 
     return res.status(200).json({ url: uploaded.secure_url })
   } catch (error) {
     console.error('Image upload error:', error)
-    return res.status(500).json({ error: 'Image upload failed' })
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : 'Image upload failed'
+    return res.status(500).json({ error: message })
   } finally {
     if (filePath) {
       await fs.unlink(filePath).catch(() => undefined)

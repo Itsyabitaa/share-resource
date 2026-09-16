@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/apiFetch'
 import { formatToMarkdown } from './markdownFormatter'
 
 export function isImageFile(file: File) {
@@ -15,9 +16,10 @@ export async function uploadPhotoForMarkdown(
   apiPath: (path: string) => string
 ): Promise<string> {
   const formData = new FormData()
-  formData.append('file', file)
+  const safeName = file.name?.trim() || 'photo.jpg'
+  formData.append('file', file, safeName)
 
-  const res = await fetch(apiPath('/upload-image'), {
+  const res = await apiFetch(apiPath('/upload-image'), {
     method: 'POST',
     body: formData,
   })
@@ -119,13 +121,18 @@ function buildPhotoMarkdown(options: {
   return lines.join('\n')
 }
 
+function shouldRunOcrOnDevice() {
+  if (typeof navigator === 'undefined') return true
+  return !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+}
+
 export async function convertImageToMarkdown(
   file: File,
   autoFormat: boolean,
   apiPath: (path: string) => string,
   onProgress?: (message: string) => void
 ) {
-  const title = titleFromFilename(file.name)
+  const title = titleFromFilename(file.name || 'photo.jpg')
   const alt = title
 
   onProgress?.('Uploading photo…')
@@ -133,6 +140,9 @@ export async function convertImageToMarkdown(
 
   let ocrText = ''
   try {
+    if (!shouldRunOcrOnDevice()) {
+      onProgress?.('Photo saved — add notes in the editor.')
+    } else {
     const ocr = await recognizeImageText(file, onProgress)
     if (isLikelyUsefulOcr(ocr.text, ocr.confidence)) {
       ocrText = autoFormat
@@ -143,6 +153,7 @@ export async function convertImageToMarkdown(
             reflowParagraphs: true,
           })
         : ocr.text
+    }
     }
   } catch (error) {
     console.warn('Photo OCR failed:', error)

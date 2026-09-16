@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/apiFetch'
 import { convertImageToMarkdown, isImageFile } from './imageToMarkdown'
 
 export const handleFileUpload = async (
@@ -42,7 +43,7 @@ export const handleFileUpload = async (
     // Include auto-format preference
     formData.append('autoFormat', String(autoFormat))
 
-    const res = await fetch(apiPath('/convert'), {
+    const res = await apiFetch(apiPath('/convert'), {
       method: 'POST',
       body: formData,
     })
@@ -65,7 +66,11 @@ export const handleFileUpload = async (
     return data.title as string | undefined
   } catch (err) {
     console.error('Conversion error:', err)
-    alert('Could not convert this file. Check the file type and try again.')
+    const message =
+      err instanceof Error && err.message
+        ? err.message
+        : 'Could not convert this file. Check the file type and try again.'
+    alert(message)
   } finally {
     setIsConverting(false)
   }
