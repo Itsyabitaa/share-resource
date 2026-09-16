@@ -2850,3 +2850,47 @@ body.dark .dropzone-btn-secondary {
     display: none !important;
   }
 }
+
+.swal2-container {
+  z-index: 14000 !important;
+}
+
+.mdnest-swal {
+  border-radius: 16px !important;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif !important;
+  border: 1px solid rgba(120, 113, 108, 0.2) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2) !important;
+}
+
+.mdnest-swal .swal2-title {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+}
+
+.mdnest-swal .swal2-html-container,
+.mdnest-swal .swal2-content {
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+}
+
+.mdnest-swal-btn-confirm,
+.mdnest-swal-btn-danger,
+.mdnest-swal-btn-cancel {
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  padding: 0.55rem 1.25rem !important;
+}
+
+.mdnest-swal-btn-danger {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+body.dark .mdnest-swal-btn-confirm {
+  color: #0f766e !important;
+}
+
+.mdnest-swal-input {
+  border-radius: 10px !important;
+  border: 1px solid rgba(120, 113, 108, 0.25) !important;
+}

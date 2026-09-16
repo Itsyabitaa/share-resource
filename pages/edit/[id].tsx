@@ -7,6 +7,7 @@ import { useTheme } from '../../lib/ThemeContext'
 import { useAppPaths } from '../../lib/appPaths'
 import MarkdownEditor from '../../components/MarkdownEditor'
 import FolderSelect from '../../components/FolderSelect'
+import { alertMessage } from '../../lib/swal'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const id = context.params?.id as string
@@ -92,7 +93,7 @@ export default function EditPage({
         }),
       })
       if (!res.ok) {
-        alert('Failed to save changes')
+        await alertMessage({ text: 'Failed to save changes', icon: 'error' })
         return
       }
       router.push(sitePath(`/file/${fileId}`))

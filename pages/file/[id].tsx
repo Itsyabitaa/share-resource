@@ -14,6 +14,7 @@ import { useSession } from '../../lib/auth-client'
 import { useAppPaths } from '../../lib/appPaths'
 import Link from 'next/link'
 import { daysUntilExpiry } from '../../lib/storagePolicy'
+import { confirmAction } from '../../lib/swal'
 
 interface Comment {
   id: string
@@ -303,7 +304,14 @@ export default function FilePage(props: {
   }
 
   const handleDeleteFile = async () => {
-    if (!confirm('Delete this document permanently?')) return
+    const ok = await confirmAction({
+      title: 'Delete document?',
+      text: 'This document will be deleted permanently. This cannot be undone.',
+      confirmText: 'Yes, delete',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
     const res = await fetch(apiPath(`/files/${fileId}`), { method: 'DELETE' })
     if (res.ok) router.push(sitePath('/workspace'))
   }
@@ -367,7 +375,14 @@ export default function FilePage(props: {
   }
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return
+    const ok = await confirmAction({
+      title: 'Delete comment?',
+      text: 'This comment will be removed permanently.',
+      confirmText: 'Delete',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
 
     try {
       const res = await fetch(apiPath(`/comments?id=${commentId}`), {

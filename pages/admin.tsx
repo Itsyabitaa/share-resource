@@ -13,6 +13,7 @@ import type {
   AdminFileStatusFilter,
 } from '../lib/moderationDb'
 import { COMMUNITY_TAKEDOWN_MESSAGE } from '../lib/moderation'
+import { confirmAction } from '../lib/swal'
 
 type AdminUserApiUsage = {
   kimemUsesTotal: number
@@ -840,7 +841,14 @@ export default function AdminPage() {
                               await loadPlatformKeys()
                             }}>{key.enabled ? 'Disable' : 'Enable'}</button>
                             <button type="button" className="header-btn" disabled={loading} onClick={async () => {
-                              if (!confirm('Delete this Groq key from the pool?')) return
+                              const okDel = await confirmAction({
+                                title: 'Delete Groq key?',
+                                text: 'Remove this key from the platform pool?',
+                                confirmText: 'Delete',
+                                danger: true,
+                                icon: 'warning',
+                              })
+                              if (!okDel) return
                               await fetch(`${apiPath('/admin/platform-groq-keys')}?id=${encodeURIComponent(key.id)}`, { method: 'DELETE' })
                               await loadPlatformKeys()
                             }}>Delete</button>

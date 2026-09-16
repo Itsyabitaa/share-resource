@@ -27,6 +27,7 @@
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.0",
     "resend": "^6.28.0",
+    "sweetalert2": "^11.26.25",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.8.1",
     "uuid": "^9.0.0",

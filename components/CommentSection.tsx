@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTheme } from '../lib/ThemeContext'
 import { useRouter } from 'next/router'
 import { useAppPaths } from '../lib/appPaths'
+import { alertMessage, confirmAction } from '../lib/swal'
 
 interface Comment {
   id: string
@@ -68,18 +69,25 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
         setNewComment('')
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to add comment')
+        await alertMessage({ text: error.error || 'Failed to add comment', icon: 'error' })
       }
     } catch (error) {
       console.error('Error adding comment:', error)
-      alert('Failed to add comment')
+      await alertMessage({ text: 'Failed to add comment', icon: 'error' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return
+    const ok = await confirmAction({
+      title: 'Delete comment?',
+      text: 'This comment will be removed permanently.',
+      confirmText: 'Delete',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
 
     try {
       const response = await fetch(apiPath(`/comments?id=${commentId}`), {
@@ -90,11 +98,11 @@ export default function CommentSection({ fileId, isAuthenticated, currentUserId 
         setComments(comments.filter(c => c.id !== commentId))
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to delete comment')
+        await alertMessage({ text: error.error || 'Failed to delete comment', icon: 'error' })
       }
     } catch (error) {
       console.error('Error deleting comment:', error)
-      alert('Failed to delete comment')
+      await alertMessage({ text: 'Failed to delete comment', icon: 'error' })
     }
   }
 

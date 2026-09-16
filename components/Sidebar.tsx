@@ -5,6 +5,7 @@ import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
 import { useSidebar } from '../lib/SidebarContext'
 import { canCreateFolder, folderLimitMessage } from '../lib/planLimits'
+import { alertMessage, confirmAction } from '../lib/swal'
 
 export interface Folder {
   id: string
@@ -317,7 +318,7 @@ export default function Sidebar({
         return
       }
 
-      alert(data.error || folderLimitMessage(userPlan))
+      await alertMessage({ text: data.error || folderLimitMessage(userPlan), icon: 'warning' })
     } catch (error) {
       console.error('Failed to create folder:', error)
     }
@@ -329,7 +330,14 @@ export default function Sidebar({
     e.stopPropagation()
     const folder = folders.find((item) => item.id === folderId)
     if (!folder) return
-    if (!confirm(`Delete "${folder.name}"? Documents inside will stay in your workspace.`)) return
+    const ok = await confirmAction({
+      title: 'Delete folder?',
+      text: `Delete "${folder.name}"? Documents inside will stay in your workspace.`,
+      confirmText: 'Delete folder',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
 
     try {
       const res = await fetch(apiPath(`/folders/${folderId}`), { method: 'DELETE' })
@@ -469,7 +477,7 @@ export default function Sidebar({
               className="sidebar-icon-btn"
               onClick={() => {
                 if (!canAddFolder) {
-                  alert(folderLimitMessage(userPlan))
+                  void alertMessage({ text: folderLimitMessage(userPlan), icon: 'warning' })
                   return
                 }
                 setIsCreating((open) => !open)

@@ -1,4 +1,5 @@
 import { apiFetch } from '../lib/apiFetch'
+import { alertMessage, confirmAction } from '../lib/swal'
 import { convertImageToMarkdown, isImageFile } from './imageToMarkdown'
 
 export const handleFileUpload = async (
@@ -23,7 +24,11 @@ export const handleFileUpload = async (
   try {
     if (isImageFile(file)) {
       if (!options?.allowPhotoToMarkdown) {
-        alert('Photo conversion limit reached or not available on your plan. See Pricing to upgrade.')
+        await alertMessage({
+          title: 'Photo limit',
+          text: 'Photo conversion limit reached or not available on your plan. See Pricing to upgrade.',
+          icon: 'warning',
+        })
         return
       }
 
@@ -52,12 +57,12 @@ export const handleFileUpload = async (
 
     if (!res.ok) {
       console.error('Convert error:', data)
-      alert(data.error || 'Could not convert this file.')
+      await alertMessage({ text: data.error || 'Could not convert this file.', icon: 'error' })
       return
     }
 
     if (!data.content) {
-      alert('Could not convert this file.')
+      await alertMessage({ text: 'Could not convert this file.', icon: 'error' })
       return
     }
 
@@ -70,7 +75,7 @@ export const handleFileUpload = async (
       err instanceof Error && err.message
         ? err.message
         : 'Could not convert this file. Check the file type and try again.'
-    alert(message)
+    await alertMessage({ text: message, icon: 'error' })
   } finally {
     setIsConverting(false)
   }
@@ -95,7 +100,12 @@ export const handleSave = async (
   const apiPath = paths?.apiPath ?? ((path: string) => path)
 
   if (!isAuthenticated && typeof window !== 'undefined') {
-    const ok = window.confirm('Guest links expire in 3 days. Continue? Sign up for 30-day storage or upgrade to Pro for permanent storage.')
+    const ok = await confirmAction({
+      title: 'Guest document',
+      text: 'Guest links expire in 3 days. Continue? Sign up for 30-day storage or upgrade to Pro for permanent storage.',
+      confirmText: 'Continue',
+      icon: 'info',
+    })
     if (!ok) return
   }
 
@@ -117,7 +127,10 @@ export const handleSave = async (
 
     if (!res.ok) {
       console.error('Save error:', data)
-      alert(`Error saving: ${data.error || data.details || 'Unknown error'}`)
+      await alertMessage({
+        text: `Error saving: ${data.error || data.details || 'Unknown error'}`,
+        icon: 'error',
+      })
       return
     }
 
@@ -126,6 +139,6 @@ export const handleSave = async (
     }
   } catch (err) {
     console.error('Network error:', err)
-    alert('Network error occurred while saving')
+    await alertMessage({ text: 'Network error occurred while saving', icon: 'error' })
   }
 }

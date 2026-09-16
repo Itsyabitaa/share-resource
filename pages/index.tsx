@@ -13,6 +13,7 @@ import { useAppPaths } from '../lib/appPaths'
 import { canUsePhotoToMarkdown } from '../lib/plans'
 import { photoConversionLimitMessage } from '../lib/planLimits'
 import { isImageFile } from '../utils/imageToMarkdown'
+import { alertMessage } from '../lib/swal'
 
 const buildQueryString = (query: Record<string, unknown>) => {
   const params = new URLSearchParams()
@@ -120,7 +121,10 @@ export default function Home() {
     if (!file) return
 
     if (isImageFile(file) && !photoToMarkdownEnabled) {
-      alert(photoConversionLimitMessage(userPlan, photoConversionsUsed))
+      await alertMessage({
+        text: photoConversionLimitMessage(userPlan, photoConversionsUsed),
+        icon: 'warning',
+      })
       event.target.value = ''
       return
     }

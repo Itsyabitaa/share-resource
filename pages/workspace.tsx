@@ -6,6 +6,7 @@ import { useTheme } from '../lib/ThemeContext'
 import { useAppPaths } from '../lib/appPaths'
 import type { Folder } from '../components/Sidebar'
 import { daysUntilExpiry } from '../lib/storagePolicy'
+import { confirmAction, promptInput } from '../lib/swal'
 
 interface Doc {
   id: string
@@ -117,7 +118,14 @@ export default function WorkspacePage() {
   }, [files, activeFolderId, search, sort])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this document permanently?')) return
+    const ok = await confirmAction({
+      title: 'Delete document?',
+      text: 'This document will be deleted permanently. This cannot be undone.',
+      confirmText: 'Yes, delete',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
     const res = await fetch(apiPath(`/files/${id}`), { method: 'DELETE' })
     if (res.ok) {
       setFiles((current) => current.filter((file) => file.id !== id))
@@ -139,8 +147,12 @@ export default function WorkspacePage() {
   }
 
   const handleCreateFolder = async () => {
-    const name = window.prompt('New folder name')
-    if (!name?.trim()) return
+    const name = await promptInput({
+      title: 'New folder',
+      placeholder: 'Folder name',
+      confirmText: 'Create',
+    })
+    if (!name) return
 
     const res = await fetch(apiPath('/folders'), {
       method: 'POST',
@@ -158,8 +170,12 @@ export default function WorkspacePage() {
 
   const handleRenameFolder = async () => {
     if (!activeFolder) return
-    const name = window.prompt('Rename folder', activeFolder.name)
-    if (!name?.trim() || name.trim() === activeFolder.name) return
+    const name = await promptInput({
+      title: 'Rename folder',
+      inputValue: activeFolder.name,
+      confirmText: 'Rename',
+    })
+    if (!name || name === activeFolder.name) return
 
     const res = await fetch(apiPath(`/folders/${activeFolder.id}`), {
       method: 'PATCH',
@@ -175,7 +191,14 @@ export default function WorkspacePage() {
 
   const handleDeleteFolder = async () => {
     if (!activeFolder) return
-    if (!confirm(`Delete folder "${activeFolder.name}"? Documents inside will move to All files.`)) return
+    const ok = await confirmAction({
+      title: 'Delete folder?',
+      text: `Delete "${activeFolder.name}"? Documents inside will move to All files.`,
+      confirmText: 'Delete folder',
+      danger: true,
+      icon: 'warning',
+    })
+    if (!ok) return
 
     const res = await fetch(apiPath(`/folders/${activeFolder.id}`), { method: 'DELETE' })
     if (res.ok) {

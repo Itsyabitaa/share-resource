@@ -2,6 +2,7 @@ import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import { ThemeProvider } from '../lib/ThemeContext'
 import '../styles/globals.css'
+import 'sweetalert2/dist/sweetalert2.min.css'
 
 import AppLayout from '../components/AppLayout'
 import { SidebarProvider } from '../lib/SidebarContext'

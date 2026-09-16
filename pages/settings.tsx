@@ -7,6 +7,7 @@ import Toast from '../components/Toast'
 import { useAppPaths } from '../lib/appPaths'
 import type { UserPlan } from '../lib/storagePolicy'
 import { KIMEM_AI_NAME, GROQ_API_KEYS_URL } from '../lib/kimemAi'
+import { confirmAction } from '../lib/swal'
 
 export default function Settings() {
     const router = useRouter()
@@ -245,9 +246,14 @@ export default function Settings() {
     }
 
     const handleDeleteKimemKey = async () => {
-        if (!confirm('Remove your Groq key? You can only use Kimem AI while md-nest trial runs remain, unless you add a key again.')) {
-            return
-        }
+        const okKey = await confirmAction({
+            title: 'Remove Groq key?',
+            text: 'You can only use Kimem AI while md-nest trial runs remain, unless you add a key again.',
+            confirmText: 'Remove key',
+            danger: true,
+            icon: 'warning',
+        })
+        if (!okKey) return
         setSavingKimemKey(true)
         try {
             const response = await fetch(apiPath('/kimem-ai/key'), { method: 'DELETE' })
@@ -265,9 +271,14 @@ export default function Settings() {
     }
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete your custom credentials? You will revert to using the default storage.')) {
-            return
-        }
+        const okCreds = await confirmAction({
+            title: 'Delete credentials?',
+            text: 'You will revert to using the default shared storage.',
+            confirmText: 'Delete credentials',
+            danger: true,
+            icon: 'warning',
+        })
+        if (!okCreds) return
 
         setSaving(true)
         try {
