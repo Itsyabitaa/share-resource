@@ -103,7 +103,7 @@ export default function EditPage({
   }
 
   return (
-    <div className="page-shell" style={{ color: colors.text }}>
+    <div className="page-shell composer" style={{ color: colors.text }}>
       <h1 className="page-title">Edit document</h1>
       <MarkdownEditor
         text={text}
