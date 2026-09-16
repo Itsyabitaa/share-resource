@@ -154,13 +154,6 @@ export default function MarkdownEditor({
         />
       )}
 
-      <KimemAiPanel
-        markdown={text}
-        title={title}
-        userPlan={userPlan}
-        onApplyMarkdown={onTextChange}
-      />
-
       <div className="editor-container">
         <SimpleMDE
           value={text}
@@ -168,6 +161,13 @@ export default function MarkdownEditor({
           options={mdeOptions}
         />
       </div>
+
+      <KimemAiPanel
+        markdown={text}
+        title={title}
+        userPlan={userPlan}
+        onApplyMarkdown={onTextChange}
+      />
     </div>
   )
 }

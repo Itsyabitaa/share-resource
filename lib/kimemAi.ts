@@ -1,4 +1,4 @@
-export type KimemAction = 'create' | 'edit' | 'analyze' | 'restructure' | 'chat'
+export type KimemAction = 'create' | 'edit' | 'rephrase' | 'analyze' | 'restructure' | 'chat'
 
 export const GROQ_API_KEYS_URL = 'https://console.groq.com/keys'
 export const GROQ_API_BASE = 'https://api.groq.com/openai/v1'
@@ -28,10 +28,20 @@ function buildUserMessage(action: KimemAction, instruction: string, markdown: st
       }\n\nReply with ONLY the markdown document.`
     case 'edit':
       return `${titleLine}Task: Edit the markdown per the user's instruction. Keep structure sensible.\n\nInstruction:\n${instruction}\n\nCurrent markdown:\n${doc || '(empty)'}\n\nReply with ONLY the full updated markdown.`
+    case 'rephrase':
+      return `${titleLine}Task: REPHRASE the markdown — polish wording, grammar, and clarity.
+Rules:
+- Keep the SAME structure: same headings, section order, and list shape.
+- Do not reorder sections, merge/split blocks, or rewrite for a new outline.
+- Preserve meaning and tone unless the user asks otherwise.
+${instruction ? `User guidance:\n${instruction}\n\n` : ''}Current markdown:\n${doc || '(empty)'}\n\nReply with ONLY the rephrased markdown.`
     case 'restructure':
-      return `${titleLine}Task: Restructure and improve organization, headings, and flow without changing meaning unnecessarily.\n\n${
-        instruction ? `Extra guidance:\n${instruction}\n\n` : ''
-      }Current markdown:\n${doc || '(empty)'}\n\nReply with ONLY the restructured markdown.`
+      return `${titleLine}Task: Adjust STRUCTURE ONLY — headings hierarchy, section order, grouping, lists.
+Rules:
+- Do NOT rephrase body text; keep original sentences and wording.
+- Only move/relabel/split/merge sections when needed for clearer organization.
+- Minimal connector words allowed when moving a paragraph (e.g. fix a broken reference).
+${instruction ? `User guidance:\n${instruction}\n\n` : ''}Current markdown:\n${doc || '(empty)'}\n\nReply with ONLY the restructured markdown.`
     case 'analyze':
       return `${titleLine}Task: Analyze this markdown (structure, clarity, gaps, tone, SEO/readability tips). Be concise and actionable.\n\n${
         instruction ? `Focus areas:\n${instruction}\n\n` : ''
@@ -95,7 +105,11 @@ export async function runKimemAi(options: {
   const { apiKey, action, instruction, markdown, title, model = DEFAULT_GROQ_MODEL } = options
   const userMessage = buildUserMessage(action, instruction, markdown, title)
 
-  const wantsMarkdownOnly = action === 'create' || action === 'edit' || action === 'restructure'
+  const wantsMarkdownOnly =
+    action === 'create' ||
+    action === 'edit' ||
+    action === 'rephrase' ||
+    action === 'restructure'
 
   const res = await fetch(`${GROQ_API_BASE}/chat/completions`, {
     method: 'POST',

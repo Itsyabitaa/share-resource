@@ -10,7 +10,7 @@ import {
 } from '../../../lib/platformGroqKeys'
 import { rateLimit, clientKey } from '../../../lib/rateLimit'
 
-const ACTIONS: KimemAction[] = ['create', 'edit', 'analyze', 'restructure', 'chat']
+const ACTIONS: KimemAction[] = ['create', 'edit', 'rephrase', 'analyze', 'restructure', 'chat']
 
 const MAX_MARKDOWN_CHARS = 120_000
 const MAX_INSTRUCTION_CHARS = 8_000
@@ -62,12 +62,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const instr = String(instruction).slice(0, MAX_INSTRUCTION_CHARS)
   const md = String(markdown).slice(0, MAX_MARKDOWN_CHARS)
 
-  if (action !== 'create' && action !== 'restructure' && !instr.trim() && action !== 'analyze') {
+  const needsInstruction =
+    action === 'edit' || action === 'chat' || action === 'create'
+  if (needsInstruction && !instr.trim() && action !== 'create') {
     return res.status(400).json({ error: 'Describe what you want Kimem AI to do.' })
   }
 
-  if (action === 'edit' && !md.trim()) {
-    return res.status(400).json({ error: 'Add some markdown first, then ask Kimem AI to edit it.' })
+  const needsMarkdown =
+    action === 'edit' || action === 'rephrase' || action === 'restructure' || action === 'analyze'
+  if (needsMarkdown && !md.trim()) {
+    return res.status(400).json({ error: 'Add some markdown in the editor first.' })
   }
 
   try {

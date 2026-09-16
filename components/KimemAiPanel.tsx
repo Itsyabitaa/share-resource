@@ -16,11 +16,12 @@ type KimemStatus = {
   blockedReason?: string
 }
 
-const QUICK_ACTIONS: { id: KimemAction; label: string; hint: string }[] = [
-  { id: 'create', label: 'Create', hint: 'Draft new markdown from your brief' },
-  { id: 'edit', label: 'Edit', hint: 'Change tone, fix wording, expand sections' },
-  { id: 'analyze', label: 'Analyze', hint: 'Structure, clarity, and improvement tips' },
-  { id: 'restructure', label: 'Restructure', hint: 'Better headings and flow' },
+const QUICK_ACTIONS: { id: KimemAction; label: string; hint: string; oneClick?: boolean }[] = [
+  { id: 'rephrase', label: 'Rephrase', hint: 'Better wording — same structure', oneClick: true },
+  { id: 'restructure', label: 'Structure', hint: 'Reorder sections — keep your words', oneClick: true },
+  { id: 'create', label: 'Create', hint: 'Draft from a brief' },
+  { id: 'analyze', label: 'Analyze', hint: 'Tips on clarity and layout' },
+  { id: 'edit', label: 'Custom edit', hint: 'Your instruction, any change' },
 ]
 
 export default function KimemAiPanel({
@@ -37,7 +38,7 @@ export default function KimemAiPanel({
   const { apiPath, sitePath } = useAppPaths()
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState<KimemStatus | null>(null)
-  const [action, setAction] = useState<KimemAction>('edit')
+  const [action, setAction] = useState<KimemAction>('rephrase')
   const [instruction, setInstruction] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ kind: 'markdown' | 'text'; content: string } | null>(null)
@@ -57,7 +58,18 @@ export default function KimemAiPanel({
     loadStatus()
   }, [loadStatus])
 
-  const runKimem = async () => {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const runKimem = async (overrideAction?: KimemAction, overrideInstruction?: string) => {
+    const act = overrideAction ?? action
+    const instr = overrideInstruction ?? instruction
     setError(null)
     setResult(null)
     setLoading(true)
@@ -65,14 +77,12 @@ export default function KimemAiPanel({
       const res = await apiFetch(apiPath('/kimem-ai'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, instruction, markdown, title }),
+        body: JSON.stringify({ action: act, instruction: instr, markdown, title }),
       })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Kimem AI request failed')
-        if (data.code === 'kimem_trial_exhausted') {
-          await loadStatus()
-        }
+        if (data.code === 'kimem_trial_exhausted') await loadStatus()
         return
       }
       setResult({ kind: data.kind, content: data.content })
@@ -95,145 +105,191 @@ export default function KimemAiPanel({
     }
   }
 
-  if (userPlan !== 'pro') {
-    return (
-      <div className="kimem-panel kimem-panel--compact">
-        <p className="kimem-panel__teaser">
-          <strong>{KIMEM_AI_NAME}</strong> — Pro markdown assistant (create, edit, analyze, restructure).{' '}
-          <Link href={sitePath('/pricing')}>Upgrade to Pro</Link>
-        </p>
-      </div>
-    )
-  }
-
   const keysUrl = status?.apiKeysUrl || GROQ_API_KEYS_URL
   const onTrial = status && !status.hasOwnKey && status.trialRemaining > 0
   const trialDone = status && !status.hasOwnKey && status.trialRemaining <= 0
+  const isPro = userPlan === 'pro'
 
   return (
-    <div className={`kimem-panel${open ? ' is-open' : ''}`}>
+    <>
       <button
         type="button"
-        className="kimem-panel__toggle"
-        onClick={() => setOpen(v => !v)}
+        className={`kimem-fab${open ? ' is-open' : ''}`}
         aria-expanded={open}
+        aria-label={`Open ${KIMEM_AI_NAME}`}
+        onClick={() => setOpen(v => !v)}
       >
-        <span className="kimem-panel__badge">Pro</span>
-        <span className="kimem-panel__title">{KIMEM_AI_NAME}</span>
-        <span className="kimem-panel__chevron">{open ? '▾' : '▸'}</span>
+        <span className="kimem-fab__icon" aria-hidden>
+          ✦
+        </span>
+        <span className="kimem-fab__label">{KIMEM_AI_NAME}</span>
+        {isPro && <span className="kimem-fab__dot" title="AI available" />}
       </button>
 
       {open && (
-        <div className="kimem-panel__body">
-          {onTrial && (
-            <div className="kimem-panel__notice kimem-panel__notice--trial">
-              <strong>Try Kimem with md-nest&apos;s API</strong> —{' '}
-              {status.trialRemaining} of {status.trialMax} trial runs left. When you&apos;re ready for
-              unlimited use, add your own Groq key below (Settings has the same steps).
-            </div>
-          )}
-
-          {status?.hasOwnKey && (
-            <div className="kimem-panel__notice kimem-panel__notice--ok">
-              Using your Groq API key — unlimited Kimem AI on your account.
-            </div>
-          )}
-
-          {(trialDone || error?.includes('trial')) && (
-            <div className="kimem-panel__notice kimem-panel__notice--warn">
-              {status?.blockedReason ||
-                'Trial finished. Follow the steps below and paste your key in Settings to continue.'}
-            </div>
-          )}
-
-          <details className="kimem-panel__steps" open={!status?.hasOwnKey}>
-            <summary>Get your Groq API key (to continue after the trial)</summary>
-            <ol>
-              <li>
-                Open{' '}
-                <a href={keysUrl} target="_blank" rel="noopener noreferrer">
-                  console.groq.com/keys
-                </a>{' '}
-                and sign in.
-              </li>
-              <li>Create an API key (starts with gsk_ — copy it once).</li>
-              <li>
-                Paste it in{' '}
-                <Link href={sitePath('/settings#kimem-ai')}>Settings → Kimem AI</Link>.
-              </li>
-              <li>Come back here — Kimem uses your key and you keep working.</li>
-            </ol>
-          </details>
-
-          <div className="kimem-panel__actions">
-            {QUICK_ACTIONS.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={`kimem-chip${action === item.id ? ' is-on' : ''}`}
-                title={item.hint}
-                onClick={() => setAction(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <label className="kimem-panel__label" htmlFor="kimem-instruction">
-            What should Kimem do?
-          </label>
-          <textarea
-            id="kimem-instruction"
-            className="kimem-panel__input"
-            rows={3}
-            value={instruction}
-            onChange={e => setInstruction(e.target.value)}
-            placeholder={
-              action === 'create'
-                ? 'e.g. Outline a blog post about sustainable design…'
-                : action === 'analyze'
-                  ? 'Optional: focus on headings and readability'
-                  : 'e.g. Make this shorter and fix grammar'
-            }
+        <>
+          <button
+            type="button"
+            className="kimem-backdrop"
+            aria-label="Close Kimem AI"
+            onClick={() => setOpen(false)}
           />
+          <div className="kimem-sheet" role="dialog" aria-labelledby="kimem-sheet-title">
+            <div className="kimem-sheet__head">
+              <div>
+                <p className="kimem-sheet__kicker">Pro assistant</p>
+                <h2 id="kimem-sheet-title">{KIMEM_AI_NAME}</h2>
+              </div>
+              <button type="button" className="kimem-sheet__close" onClick={() => setOpen(false)}>
+                ×
+              </button>
+            </div>
 
-          <div className="kimem-panel__toolbar">
-            <button
-              type="button"
-              className="header-btn primary kimem-run"
-              disabled={loading || (status != null && !status.canUseKimem)}
-              onClick={runKimem}
-            >
-              {loading ? 'Kimem is thinking…' : 'Run Kimem AI'}
-            </button>
-            {!status?.hasOwnKey && (
-              <Link href={sitePath('/settings#kimem-ai')} className="ghost-btn">
-                Paste API key
-              </Link>
-            )}
-          </div>
+            {!isPro ? (
+              <div className="kimem-sheet__body">
+                <p>
+                  Rephrase, fix structure, analyze, and draft markdown with AI.{' '}
+                  <Link href={sitePath('/pricing')}>Upgrade to Pro</Link> to unlock Kimem.
+                </p>
+              </div>
+            ) : (
+              <div className="kimem-sheet__body">
+                {onTrial && (
+                  <div className="kimem-panel__notice kimem-panel__notice--trial">
+                    <strong>Trial</strong> — {status.trialRemaining} of {status.trialMax} runs left on md-nest.
+                    Add your Groq key in <Link href={sitePath('/settings#kimem-ai')}>Settings</Link> for unlimited use.
+                  </div>
+                )}
+                {status?.hasOwnKey && (
+                  <div className="kimem-panel__notice kimem-panel__notice--ok">
+                    Using your Groq key — unlimited runs.
+                  </div>
+                )}
+                {(trialDone || error?.includes('trial')) && (
+                  <div className="kimem-panel__notice kimem-panel__notice--warn">
+                    {status?.blockedReason || 'Trial finished — add a Groq key in Settings.'}
+                  </div>
+                )}
 
-          {error && <p className="kimem-panel__error">{error}</p>}
-
-          {result && (
-            <div className="kimem-panel__result">
-              <div className="kimem-panel__result-head">
-                <span>{result.kind === 'markdown' ? 'Suggested markdown' : 'Analysis'}</span>
-                {result.kind === 'markdown' && (
+                <div className="kimem-quick-row">
                   <button
                     type="button"
-                    className="ghost-btn"
-                    onClick={() => onApplyMarkdown(result.content)}
+                    className="kimem-quick-btn"
+                    disabled={loading || !markdown.trim() || (status != null && !status.canUseKimem)}
+                    onClick={() => {
+                      setAction('rephrase')
+                      void runKimem('rephrase', instruction || 'Polish wording. Keep the same structure and headings.')
+                    }}
                   >
-                    Apply to editor
+                    <strong>Rephrase</strong>
+                    <span>Same layout, better words</span>
                   </button>
+                  <button
+                    type="button"
+                    className="kimem-quick-btn"
+                    disabled={loading || !markdown.trim() || (status != null && !status.canUseKimem)}
+                    onClick={() => {
+                      setAction('restructure')
+                      void runKimem(
+                        'restructure',
+                        instruction || 'Reorder headings and sections only. Do not rephrase sentences.'
+                      )
+                    }}
+                  >
+                    <strong>Fix structure</strong>
+                    <span>Reorder sections, keep wording</span>
+                  </button>
+                </div>
+
+                <div className="kimem-panel__actions">
+                  {QUICK_ACTIONS.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`kimem-chip${action === item.id ? ' is-on' : ''}`}
+                      title={item.hint}
+                      onClick={() => setAction(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <label className="kimem-panel__label" htmlFor="kimem-instruction">
+                  Optional instructions
+                </label>
+                <textarea
+                  id="kimem-instruction"
+                  className="kimem-panel__input"
+                  rows={3}
+                  value={instruction}
+                  onChange={e => setInstruction(e.target.value)}
+                  placeholder={
+                    action === 'rephrase'
+                      ? 'e.g. Shorter sentences, friendlier tone…'
+                      : action === 'restructure'
+                        ? 'e.g. Put summary first, group FAQs…'
+                        : action === 'create'
+                          ? 'What should Kimem write?'
+                          : 'Tell Kimem what to change…'
+                  }
+                />
+
+                <div className="kimem-panel__toolbar">
+                  <button
+                    type="button"
+                    className="header-btn primary kimem-run"
+                    disabled={loading || (status != null && !status.canUseKimem)}
+                    onClick={() => runKimem()}
+                  >
+                    {loading ? 'Kimem is thinking…' : 'Run'}
+                  </button>
+                  {!status?.hasOwnKey && (
+                    <Link href={sitePath('/settings#kimem-ai')} className="ghost-btn">
+                      Groq key
+                    </Link>
+                  )}
+                </div>
+
+                <details className="kimem-panel__steps">
+                  <summary>Get your Groq API key</summary>
+                  <ol>
+                    <li>
+                      <a href={keysUrl} target="_blank" rel="noopener noreferrer">
+                        console.groq.com/keys
+                      </a>
+                    </li>
+                    <li>Paste in <Link href={sitePath('/settings#kimem-ai')}>Settings → Kimem AI</Link></li>
+                  </ol>
+                </details>
+
+                {error && <p className="kimem-panel__error">{error}</p>}
+
+                {result && (
+                  <div className="kimem-panel__result">
+                    <div className="kimem-panel__result-head">
+                      <span>{result.kind === 'markdown' ? 'Result' : 'Analysis'}</span>
+                      {result.kind === 'markdown' && (
+                        <button
+                          type="button"
+                          className="ghost-btn"
+                          onClick={() => {
+                            onApplyMarkdown(result.content)
+                            setOpen(false)
+                          }}
+                        >
+                          Apply to editor
+                        </button>
+                      )}
+                    </div>
+                    <pre className="kimem-panel__result-body">{result.content}</pre>
+                  </div>
                 )}
               </div>
-              <pre className="kimem-panel__result-body">{result.content}</pre>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </>
       )}
-    </div>
+    </>
   )
 }
