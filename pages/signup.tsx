@@ -9,6 +9,7 @@ import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 import { isGoogleAuthEnabled } from '../lib/googleAuth'
+import { getEmailPolicyError } from '../lib/emailPolicy'
 
 export default function Signup() {
     const [name, setName] = useState('')
@@ -31,6 +32,14 @@ export default function Signup() {
         setToast(null) // Clear any existing toast
 
         try {
+            const policyError = getEmailPolicyError(email)
+            if (policyError) {
+                setError(policyError)
+                setToast({ message: policyError, type: 'error' })
+                setLoading(false)
+                return
+            }
+
             const result = await signUp.email({
                 email,
                 password,
@@ -134,7 +143,7 @@ export default function Signup() {
                         opacity: 0.5,
                         fontSize: '0.95rem'
                     }}>
-                        Join us and start sharing your markdown
+                        Gmail only for now (@gmail.com) — sign up with Google or your Gmail address
                     </p>
                 </div>
 

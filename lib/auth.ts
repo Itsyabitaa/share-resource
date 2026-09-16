@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import { sendPasswordResetEmail } from "./email";
+import { GMAIL_ONLY_MESSAGE, getEmailPolicyError, isAllowedSignupEmail } from "./emailPolicy";
+import { APIError } from "better-auth/api";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -73,6 +75,14 @@ function getSocialProviders() {
     }
 }
 
+async function getUserEmailById(userId: string): Promise<string | null> {
+    const result = await getPool().query<{ email: string }>(
+        'SELECT email FROM "user" WHERE id = $1 LIMIT 1',
+        [userId]
+    )
+    return result.rows[0]?.email ?? null
+}
+
 function createAuth() {
     const socialProviders = getSocialProviders()
 
@@ -98,6 +108,30 @@ function createAuth() {
         },
         ...(socialProviders ? { socialProviders } : {}),
         trustedOrigins: getTrustedOrigins(),
+        databaseHooks: {
+            user: {
+                create: {
+                    before: async (user) => {
+                        const policyError = getEmailPolicyError(user.email || "")
+                        if (policyError) {
+                            throw new APIError("BAD_REQUEST", { message: policyError })
+                        }
+                    },
+                },
+            },
+            session: {
+                create: {
+                    before: async (session) => {
+                        const email = await getUserEmailById(String(session.userId))
+                        if (!email || !isAllowedSignupEmail(email)) {
+                            throw new APIError("FORBIDDEN", {
+                                message: GMAIL_ONLY_MESSAGE,
+                            })
+                        }
+                    },
+                },
+            },
+        },
     })
 }
 

@@ -9,6 +9,7 @@ import { useAppPaths } from '../lib/appPaths'
 import BrandMark from '../components/BrandMark'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 import { isGoogleAuthEnabled } from '../lib/googleAuth'
+import { getEmailPolicyError } from '../lib/emailPolicy'
 
 export default function Login() {
     const [email, setEmail] = useState('')
@@ -43,6 +44,14 @@ export default function Login() {
         setToast(null) // Clear any existing toast
 
         try {
+            const policyError = getEmailPolicyError(email)
+            if (policyError) {
+                setError(policyError)
+                setToast({ message: policyError, type: 'error' })
+                setLoading(false)
+                return
+            }
+
             const result = await signIn.email({
                 email,
                 password,
