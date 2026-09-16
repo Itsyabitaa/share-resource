@@ -30,10 +30,15 @@ export async function uploadPhotoForMarkdown(
   return data.url as string
 }
 
+type OcrResult = {
+  text: string
+  confidence: number
+}
+
 export async function recognizeImageText(
   file: File,
   onProgress?: (message: string) => void
-): Promise<string> {
+): Promise<OcrResult> {
   onProgress?.('Loading text recognition…')
 
   const { createWorker } = await import('tesseract.js')
@@ -47,10 +52,71 @@ export async function recognizeImageText(
 
   try {
     const { data } = await worker.recognize(file)
-    return (data.text || '').trim()
+    return {
+      text: (data.text || '').trim(),
+      confidence: typeof data.confidence === 'number' ? data.confidence : 0,
+    }
   } finally {
     await worker.terminate()
   }
+}
+
+/** OCR on photos is often wrong; avoid turning noise into fake headings/tables. */
+function isLikelyUsefulOcr(text: string, confidence: number): boolean {
+  const trimmed = text.trim()
+  if (!trimmed || confidence < 42) return false
+
+  const compact = trimmed.replace(/\s/g, '')
+  if (compact.length < 40) return false
+
+  const letters = (compact.match(/[a-zA-Z]/g) || []).length
+  const digits = (compact.match(/[0-9]/g) || []).length
+  const usefulChars = letters + digits
+  if (usefulChars / compact.length < 0.5) return false
+
+  const words = trimmed.split(/\s+/).filter(Boolean)
+  if (words.length < 8) return false
+
+  const shortWords = words.filter((word) => word.length <= 2).length
+  if (shortWords / words.length > 0.45) return false
+
+  return true
+}
+
+function buildPhotoMarkdown(options: {
+  title: string
+  alt: string
+  imageUrl: string
+  ocrText?: string
+}) {
+  const { title, alt, imageUrl, ocrText } = options
+  const lines = [
+    `# ${title}`,
+    '',
+    `![${alt}](${imageUrl})`,
+    '',
+  ]
+
+  if (ocrText) {
+    lines.push(
+      '## Extracted text',
+      '',
+      '_Automatic scan — please review and edit. Your photo stays above._',
+      '',
+      '```text',
+      ocrText,
+      '```',
+      '',
+    )
+  } else {
+    lines.push(
+      '_Your photo is saved above. We could not read the text clearly from this shot — add notes below or retake with even lighting and a flat angle._',
+      '',
+    )
+  }
+
+  lines.push('## Notes', '', '')
+  return lines.join('\n')
 }
 
 export async function convertImageToMarkdown(
@@ -62,43 +128,33 @@ export async function convertImageToMarkdown(
   const title = titleFromFilename(file.name)
   const alt = title
 
-  let imageUrl: string | null = null
-  try {
-    onProgress?.('Uploading photo…')
-    imageUrl = await uploadPhotoForMarkdown(file, apiPath)
-  } catch (error) {
-    console.warn('Photo upload failed:', error)
-  }
+  onProgress?.('Uploading photo…')
+  const imageUrl = await uploadPhotoForMarkdown(file, apiPath)
 
   let ocrText = ''
   try {
-    ocrText = await recognizeImageText(file, onProgress)
-    if (autoFormat && ocrText) {
-      ocrText = formatToMarkdown(ocrText)
+    const ocr = await recognizeImageText(file, onProgress)
+    if (isLikelyUsefulOcr(ocr.text, ocr.confidence)) {
+      ocrText = autoFormat
+        ? formatToMarkdown(ocr.text, {
+            detectHeadings: false,
+            detectTables: false,
+            detectCodeBlocks: false,
+            reflowParagraphs: true,
+          })
+        : ocr.text
     }
   } catch (error) {
     console.warn('Photo OCR failed:', error)
   }
 
-  const imageMarkdown = imageUrl ? `![${alt}](${imageUrl})` : ''
-
-  if (ocrText && imageMarkdown) {
-    return {
+  return {
+    title,
+    content: buildPhotoMarkdown({
       title,
-      content: `${ocrText}\n\n---\n\n${imageMarkdown}`,
-    }
+      alt,
+      imageUrl,
+      ocrText: ocrText || undefined,
+    }),
   }
-
-  if (ocrText) {
-    return { title, content: ocrText }
-  }
-
-  if (imageMarkdown) {
-    return {
-      title,
-      content: `# ${title}\n\n${imageMarkdown}\n\n_Add notes about this photo below._`,
-    }
-  }
-
-  throw new Error('Could not read or upload this photo. Try again with better lighting.')
 }

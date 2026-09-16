@@ -4,25 +4,25 @@
  */
 
 interface FormatterOptions {
-  detectHeadings?: boolean
-  detectLists?: boolean
-  detectCodeBlocks?: boolean
-  detectLinks?: boolean
+    detectHeadings?: boolean
+    detectLists?: boolean
+    detectCodeBlocks?: boolean
+    detectLinks?: boolean
   detectQuotes?: boolean
   detectTables?: boolean
   reflowParagraphs?: boolean
-  preserveWhitespace?: boolean
+    preserveWhitespace?: boolean
 }
 
 const DEFAULT_OPTIONS: FormatterOptions = {
-  detectHeadings: true,
-  detectLists: true,
-  detectCodeBlocks: true,
-  detectLinks: true,
+    detectHeadings: true,
+    detectLists: true,
+    detectCodeBlocks: true,
+    detectLinks: true,
   detectQuotes: true,
   detectTables: true,
   reflowParagraphs: true,
-  preserveWhitespace: false,
+    preserveWhitespace: false,
 }
 
 const BULLET_CHARS = '•●○◦▪▫■□◆◇►▸‣·∙–—'
@@ -41,7 +41,7 @@ const MD_HR = /^(-{3,}|\*{3,}|_{3,})$/
 const MD_TABLE_SEP = /^\|?[\s:]*-{3,}[\s:]*(\|[\s:]*-{3,}[\s:]*)+\|?$/
 
 export function formatToMarkdown(text: string, options: FormatterOptions = {}): string {
-  const opts = { ...DEFAULT_OPTIONS, ...options }
+    const opts = { ...DEFAULT_OPTIONS, ...options }
   if (!text || !text.trim()) return text
 
   let content = cleanArtifacts(text)
@@ -107,7 +107,7 @@ function reflowSoftWrappedLines(lines: string[]): string[] {
 
   while (i < lines.length) {
     let line = lines[i]
-    const trimmed = line.trim()
+        const trimmed = line.trim()
 
     if (!trimmed) {
       out.push('')
@@ -118,8 +118,8 @@ function reflowSoftWrappedLines(lines: string[]): string[] {
     if (shouldKeepStandalone(trimmed) || isLikelyCodeLine(trimmed)) {
       out.push(line)
       i++
-      continue
-    }
+            continue
+        }
 
     while (i + 1 < lines.length) {
       const next = lines[i + 1]
@@ -194,35 +194,35 @@ function formatStructure(lines: string[], opts: FormatterOptions): string[] {
       inFence = !inFence
       out.push(line)
       i++
-      continue
-    }
+            continue
+        }
 
     if (inFence) {
       out.push(line)
       i++
-      continue
-    }
+            continue
+        }
 
     if (!trimmed) {
       out.push('')
       i++
-      continue
-    }
+            continue
+        }
 
     // Already markdown — keep as-is (light normalize bullets)
     if (MD_HEADING.test(trimmed) || MD_QUOTE.test(trimmed) || MD_HR.test(trimmed)) {
       out.push(trimmed)
       if (MD_HEADING.test(trimmed)) foundTitle = true
       i++
-      continue
-    }
+            continue
+        }
 
     if (MD_BULLET.test(trimmed)) {
       const indent = leadingIndent(line)
       out.push(`${indent}- ${trimmed.replace(MD_BULLET, '')}`)
       i++
-      continue
-    }
+            continue
+        }
 
     if (MD_ORDERED.test(trimmed)) {
       out.push(trimmed)
@@ -246,8 +246,8 @@ function formatStructure(lines: string[], opts: FormatterOptions): string[] {
     if (/^[-*_=\.]{3,}$/.test(trimmed) && trimmed.length <= 80) {
       out.push('---')
       i++
-      continue
-    }
+            continue
+        }
 
     // Tables
     if (opts.detectTables && looksLikeTableRow(trimmed)) {
@@ -276,16 +276,16 @@ function formatStructure(lines: string[], opts: FormatterOptions): string[] {
     if (opts.detectQuotes && isQuoteCandidate(trimmed)) {
       out.push(`> ${trimmed.replace(/^["“]|["”]$/g, '').replace(/^>\s?/, '')}`)
       i++
-      continue
-    }
+            continue
+        }
 
     // Bullets
     if (opts.detectLists && isBulletLine(trimmed)) {
       const indent = leadingIndent(line)
       out.push(`${indent}- ${extractBulletText(trimmed)}`)
       i++
-      continue
-    }
+            continue
+        }
 
     // Ordered lists — preserve numbering
     if (opts.detectLists && isOrderedLine(trimmed)) {
@@ -294,7 +294,7 @@ function formatStructure(lines: string[], opts: FormatterOptions): string[] {
       if (parsed) {
         out.push(`${indent}${parsed.n}. ${parsed.text}`)
         i++
-        continue
+            continue
       }
     }
 
@@ -542,8 +542,8 @@ function collectTable(
 
     if (MD_TABLE_SEP.test(t)) {
       i++
-      continue
-    }
+            continue
+        }
 
     let cells: string[] | null = null
     if (t.includes('|') && t.split('|').filter(c => c.trim()).length >= 2) {
@@ -700,8 +700,8 @@ function normalizeWhitespace(lines: string[]): string[] {
   let prevWasHeading = false
   let prevWasList = false
 
-  for (const line of lines) {
-    const trimmed = line.trim()
+    for (const line of lines) {
+        const trimmed = line.trim()
     const empty = !trimmed
 
     if (empty) {
