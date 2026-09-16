@@ -809,6 +809,38 @@ export async function setUserPlan(userId: string, plan: UserPlan) {
   `
 }
 
+export async function countFoldersByUser(userId: string): Promise<number> {
+  const result = await sql`
+    SELECT COUNT(*)::int AS count FROM folders WHERE user_id = ${userId}
+  `
+  return result[0]?.count ?? 0
+}
+
+export async function getPhotoConversionsUsed(userId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT photo_conversions_used FROM "user" WHERE id = ${userId}
+    `
+    return Number(result[0]?.photo_conversions_used ?? 0)
+  } catch (error) {
+    if (isMissingPlanColumn(error)) {
+      return 0
+    }
+    throw error
+  }
+}
+
+export async function incrementPhotoConversionsUsed(userId: string): Promise<number> {
+  const result = await sql`
+    UPDATE "user"
+    SET photo_conversions_used = COALESCE(photo_conversions_used, 0) + 1,
+        "updatedAt" = NOW()
+    WHERE id = ${userId}
+    RETURNING photo_conversions_used::int AS photo_conversions_used
+  `
+  return Number(result[0]?.photo_conversions_used ?? 0)
+}
+
 export async function applyProStorageToUserFiles(userId: string) {
   await sql`
     UPDATE files

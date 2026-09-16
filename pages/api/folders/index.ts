@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getFoldersByUser, createFolder } from '../../../lib/dbSchema'
+import { countFoldersByUser, createFolder, getFoldersByUser, getUserPlan } from '../../../lib/dbSchema'
 import { auth } from '../../../lib/auth'
+import { canCreateFolder, folderLimitMessage } from '../../../lib/planLimits'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await auth.api.getSession({
@@ -28,6 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!name) {
         return res.status(400).json({ error: 'Folder name is required' })
       }
+
+      const [plan, foldersUsed] = await Promise.all([
+        getUserPlan(userId),
+        countFoldersByUser(userId),
+      ])
+
+      if (!canCreateFolder(plan, foldersUsed)) {
+        return res.status(403).json({ error: folderLimitMessage(plan) })
+      }
+
       const folder = await createFolder(name, userId)
       return res.status(201).json({ folder })
     } catch (error) {

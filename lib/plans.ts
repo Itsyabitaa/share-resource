@@ -1,11 +1,21 @@
 export type PlanId = 'guest' | 'free' | 'pro'
 
+import {
+  canUsePhotoConversion,
+  FREE_MAX_FOLDERS,
+  FREE_MAX_PHOTO_CONVERSIONS,
+} from './planLimits'
+
 export function canUsePhotoToMarkdown(options: {
   isSignedIn: boolean
   plan: 'free' | 'pro' | null
+  photoConversionsUsed?: number
 }) {
-  return options.isSignedIn && options.plan === 'pro'
+  if (!options.isSignedIn || !options.plan) return false
+  return canUsePhotoConversion(options.plan, options.photoConversionsUsed ?? 0)
 }
+
+export { FREE_MAX_FOLDERS, FREE_MAX_PHOTO_CONVERSIONS }
 
 export type PlanFeature = {
   label: string
@@ -57,7 +67,8 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       { label: 'Markdown editor & uploads', included: true },
       { label: 'Shareable links', included: true },
       { label: '30-day storage', included: true },
-      { label: 'Workspace & folders', included: true },
+      { label: '1 folder', included: true },
+      { label: '3 photo → markdown scans', included: true },
       { label: 'Edit anytime', included: true },
       { label: 'Permanent storage', included: false },
     ],
@@ -74,10 +85,10 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     highlighted: true,
     features: [
       { label: 'Markdown editor & uploads', included: true },
-      { label: 'Photo & camera → markdown (OCR)', included: true },
+      { label: 'Unlimited photo → markdown scans', included: true },
       { label: 'Shareable links', included: true },
       { label: 'Permanent storage', included: true },
-      { label: 'Workspace & folders', included: true },
+      { label: 'Unlimited folders', included: true },
       { label: 'Edit anytime', included: true },
       { label: 'Priority support', included: true },
     ],

@@ -23,7 +23,7 @@ export const handleFileUpload = async (
   try {
     if (isImageFile(file)) {
       if (!options?.allowPhotoToMarkdown) {
-        alert('Photo and camera to markdown is a Pro feature. Upgrade on the Pricing page.')
+        alert('Photo conversion limit reached or not available on your plan. See Pricing to upgrade.')
         return
       }
 

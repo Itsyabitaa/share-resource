@@ -2,12 +2,15 @@ import React, { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
+import { FREE_MAX_PHOTO_CONVERSIONS, photoConversionsRemaining } from '../lib/planLimits'
 
 interface FileUploadProps {
   uploadedFile: File | null
   isConverting: boolean
   conversionStatus?: string
   photoToMarkdownEnabled?: boolean
+  userPlan?: 'free' | 'pro' | null
+  photoConversionsUsed?: number
   showAuthor: boolean
   author: string
   autoFormat: boolean
@@ -28,6 +31,8 @@ export default function FileUpload({
   isConverting,
   conversionStatus,
   photoToMarkdownEnabled = false,
+  userPlan = null,
+  photoConversionsUsed = 0,
   showAuthor,
   author,
   autoFormat,
@@ -49,6 +54,8 @@ export default function FileUpload({
 
   const busyLabel = conversionStatus || (isConverting ? 'Turning it into markdown…' : 'Drop a document in the nest')
   const busyKicker = isConverting ? 'Working' : 'Bring a file'
+  const photosLeft =
+    userPlan === 'free' ? photoConversionsRemaining('free', photoConversionsUsed) : null
 
   return (
     <div className="composer-stage-body">
@@ -77,7 +84,9 @@ export default function FileUpload({
         <h2>{busyLabel}</h2>
         <p>
           {photoToMarkdownEnabled
-            ? 'Documents (TXT, Word, PDF) or photos — up to 10 MB. On your phone, use the camera to scan notes into markdown.'
+            ? userPlan === 'pro'
+              ? 'Documents or photos — up to 10 MB. Unlimited photo scans on Pro.'
+              : `Documents or photos — up to 10 MB. Free plan: ${photosLeft ?? 0} of ${FREE_MAX_PHOTO_CONVERSIONS} photo scans left.`
             : 'TXT, Markdown, Word, or PDF — up to 10 MB.'}
         </p>
 
@@ -104,18 +113,16 @@ export default function FileUpload({
 
         {!photoToMarkdownEnabled && (
           <p className="dropzone-pro-note">
-            {session?.user ? (
+            {!session?.user ? (
               <>
-                Photo &amp; camera → markdown is{' '}
-                <Link href={sitePath('/pricing')}>Pro only</Link>.
+                <Link href={sitePath('/login')}>Sign in</Link> to scan photos (Free: {FREE_MAX_PHOTO_CONVERSIONS} scans).
               </>
-            ) : (
+            ) : userPlan === 'free' ? (
               <>
-                Sign in with{' '}
-                <Link href={sitePath('/pricing')}>Pro</Link>
-                {' '}to scan photos with your camera.
+                You used all {FREE_MAX_PHOTO_CONVERSIONS} photo scans on Free.{' '}
+                <Link href={sitePath('/pricing')}>Upgrade to Pro</Link> for unlimited scans.
               </>
-            )}
+            ) : null}
           </p>
         )}
 

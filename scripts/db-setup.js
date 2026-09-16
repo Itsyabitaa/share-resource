@@ -122,6 +122,7 @@ async function setup() {
   await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS edit_count INTEGER NOT NULL DEFAULT 0`)
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'free'`)
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP WITH TIME ZONE`)
+  await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS photo_conversions_used INTEGER NOT NULL DEFAULT 0`)
 
   // Apply 30-day retention to legacy signed-in files that were stored permanently.
   await pool.query(`

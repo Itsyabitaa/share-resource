@@ -11,6 +11,7 @@ import ShareButton from '../components/ShareButton'
 import FolderSelect from '../components/FolderSelect'
 import { useAppPaths } from '../lib/appPaths'
 import { canUsePhotoToMarkdown } from '../lib/plans'
+import { photoConversionLimitMessage } from '../lib/planLimits'
 import { isImageFile } from '../utils/imageToMarkdown'
 
 const buildQueryString = (query: Record<string, unknown>) => {
@@ -48,6 +49,7 @@ export default function Home() {
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
   const [targetFolderId, setTargetFolderId] = useState<string | null>(null)
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | null>(null)
+  const [photoConversionsUsed, setPhotoConversionsUsed] = useState(0)
   const router = useRouter()
   const { colors } = useTheme()
   const { data: session } = useSession()
@@ -92,17 +94,25 @@ export default function Home() {
       return
     }
 
-    fetch(apiPath('/plan'), { credentials: 'include' })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.plan === 'pro' || data?.plan === 'free') setUserPlan(data.plan)
-      })
-      .catch(() => {})
+    const loadPlan = () => {
+      fetch(apiPath('/plan'), { credentials: 'include' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.plan === 'pro' || data?.plan === 'free') setUserPlan(data.plan)
+          if (typeof data?.limits?.photoConversionsUsed === 'number') {
+            setPhotoConversionsUsed(data.limits.photoConversionsUsed)
+          }
+        })
+        .catch(() => {})
+    }
+
+    loadPlan()
   }, [session?.user, apiPath])
 
   const photoToMarkdownEnabled = canUsePhotoToMarkdown({
     isSignedIn: !!session?.user,
     plan: userPlan,
+    photoConversionsUsed,
   })
 
   const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,11 +120,7 @@ export default function Home() {
     if (!file) return
 
     if (isImageFile(file) && !photoToMarkdownEnabled) {
-      alert(
-        session?.user
-          ? 'Photo and camera to markdown is a Pro feature. Upgrade on the Pricing page.'
-          : 'Sign in with a Pro account to convert photos and camera shots to markdown.'
-      )
+      alert(photoConversionLimitMessage(userPlan, photoConversionsUsed))
       event.target.value = ''
       return
     }
@@ -136,6 +142,16 @@ export default function Home() {
     setConversionStatus('')
     if (suggestedTitle && !title) {
       setTitle(suggestedTitle)
+    }
+    if (isImageFile(file) && userPlan === 'free') {
+      fetch(apiPath('/plan'), { credentials: 'include' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (typeof data?.limits?.photoConversionsUsed === 'number') {
+            setPhotoConversionsUsed(data.limits.photoConversionsUsed)
+          }
+        })
+        .catch(() => {})
     }
     event.target.value = ''
   }
@@ -197,6 +213,8 @@ export default function Home() {
             isConverting={isConverting}
             conversionStatus={conversionStatus}
             photoToMarkdownEnabled={photoToMarkdownEnabled}
+            userPlan={userPlan}
+            photoConversionsUsed={photoConversionsUsed}
             showAuthor={showAuthor}
             author={author}
             autoFormat={autoFormat}

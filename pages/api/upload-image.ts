@@ -4,7 +4,8 @@ import { promises as fs } from 'fs'
 import { auth } from '../../lib/auth'
 import { uploadImageFile } from '../../lib/cloudinaryOps'
 import { getCloudinaryConfig } from '../../lib/userCredentials'
-import { getUserPlan } from '../../lib/dbSchema'
+import { getPhotoConversionsUsed, getUserPlan, incrementPhotoConversionsUsed } from '../../lib/dbSchema'
+import { canUsePhotoConversion, photoConversionLimitMessage } from '../../lib/planLimits'
 import { rateLimit, clientKey } from '../../lib/rateLimit'
 
 export const config = {
@@ -104,16 +105,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Sign in required for photo conversion.' })
     }
 
-    const plan = await getUserPlan(session.user.id)
-    if (plan !== 'pro') {
-      return res.status(403).json({ error: 'Photo and camera to markdown is a Pro feature.' })
+    const userId = session.user.id
+    const [plan, photoConversionsUsed] = await Promise.all([
+      getUserPlan(userId),
+      getPhotoConversionsUsed(userId),
+    ])
+
+    if (!canUsePhotoConversion(plan, photoConversionsUsed)) {
+      return res.status(403).json({ error: photoConversionLimitMessage(plan, photoConversionsUsed) })
     }
 
-    const config = await getCloudinaryConfig(session.user.id)
+    const config = await getCloudinaryConfig(userId)
     assertCloudinaryReady(config)
     const uploaded = await uploadImageFile(filePath, config)
 
-    return res.status(200).json({ url: uploaded.secure_url })
+    const usedAfter = plan === 'free'
+      ? await incrementPhotoConversionsUsed(userId)
+      : photoConversionsUsed
+
+    return res.status(200).json({
+      url: uploaded.secure_url,
+      photoConversionsUsed: usedAfter,
+    })
   } catch (error) {
     console.error('Image upload error:', error)
     const message =

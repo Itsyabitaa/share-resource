@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSession } from '../lib/auth-client'
 import { useAppPaths } from '../lib/appPaths'
 import { useSidebar } from '../lib/SidebarContext'
+import { canCreateFolder, folderLimitMessage } from '../lib/planLimits'
 
 export interface Folder {
   id: string
@@ -296,17 +297,23 @@ export default function Sidebar({
         body: JSON.stringify({ name: newFolderName.trim() }),
       })
 
+      const data = await res.json().catch(() => ({}))
+
       if (res.ok) {
-        const data = await res.json()
         setNewFolderName('')
         setIsCreating(false)
         await loadData()
         goWorkspace(data.folder.id)
+        return
       }
+
+      alert(data.error || folderLimitMessage(userPlan))
     } catch (error) {
       console.error('Failed to create folder:', error)
     }
   }
+
+  const canAddFolder = canCreateFolder(userPlan, folders.length)
 
   const handleDeleteFolder = async (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -450,9 +457,16 @@ export default function Sidebar({
             <button
               type="button"
               className="sidebar-icon-btn"
-              onClick={() => setIsCreating((open) => !open)}
-              title="New folder"
+              onClick={() => {
+                if (!canAddFolder) {
+                  alert(folderLimitMessage(userPlan))
+                  return
+                }
+                setIsCreating((open) => !open)
+              }}
+              title={canAddFolder ? 'New folder' : folderLimitMessage(userPlan)}
               aria-label="New folder"
+              disabled={!canAddFolder}
             >
               <IconPlus />
             </button>
