@@ -245,9 +245,16 @@ export default function Home() {
           />
         )}
 
-        <div className="composer-stage-footer">
-          <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
-          <ShareButton text={text} onShare={onShare} />
+        <div className="composer-stage-bottom">
+          <div className="composer-stage-footer">
+            <div className="composer-footer-start">
+              <FolderSelect activeFolderId={targetFolderId} onChange={setTargetFolderId} />
+              {userPlan === 'pro' && (
+                <span className="composer-kimem-hint">Kimem AI — bottom right</span>
+              )}
+            </div>
+            <ShareButton text={text} onShare={onShare} />
+          </div>
         </div>
       </section>
     </div>

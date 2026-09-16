@@ -85,7 +85,7 @@ export default function MarkdownEditor({
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
-    minHeight: '420px'
+    minHeight: 'min(360px, 45vh)'
   }), [])
 
   return (
@@ -154,12 +154,14 @@ export default function MarkdownEditor({
         />
       )}
 
-      <div className="editor-container">
-        <SimpleMDE
-          value={text}
-          onChange={handleTextChange}
-          options={mdeOptions}
-        />
+      <div className="composer-editor-shell">
+        <div className="editor-container">
+          <SimpleMDE
+            value={text}
+            onChange={handleTextChange}
+            options={mdeOptions}
+          />
+        </div>
       </div>
 
       <KimemAiPanel

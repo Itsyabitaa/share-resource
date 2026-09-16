@@ -1876,6 +1876,7 @@ body.dark .mode-tab.is-active {
   display: flex;
   flex-direction: column;
   padding-top: 28px;
+  padding-bottom: max(112px, calc(88px + env(safe-area-inset-bottom)));
 }
 
 .composer-hero {
@@ -1942,7 +1943,9 @@ body.dark .composer-kicker {
   border-radius: 22px;
   box-shadow: var(--composer-shadow);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .composer-stage-bar {
@@ -1957,7 +1960,50 @@ body.dark .composer-kicker {
 }
 
 .composer-stage-body {
-  padding: 8px 22px 8px;
+  padding: 8px 22px 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.composer-editor-shell {
+  margin: 0 -22px;
+  padding: 0 22px;
+  background: var(--composer-paper);
+  border-top: 1px solid var(--composer-line);
+}
+
+.composer-stage-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--composer-line);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 118, 110, 0.04) 0%,
+    rgba(15, 118, 110, 0.08) 100%
+  );
+}
+
+body.dark .composer-stage-bottom {
+  background: linear-gradient(
+    180deg,
+    rgba(45, 212, 191, 0.04) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+.composer-footer-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+.composer-kimem-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--composer-muted);
+  opacity: 0.85;
+  white-space: nowrap;
 }
 
 .composer-title-input {
@@ -2056,14 +2102,14 @@ body.dark .chip.is-on {
   gap: 12px;
   flex-wrap: wrap;
   padding: 14px 18px 16px;
-  border-top: 1px solid var(--composer-line);
-  background: rgba(120, 113, 108, 0.04);
+  border: none;
+  background: transparent;
 }
 
 .kimem-fab {
   position: fixed;
   right: max(16px, env(safe-area-inset-right));
-  bottom: max(20px, env(safe-area-inset-bottom));
+  bottom: max(88px, calc(72px + env(safe-area-inset-bottom)));
   z-index: 1200;
   display: inline-flex;
   align-items: center;
@@ -2579,13 +2625,21 @@ body.dark .dropzone-btn-secondary {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;
   line-height: 1.7;
-  min-height: 420px !important;
+  min-height: 240px !important;
+  height: auto !important;
   padding-top: 8px;
+  padding-bottom: 4px;
   box-shadow: none !important;
 }
 
 .composer-stage .CodeMirror-scroll {
-  min-height: 420px;
+  min-height: 240px;
+  margin-bottom: 0;
+  padding-bottom: 8px;
+}
+
+.composer-stage .EasyMDEContainer .editor-wrapper {
+  margin-bottom: 0;
 }
 
 .composer-stage .EasyMDEContainer .CodeMirror {
@@ -2598,9 +2652,12 @@ body.dark .dropzone-btn-secondary {
 
 .composer-stage .editor-statusbar {
   border: none;
+  border-top: 1px solid var(--composer-line);
   color: var(--composer-muted);
-  padding: 8px 0 4px;
-  opacity: 0.8;
+  padding: 8px 0 10px;
+  margin: 0;
+  opacity: 0.85;
+  background: rgba(120, 113, 108, 0.03);
 }
 
 .composer-stage .editor-preview,
@@ -2785,6 +2842,14 @@ body.dark .dropzone-btn-secondary {
   .composer-stage-footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .composer-kimem-hint {
+    white-space: normal;
+  }
+
+  .kimem-fab {
+    bottom: max(96px, calc(80px + env(safe-area-inset-bottom)));
   }
 
   .folder-select select {
