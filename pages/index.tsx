@@ -10,6 +10,8 @@ import MarkdownEditor from '../components/MarkdownEditor'
 import ShareButton from '../components/ShareButton'
 import FolderSelect from '../components/FolderSelect'
 import { useAppPaths } from '../lib/appPaths'
+import { canUsePhotoToMarkdown } from '../lib/plans'
+import { isImageFile } from '../utils/imageToMarkdown'
 
 const buildQueryString = (query: Record<string, unknown>) => {
   const params = new URLSearchParams()
@@ -40,6 +42,7 @@ export default function Home() {
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isConverting, setIsConverting] = useState(false)
+  const [conversionStatus, setConversionStatus] = useState('')
   const [autoFormat, setAutoFormat] = useState(true) // Default to auto-format enabled
   const [hasCustomCredentials, setHasCustomCredentials] = useState(false)
   const [useCustomCredentials, setUseCustomCredentials] = useState(false)
@@ -97,11 +100,27 @@ export default function Home() {
       .catch(() => {})
   }, [session?.user, apiPath])
 
+  const photoToMarkdownEnabled = canUsePhotoToMarkdown({
+    isSignedIn: !!session?.user,
+    plan: userPlan,
+  })
+
   const onFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
+    if (isImageFile(file) && !photoToMarkdownEnabled) {
+      alert(
+        session?.user
+          ? 'Photo and camera to markdown is a Pro feature. Upgrade on the Pricing page.'
+          : 'Sign in with a Pro account to convert photos and camera shots to markdown.'
+      )
+      event.target.value = ''
+      return
+    }
+
     setUploadedFile(file)
+    setConversionStatus('')
     const suggestedTitle = await handleFileUpload(
       file,
       showAuthor,
@@ -109,9 +128,12 @@ export default function Home() {
       autoFormat,
       setText,
       setMode,
-        setIsConverting,
-        { apiPath }
+      setIsConverting,
+      { apiPath },
+      setConversionStatus,
+      { allowPhotoToMarkdown: photoToMarkdownEnabled }
     )
+    setConversionStatus('')
     if (suggestedTitle && !title) {
       setTitle(suggestedTitle)
     }
@@ -173,6 +195,8 @@ export default function Home() {
           <FileUpload
             uploadedFile={uploadedFile}
             isConverting={isConverting}
+            conversionStatus={conversionStatus}
+            photoToMarkdownEnabled={photoToMarkdownEnabled}
             showAuthor={showAuthor}
             author={author}
             autoFormat={autoFormat}

@@ -1,5 +1,12 @@
 export type PlanId = 'guest' | 'free' | 'pro'
 
+export function canUsePhotoToMarkdown(options: {
+  isSignedIn: boolean
+  plan: 'free' | 'pro' | null
+}) {
+  return options.isSignedIn && options.plan === 'pro'
+}
+
 export type PlanFeature = {
   label: string
   included: boolean
@@ -67,6 +74,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     highlighted: true,
     features: [
       { label: 'Markdown editor & uploads', included: true },
+      { label: 'Photo & camera → markdown (OCR)', included: true },
       { label: 'Shareable links', included: true },
       { label: 'Permanent storage', included: true },
       { label: 'Workspace & folders', included: true },

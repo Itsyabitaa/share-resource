@@ -1,3 +1,5 @@
+import { convertImageToMarkdown, isImageFile } from './imageToMarkdown'
+
 export const handleFileUpload = async (
   file: File,
   showAuthor: boolean,
@@ -8,12 +10,29 @@ export const handleFileUpload = async (
   setIsConverting: (converting: boolean) => void,
   paths?: {
     apiPath?: (path: string) => string
+  },
+  onProgress?: (message: string) => void,
+  options?: {
+    allowPhotoToMarkdown?: boolean
   }
 ) => {
   setIsConverting(true)
   const apiPath = paths?.apiPath ?? ((path: string) => path)
 
   try {
+    if (isImageFile(file)) {
+      if (!options?.allowPhotoToMarkdown) {
+        alert('Photo and camera to markdown is a Pro feature. Upgrade on the Pricing page.')
+        return
+      }
+
+      const result = await convertImageToMarkdown(file, autoFormat, apiPath, onProgress)
+      setText(result.content)
+      setMode('editor')
+      return result.title
+    }
+
+    onProgress?.('Converting document…')
     const formData = new FormData()
     formData.append('file', file)
     // Include author information if available

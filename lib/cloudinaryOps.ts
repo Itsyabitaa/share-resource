@@ -28,6 +28,20 @@ export function extractPublicId(url: string): string | null {
   return `md-nest/${match[1]}`
 }
 
+export async function uploadImageFile(
+  filePath: string,
+  config: CloudinaryConfig,
+  publicId = `md-nest/photos/${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+) {
+  return withCloudinary(config, () =>
+    cloudinary.uploader.upload(filePath, {
+      resource_type: 'image',
+      public_id: publicId,
+      overwrite: true,
+    })
+  )
+}
+
 export async function uploadMarkdown(
   content: string,
   config: CloudinaryConfig,
