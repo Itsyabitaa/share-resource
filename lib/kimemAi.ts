@@ -44,6 +44,23 @@ function buildUserMessage(action: KimemAction, instruction: string, markdown: st
   }
 }
 
+export function classifyGroqKeyError(message: string): 'retry' | 'disable' | 'fatal' {
+  const m = message.toLowerCase()
+  if (m.includes('invalid') && m.includes('api key')) return 'disable'
+  if (m.includes('401') || m.includes('unauthorized')) return 'disable'
+  if (
+    m.includes('429') ||
+    m.includes('rate limit') ||
+    m.includes('quota') ||
+    m.includes('insufficient') ||
+    m.includes('capacity') ||
+    m.includes('too many requests')
+  ) {
+    return 'retry'
+  }
+  return 'fatal'
+}
+
 export function stripModelMarkdownFences(text: string) {
   let out = text.trim()
   if (out.startsWith('```')) {
@@ -121,4 +138,34 @@ export async function runKimemAi(options: {
   }
 
   return { kind: 'text', content: raw }
+}
+
+export async function runKimemAiWithKeyPool(
+  pool: { id: string; apiKey: string }[],
+  options: Omit<Parameters<typeof runKimemAi>[0], 'apiKey'>,
+  hooks: {
+    onSuccess: (id: string) => Promise<void>
+    onFailure: (id: string, message: string, kind: 'retry' | 'disable' | 'fatal') => Promise<void>
+  }
+) {
+  let lastError: Error | null = null
+
+  for (const entry of pool) {
+    if (!entry.apiKey.trim()) continue
+    try {
+      const result = await runKimemAi({ ...options, apiKey: entry.apiKey })
+      await hooks.onSuccess(entry.id)
+      return result
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Kimem AI request failed'
+      lastError = error instanceof Error ? error : new Error(message)
+      const kind = classifyGroqKeyError(message)
+      await hooks.onFailure(entry.id, message, kind)
+      if (kind === 'retry') continue
+      if (kind === 'disable') continue
+      throw lastError
+    }
+  }
+
+  throw lastError || new Error('All platform Groq keys are unavailable. Add another key in Admin or try again later.')
 }

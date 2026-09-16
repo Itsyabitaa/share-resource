@@ -128,6 +128,25 @@ async function setup() {
   await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS openai_api_key TEXT`)
   await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS groq_api_key TEXT`)
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS platform_groq_keys (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      label VARCHAR(120),
+      api_key_encrypted TEXT NOT NULL,
+      key_display VARCHAR(64) NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      enabled BOOLEAN NOT NULL DEFAULT true,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      last_used_at TIMESTAMP WITH TIME ZONE,
+      last_error_at TIMESTAMP WITH TIME ZONE,
+      last_error TEXT,
+      cooldown_until TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_platform_groq_keys_sort ON platform_groq_keys(sort_order ASC)')
+
   // Apply 30-day retention to legacy signed-in files that were stored permanently.
   await pool.query(`
     UPDATE files f

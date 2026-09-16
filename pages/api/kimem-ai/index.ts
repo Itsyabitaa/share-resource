@@ -2,7 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../../lib/auth'
 import { getUserPlan, incrementKimemTrialUses, incrementKimemUsesTotal } from '../../../lib/dbSchema'
 import { resolveKimemAccess } from '../../../lib/resolveKimemApiKey'
-import { runKimemAi, type KimemAction } from '../../../lib/kimemAi'
+import { runKimemAi, runKimemAiWithKeyPool, type KimemAction } from '../../../lib/kimemAi'
+import {
+  getPlatformGroqKeyPool,
+  recordPlatformGroqKeyFailure,
+  recordPlatformGroqKeySuccess,
+} from '../../../lib/platformGroqKeys'
 import { rateLimit, clientKey } from '../../../lib/rateLimit'
 
 const ACTIONS: KimemAction[] = ['create', 'edit', 'analyze', 'restructure', 'chat']
@@ -33,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const access = await resolveKimemAccess(userId)
-  if (!access.apiKey) {
+  if (!access.canUseKimem) {
     return res.status(403).json({
       error: access.blockedReason || 'Add your Groq API key in Settings to continue with Kimem AI.',
       code: 'kimem_trial_exhausted',
@@ -66,13 +71,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const result = await runKimemAi({
-      apiKey: access.apiKey,
+    const runOptions = {
       action,
       instruction: instr,
       markdown: md,
       title: title ? String(title).slice(0, 500) : undefined,
-    })
+    }
+
+    const result = access.usePlatformPool
+      ? await runKimemAiWithKeyPool(await getPlatformGroqKeyPool(), runOptions, {
+          onSuccess: recordPlatformGroqKeySuccess,
+          onFailure: async (id, message, kind) => {
+            await recordPlatformGroqKeyFailure(id, message, {
+              disable: kind === 'disable',
+              cooldownMs: kind === 'retry' ? 15 * 60 * 1000 : undefined,
+            })
+          },
+        })
+      : await runKimemAi({
+          apiKey: access.apiKey!,
+          ...runOptions,
+        })
 
     let trialUsed = access.trialUsed
     if (access.source === 'platform') {
