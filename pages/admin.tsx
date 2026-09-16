@@ -48,7 +48,21 @@ function isGoogleUser(user: AdminUser) {
   return (user.auth_providers || '').includes('google')
 }
 
-type Tab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts'
+type Tab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts' | 'api-keys'
+
+type PlatformGroqKeyAdmin = {
+  id: string
+  label: string | null
+  keyDisplay: string
+  sortOrder: number
+  enabled: boolean
+  useCount: number
+  lastUsedAt: string | null
+  lastErrorAt: string | null
+  lastError: string | null
+  cooldownUntil: string | null
+  createdAt: string
+}
 
 const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
   overview: {
@@ -75,6 +89,10 @@ const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
     title: 'Accounts',
     subtitle: 'Real sign-ups from your database — filter by Google, activity, or search.',
   },
+  'api-keys': {
+    title: 'Global Groq API keys',
+    subtitle: 'Kimem AI trial pool — keys are tried in order; rate-limited keys auto-rotate to the next.',
+  },
 }
 
 function parseTab(value: unknown): Tab {
@@ -83,7 +101,8 @@ function parseTab(value: unknown): Tab {
     value === 'posts' ||
     value === 'viral' ||
     value === 'activity' ||
-    value === 'accounts'
+    value === 'accounts' ||
+    value === 'api-keys'
   ) {
     return value
   }
@@ -117,6 +136,11 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [planEmail, setPlanEmail] = useState('')
   const [plan, setPlan] = useState<'free' | 'pro'>('pro')
+
+  const [platformKeys, setPlatformKeys] = useState<PlatformGroqKeyAdmin[]>([])
+  const [envFallback, setEnvFallback] = useState<{ configured: boolean; keyDisplay?: string; note?: string } | null>(null)
+  const [newGroqLabel, setNewGroqLabel] = useState('')
+  const [newGroqKey, setNewGroqKey] = useState('')
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -197,13 +221,28 @@ export default function AdminPage() {
     }
   }, [apiPath, userSearch, accountProvider, accountActivity])
 
+  const loadPlatformKeys = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(apiPath('/admin/platform-groq-keys'))
+      const data = await res.json()
+      if (res.ok) {
+        setPlatformKeys(data.keys || [])
+        setEnvFallback(data.envFallback || null)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [apiPath])
+
   useEffect(() => {
     if (!isAdmin) return
     if (tab === 'overview' || tab === 'analytics' || tab === 'activity') loadDashboard()
     if (tab === 'posts') loadPosts()
     if (tab === 'viral') loadViral()
     if (tab === 'accounts') loadUsers()
-  }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers])
+    if (tab === 'api-keys') loadPlatformKeys()
+  }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers, loadPlatformKeys])
 
   const moderateFile = async (fileId: string, action: 'remove' | 'private' | 'warn' | 'restore') => {
     setLoading(true)
@@ -289,6 +328,7 @@ export default function AdminPage() {
               if (tab === 'posts') loadPosts()
               else if (tab === 'viral') loadViral()
               else if (tab === 'accounts') loadUsers()
+              else if (tab === 'api-keys') loadPlatformKeys()
               else loadDashboard()
             }}
           >
@@ -624,6 +664,147 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+      )}
+
+      {tab === 'api-keys' && (
+        <>
+          <p className="admin-hint">
+            Pro users on Kimem trial use these keys (top to bottom). On rate limits, the next key runs automatically.
+            Keys are stored encrypted; only the prefix/suffix is shown here.
+          </p>
+
+          {envFallback?.configured && (
+            <div className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border, marginBottom: 16 }}>
+              <strong>Env fallback:</strong> <code>{envFallback.keyDisplay}</code>
+              <p className="admin-hint" style={{ margin: '8px 0 0' }}>{envFallback.note}</p>
+            </div>
+          )}
+
+          <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border, marginBottom: 16 }}>
+            <h2>Add Groq key</h2>
+            <div className="admin-toolbar admin-toolbar-wrap">
+              <input
+                value={newGroqLabel}
+                onChange={(e) => setNewGroqLabel(e.target.value)}
+                placeholder="Label (optional) e.g. Key 2"
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+              />
+              <input
+                type="password"
+                value={newGroqKey}
+                onChange={(e) => setNewGroqKey(e.target.value)}
+                placeholder="gsk_…"
+                autoComplete="off"
+                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text, minWidth: 280 }}
+              />
+              <button
+                type="button"
+                className="header-btn primary"
+                disabled={loading || !newGroqKey.trim()}
+                onClick={async () => {
+                  setLoading(true)
+                  try {
+                    const res = await fetch(apiPath('/admin/platform-groq-keys'), {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ label: newGroqLabel, apiKey: newGroqKey }),
+                    })
+                    const data = await res.json()
+                    if (!res.ok) {
+                      setToast({ message: data.error || 'Failed to add key', type: 'error' })
+                      return
+                    }
+                    setNewGroqKey('')
+                    setNewGroqLabel('')
+                    setToast({ message: 'Groq key added', type: 'success' })
+                    await loadPlatformKeys()
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+              >
+                Add key
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+            <div className="admin-panel-head">
+              <h2>Key pool ({platformKeys.length})</h2>
+            </div>
+            {platformKeys.length === 0 ? (
+              <p className="admin-hint">No keys in the database yet. Add keys above or set GROQ_API_KEY on Vercel.</p>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Key</th>
+                      <th>Label</th>
+                      <th>Uses</th>
+                      <th>Status</th>
+                      <th>Last error</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {platformKeys.map((key, index) => {
+                      const inCooldown = key.cooldownUntil && new Date(key.cooldownUntil) > new Date()
+                      const status = !key.enabled ? 'Disabled' : inCooldown ? 'Cooldown' : 'Active'
+                      return (
+                        <tr key={key.id}>
+                          <td>{index + 1}</td>
+                          <td><code>{key.keyDisplay}</code></td>
+                          <td>{key.label || '—'}</td>
+                          <td>{key.useCount}</td>
+                          <td>
+                            <span className={`admin-plan-badge ${status === 'Active' ? 'pro' : 'free'}`}>{status}</span>
+                            {inCooldown && key.cooldownUntil && (
+                              <div className="admin-hint">Until {new Date(key.cooldownUntil).toLocaleString()}</div>
+                            )}
+                          </td>
+                          <td className="admin-hint" style={{ maxWidth: 220 }}>{key.lastError || '—'}</td>
+                          <td className="admin-actions-cell">
+                            <button type="button" className="header-btn" disabled={loading || index === 0} onClick={async () => {
+                              await fetch(apiPath('/admin/platform-groq-keys'), {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: key.id, move: 'up' }),
+                              })
+                              await loadPlatformKeys()
+                            }}>↑</button>
+                            <button type="button" className="header-btn" disabled={loading || index === platformKeys.length - 1} onClick={async () => {
+                              await fetch(apiPath('/admin/platform-groq-keys'), {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: key.id, move: 'down' }),
+                              })
+                              await loadPlatformKeys()
+                            }}>↓</button>
+                            <button type="button" className="header-btn" disabled={loading} onClick={async () => {
+                              await fetch(apiPath('/admin/platform-groq-keys'), {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: key.id, enabled: !key.enabled }),
+                              })
+                              await loadPlatformKeys()
+                            }}>{key.enabled ? 'Disable' : 'Enable'}</button>
+                            <button type="button" className="header-btn" disabled={loading} onClick={async () => {
+                              if (!confirm('Delete this Groq key from the pool?')) return
+                              await fetch(`${apiPath('/admin/platform-groq-keys')}?id=${encodeURIComponent(key.id)}`, { method: 'DELETE' })
+                              await loadPlatformKeys()
+                            }}>Delete</button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       )}
 
       {tab === 'accounts' && (
