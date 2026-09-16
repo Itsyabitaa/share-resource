@@ -62,16 +62,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const instr = String(instruction).slice(0, MAX_INSTRUCTION_CHARS)
   const md = String(markdown).slice(0, MAX_MARKDOWN_CHARS)
 
-  const needsInstruction =
-    action === 'edit' || action === 'chat' || action === 'create'
-  if (needsInstruction && !instr.trim() && action !== 'create') {
+  if ((action === 'edit' || action === 'chat') && !instr.trim()) {
     return res.status(400).json({ error: 'Describe what you want Kimem AI to do.' })
+  }
+
+  if (action === 'create' && !instr.trim() && !md.trim()) {
+    return res.status(400).json({ error: 'Describe what Kimem should write (or add a brief in Optional instructions).' })
   }
 
   const needsMarkdown =
     action === 'edit' || action === 'rephrase' || action === 'restructure' || action === 'analyze'
   if (needsMarkdown && !md.trim()) {
-    return res.status(400).json({ error: 'Add some markdown in the editor first.' })
+    return res.status(400).json({
+      error: 'Add markdown in the editor first — or use Create with instructions only to draft a new document.',
+      code: 'needs_markdown',
+    })
   }
 
   try {

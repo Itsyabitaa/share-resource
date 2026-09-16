@@ -5,8 +5,26 @@ export const GROQ_API_BASE = 'https://api.groq.com/openai/v1'
 
 export const KIMEM_AI_NAME = 'Kimem AI'
 
+/** Groq retired llama-3.3-70b-versatile Aug 2026 — see console.groq.com/docs/deprecations */
+export const GROQ_MODEL_FALLBACKS = [
+  'openai/gpt-oss-120b',
+  'qwen/qwen3-32b',
+  'qwen/qwen3.6-27b',
+  'llama-3.1-70b-versatile',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'llama-3.1-8b-instant',
+] as const
+
+export function getGroqModelCandidates(preferred?: string): string[] {
+  const fromEnv = process.env.KIMEM_GROQ_MODEL?.trim()
+  const ordered = [preferred, fromEnv, ...GROQ_MODEL_FALLBACKS].filter(
+    (m): m is string => !!m?.trim()
+  )
+  return [...new Set(ordered)]
+}
+
 export const DEFAULT_GROQ_MODEL =
-  process.env.KIMEM_GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile'
+  process.env.KIMEM_GROQ_MODEL?.trim() || GROQ_MODEL_FALLBACKS[0]
 
 const SYSTEM_PROMPT = `You are Kimem AI, a focused markdown assistant inside md-nest.
 You help users write, edit, analyze, and restructure markdown documents.
@@ -94,23 +112,18 @@ export async function validateGroqApiKey(apiKey: string): Promise<{ valid: boole
   }
 }
 
-export async function runKimemAi(options: {
-  apiKey: string
-  action: KimemAction
-  instruction: string
-  markdown: string
-  title?: string
-  model?: string
-}): Promise<{ kind: 'markdown' | 'text'; content: string }> {
-  const { apiKey, action, instruction, markdown, title, model = DEFAULT_GROQ_MODEL } = options
-  const userMessage = buildUserMessage(action, instruction, markdown, title)
+function isGroqModelUnavailableError(message: string) {
+  const m = message.toLowerCase()
+  return m.includes('does not exist') || m.includes('decommissioned') || m.includes('not have access')
+}
 
-  const wantsMarkdownOnly =
-    action === 'create' ||
-    action === 'edit' ||
-    action === 'rephrase' ||
-    action === 'restructure'
-
+async function callGroqChat(
+  apiKey: string,
+  model: string,
+  action: KimemAction,
+  userMessage: string,
+  wantsMarkdownOnly: boolean
+) {
   const res = await fetch(`${GROQ_API_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -144,14 +157,48 @@ export async function runKimemAi(options: {
     throw new Error(msg)
   }
 
-  const raw = data.choices?.[0]?.message?.content?.trim() || ''
-  if (!raw) throw new Error('Empty response from Kimem AI')
+  return data
+}
 
-  if (wantsMarkdownOnly) {
-    return { kind: 'markdown', content: stripModelMarkdownFences(raw) }
+export async function runKimemAi(options: {
+  apiKey: string
+  action: KimemAction
+  instruction: string
+  markdown: string
+  title?: string
+  model?: string
+}): Promise<{ kind: 'markdown' | 'text'; content: string }> {
+  const { apiKey, action, instruction, markdown, title, model } = options
+  const userMessage = buildUserMessage(action, instruction, markdown, title)
+
+  const wantsMarkdownOnly =
+    action === 'create' ||
+    action === 'edit' ||
+    action === 'rephrase' ||
+    action === 'restructure'
+
+  const models = getGroqModelCandidates(model)
+  let lastError: Error | null = null
+
+  for (const candidate of models) {
+    try {
+      const data = await callGroqChat(apiKey, candidate, action, userMessage, wantsMarkdownOnly)
+      const raw = data.choices?.[0]?.message?.content?.trim() || ''
+      if (!raw) throw new Error('Empty response from Kimem AI')
+
+      if (wantsMarkdownOnly) {
+        return { kind: 'markdown', content: stripModelMarkdownFences(raw) }
+      }
+      return { kind: 'text', content: raw }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      lastError = error instanceof Error ? error : new Error(msg)
+      if (isGroqModelUnavailableError(msg)) continue
+      throw lastError
+    }
   }
 
-  return { kind: 'text', content: raw }
+  throw lastError || new Error('No Groq model available. Set KIMEM_GROQ_MODEL on the server or update Admin keys.')
 }
 
 export async function runKimemAiWithKeyPool(

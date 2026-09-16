@@ -67,9 +67,28 @@ export default function KimemAiPanel({
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
 
+  const resolveAction = (act: KimemAction, instr: string): KimemAction => {
+    const hasMd = !!markdown.trim()
+    const hasInstr = !!instr.trim()
+    if (!hasMd && hasInstr && (act === 'rephrase' || act === 'restructure' || act === 'edit')) {
+      return 'create'
+    }
+    return act
+  }
+
   const runKimem = async (overrideAction?: KimemAction, overrideInstruction?: string) => {
-    const act = overrideAction ?? action
     const instr = overrideInstruction ?? instruction
+    const act = resolveAction(overrideAction ?? action, instr)
+
+    if (
+      !markdown.trim() &&
+      (act === 'rephrase' || act === 'restructure' || act === 'analyze') &&
+      !instr.trim()
+    ) {
+      setError('Add text in the editor, or describe what to create under Optional instructions.')
+      return
+    }
+
     setError(null)
     setResult(null)
     setLoading(true)
@@ -84,6 +103,9 @@ export default function KimemAiPanel({
         setError(data.error || 'Kimem AI request failed')
         if (data.code === 'kimem_trial_exhausted') await loadStatus()
         return
+      }
+      if (act === 'create' && (overrideAction ?? action) !== 'create' && !markdown.trim()) {
+        setAction('create')
       }
       setResult({ kind: data.kind, content: data.content })
       if (typeof data.trialUsed === 'number') {
