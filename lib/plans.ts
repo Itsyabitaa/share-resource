@@ -90,6 +90,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       { label: 'Permanent storage', included: true },
       { label: 'Unlimited folders', included: true },
       { label: 'Edit anytime', included: true },
+      { label: 'Kimem AI (Groq trial + your key)', included: true },
       { label: 'Priority support', included: true },
     ],
   },

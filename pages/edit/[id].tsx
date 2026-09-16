@@ -1,5 +1,5 @@
 import { GetServerSideProps } from 'next'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { auth } from '../../lib/auth'
 import { getFileById } from '../../lib/dbSchema'
@@ -65,6 +65,16 @@ export default function EditPage({
   const [hashtags, setHashtags] = useState<string[]>([])
   const [folderId, setFolderId] = useState<string | null>(initialFolderId)
   const [saving, setSaving] = useState(false)
+  const [userPlan, setUserPlan] = useState<'free' | 'pro'>('free')
+
+  useEffect(() => {
+    fetch(apiPath('/profile'))
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.plan === 'pro') setUserPlan('pro')
+      })
+      .catch(() => {})
+  }, [apiPath])
 
   const handleSave = async () => {
     setSaving(true)
@@ -107,6 +117,7 @@ export default function EditPage({
         onShowAuthorChange={setShowAuthor}
         onIsPublicChange={setIsPublic}
         onHashtagsChange={setHashtags}
+        userPlan={userPlan}
       />
       <FolderSelect activeFolderId={folderId} onChange={setFolderId} />
       <div className="share-row">

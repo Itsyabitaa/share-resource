@@ -1022,6 +1022,75 @@ body.dark .header-btn.primary {
   margin-bottom: 24px;
 }
 
+.usage-dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, rgba(120, 113, 108, 0.2));
+  background: var(--card-bg, rgba(120, 113, 108, 0.04));
+}
+
+.usage-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.usage-row-nums {
+  font-size: 0.82rem;
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+.usage-meter {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(120, 113, 108, 0.15);
+  overflow: hidden;
+}
+
+.usage-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand, #0d9488);
+  transition: width 0.3s ease;
+}
+
+.usage-meter-fill.is-warn {
+  background: #eab308;
+}
+
+.usage-row-hint {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  line-height: 1.45;
+}
+
+.usage-row-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.usage-row--muted {
+  opacity: 0.9;
+}
+
+.usage-footnote {
+  margin: 0.5rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(120, 113, 108, 0.15);
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
 .user-dashboard-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1971,6 +2040,194 @@ body.dark .chip.is-on {
   padding: 14px 18px 16px;
   border-top: 1px solid var(--composer-line);
   background: rgba(120, 113, 108, 0.04);
+}
+
+.kimem-panel {
+  margin: 0 0 14px;
+  border: 1px solid var(--composer-line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(120, 113, 108, 0.04);
+}
+
+.kimem-panel--compact {
+  padding: 12px 14px;
+}
+
+.kimem-panel__teaser {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--composer-muted);
+}
+
+.kimem-panel__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: var(--composer-ink);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.kimem-panel__badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--chip-on);
+  color: var(--brand);
+}
+
+.kimem-panel__title {
+  flex: 1;
+}
+
+.kimem-panel__chevron {
+  color: var(--composer-muted);
+  font-size: 0.85rem;
+}
+
+.kimem-panel__body {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--composer-line);
+}
+
+.kimem-panel__notice {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.kimem-panel__notice--trial {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--composer-ink);
+}
+
+.kimem-panel__notice--ok {
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.kimem-panel__notice--warn {
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.kimem-panel__steps {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--composer-muted);
+}
+
+.kimem-panel__steps summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--composer-ink);
+}
+
+.kimem-panel__steps ol {
+  margin: 8px 0 0;
+  padding-left: 1.2rem;
+}
+
+.kimem-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.kimem-chip {
+  border: 1px solid var(--composer-line);
+  background: transparent;
+  color: var(--composer-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kimem-chip.is-on {
+  background: var(--chip-on);
+  color: var(--brand);
+  border-color: transparent;
+}
+
+.kimem-panel__label {
+  display: block;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--composer-muted);
+}
+
+.kimem-panel__input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--composer-line);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.kimem-panel__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.kimem-run {
+  font-size: 0.88rem !important;
+  padding: 8px 16px !important;
+}
+
+.kimem-panel__error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
+.kimem-panel__result {
+  margin-top: 14px;
+  border: 1px solid var(--composer-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kimem-panel__result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(120, 113, 108, 0.08);
+}
+
+.kimem-panel__result-body {
+  margin: 0;
+  padding: 12px;
+  max-height: 280px;
+  overflow: auto;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .folder-select {

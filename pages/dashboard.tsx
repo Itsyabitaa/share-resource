@@ -7,6 +7,8 @@ import { useAppPaths } from '../lib/appPaths'
 import { daysUntilExpiry } from '../lib/storagePolicy'
 import type { UserDashboardActivity, UserDashboardFile, UserDashboardStats } from '../lib/userDashboard'
 import type { UserPlan } from '../lib/storagePolicy'
+import type { UserUsageSummary } from '../lib/usageSummary'
+import UsageDashboard from '../components/UsageDashboard'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -29,6 +31,7 @@ export default function UserDashboardPage() {
   const [topFiles, setTopFiles] = useState<UserDashboardFile[]>([])
   const [activity, setActivity] = useState<UserDashboardActivity[]>([])
   const [warningCount, setWarningCount] = useState(0)
+  const [usage, setUsage] = useState<UserUsageSummary | null>(null)
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -50,6 +53,7 @@ export default function UserDashboardPage() {
         setTopFiles(data.topFiles || [])
         setActivity(data.activity || [])
         setWarningCount(data.warningCount || 0)
+        if (data.usage) setUsage(data.usage)
       })
       .finally(() => setLoading(false))
   }, [session?.user?.id, apiPath])
@@ -94,6 +98,8 @@ export default function UserDashboardPage() {
         <p className="admin-hint">Loading your dashboard...</p>
       ) : stats ? (
         <>
+          {usage && <UsageDashboard usage={usage} sitePath={sitePath} />}
+
           <section className="user-dashboard-section">
             <h2 className="admin-block-title">At a glance</h2>
             <div className="admin-stat-grid">
@@ -195,6 +201,7 @@ export default function UserDashboardPage() {
           <div className="user-dashboard-quick">
             <Link href={sitePath('/workspace')} className="header-btn">Workspace</Link>
             <Link href={sitePath('/settings')} className="header-btn">Settings</Link>
+            <Link href={sitePath('/settings#kimem-ai')} className="header-btn">Kimem AI key</Link>
             {plan !== 'pro' && (
               <Link href={sitePath('/pricing')} className="header-btn primary">Upgrade to Pro</Link>
             )}

@@ -237,6 +237,7 @@ export default function Home() {
             onShowAuthorChange={setShowAuthor}
             onIsPublicChange={setIsPublic}
             onHashtagsChange={setHashtags}
+            userPlan={userPlan}
           />
         )}
 

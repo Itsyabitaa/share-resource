@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../../lib/auth'
 import { getUserPlan } from '../../../lib/dbSchema'
 import { getUserDashboard } from '../../../lib/userDashboard'
+import { getUserUsageSummary } from '../../../lib/usageSummary'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -17,14 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const [dashboard, plan] = await Promise.all([
+    const [dashboard, plan, usage] = await Promise.all([
       getUserDashboard(session.user.id),
       getUserPlan(session.user.id),
+      getUserUsageSummary(session.user.id),
     ])
 
     return res.status(200).json({
       ...dashboard,
       plan,
+      usage,
       user: {
         name: session.user.name,
         email: session.user.email,

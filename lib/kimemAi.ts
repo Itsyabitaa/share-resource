@@ -1,0 +1,124 @@
+export type KimemAction = 'create' | 'edit' | 'analyze' | 'restructure' | 'chat'
+
+export const GROQ_API_KEYS_URL = 'https://console.groq.com/keys'
+export const GROQ_API_BASE = 'https://api.groq.com/openai/v1'
+
+export const KIMEM_AI_NAME = 'Kimem AI'
+
+export const DEFAULT_GROQ_MODEL =
+  process.env.KIMEM_GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile'
+
+const SYSTEM_PROMPT = `You are Kimem AI, a focused markdown assistant inside md-nest.
+You help users write, edit, analyze, and restructure markdown documents.
+Rules:
+- Prefer clean, portable CommonMark-style markdown (headings, lists, links, code fences when needed).
+- Preserve the author's voice unless they ask for a tone change.
+- Do not invent facts; if information is missing, say so in analysis mode or use placeholders in draft mode.
+- Never wrap markdown output in code fences unless the user asked for a code block inside the document.
+- Do not include meta commentary when the user expects document markdown as the reply.`
+
+function buildUserMessage(action: KimemAction, instruction: string, markdown: string, title?: string) {
+  const doc = markdown.trim()
+  const titleLine = title?.trim() ? `Document title: ${title.trim()}\n\n` : ''
+
+  switch (action) {
+    case 'create':
+      return `${titleLine}Task: Create new markdown from the user's brief.\n\nUser brief:\n${instruction || 'Write a useful starter document.'}\n\n${
+        doc ? `Optional context from their draft (you may replace or extend):\n${doc}` : ''
+      }\n\nReply with ONLY the markdown document.`
+    case 'edit':
+      return `${titleLine}Task: Edit the markdown per the user's instruction. Keep structure sensible.\n\nInstruction:\n${instruction}\n\nCurrent markdown:\n${doc || '(empty)'}\n\nReply with ONLY the full updated markdown.`
+    case 'restructure':
+      return `${titleLine}Task: Restructure and improve organization, headings, and flow without changing meaning unnecessarily.\n\n${
+        instruction ? `Extra guidance:\n${instruction}\n\n` : ''
+      }Current markdown:\n${doc || '(empty)'}\n\nReply with ONLY the restructured markdown.`
+    case 'analyze':
+      return `${titleLine}Task: Analyze this markdown (structure, clarity, gaps, tone, SEO/readability tips). Be concise and actionable.\n\n${
+        instruction ? `Focus areas:\n${instruction}\n\n` : ''
+      }Markdown:\n${doc || '(empty)'}`
+    case 'chat':
+    default:
+      return `${titleLine}User message:\n${instruction}\n\n${
+        doc ? `Current markdown for context:\n${doc}` : 'No document content yet.'
+      }`
+  }
+}
+
+export function stripModelMarkdownFences(text: string) {
+  let out = text.trim()
+  if (out.startsWith('```')) {
+    out = out.replace(/^```(?:markdown|md)?\s*\n/i, '').replace(/\n```\s*$/, '')
+  }
+  return out.trim()
+}
+
+export async function validateGroqApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${GROQ_API_BASE}/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (res.ok) return { valid: true }
+    const body = await res.json().catch(() => ({}))
+    const message =
+      (body as { error?: { message?: string } })?.error?.message || `Groq returned ${res.status}`
+    return { valid: false, error: message }
+  } catch (e) {
+    return { valid: false, error: e instanceof Error ? e.message : 'Could not reach Groq' }
+  }
+}
+
+export async function runKimemAi(options: {
+  apiKey: string
+  action: KimemAction
+  instruction: string
+  markdown: string
+  title?: string
+  model?: string
+}): Promise<{ kind: 'markdown' | 'text'; content: string }> {
+  const { apiKey, action, instruction, markdown, title, model = DEFAULT_GROQ_MODEL } = options
+  const userMessage = buildUserMessage(action, instruction, markdown, title)
+
+  const wantsMarkdownOnly = action === 'create' || action === 'edit' || action === 'restructure'
+
+  const res = await fetch(`${GROQ_API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      temperature: wantsMarkdownOnly ? 0.4 : 0.6,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: wantsMarkdownOnly
+            ? userMessage
+            : action === 'analyze'
+              ? `${userMessage}\n\nReply in clear plain text (short sections, bullet lists OK). Do not output a full rewritten document unless asked.`
+              : userMessage,
+        },
+      ],
+    }),
+  })
+
+  const data = (await res.json()) as {
+    error?: { message?: string }
+    choices?: { message?: { content?: string } }[]
+  }
+
+  if (!res.ok) {
+    const msg = data.error?.message || `Groq error (${res.status})`
+    throw new Error(msg)
+  }
+
+  const raw = data.choices?.[0]?.message?.content?.trim() || ''
+  if (!raw) throw new Error('Empty response from Kimem AI')
+
+  if (wantsMarkdownOnly) {
+    return { kind: 'markdown', content: stripModelMarkdownFences(raw) }
+  }
+
+  return { kind: 'text', content: raw }
+}

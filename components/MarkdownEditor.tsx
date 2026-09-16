@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useSession } from '../lib/auth-client'
 import { formatToMarkdown } from '../utils/markdownFormatter'
+import KimemAiPanel from './KimemAiPanel'
+import type { UserPlan } from '../lib/storagePolicy'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
 import 'easymde/dist/easymde.min.css'
@@ -19,6 +21,7 @@ interface MarkdownEditorProps {
   onShowAuthorChange: (checked: boolean) => void
   onIsPublicChange: (checked: boolean) => void
   onHashtagsChange: (hashtags: string[]) => void
+  userPlan?: UserPlan | null
 }
 
 export default function MarkdownEditor({
@@ -33,7 +36,8 @@ export default function MarkdownEditor({
   onAuthorChange,
   onShowAuthorChange,
   onIsPublicChange,
-  onHashtagsChange
+  onHashtagsChange,
+  userPlan = null,
 }: MarkdownEditorProps) {
   const { data: session } = useSession()
   const [formatStatus, setFormatStatus] = useState<'idle' | 'done' | 'same'>('idle')
@@ -149,6 +153,13 @@ export default function MarkdownEditor({
           placeholder="Tags for Explore — design, notes, tutorial"
         />
       )}
+
+      <KimemAiPanel
+        markdown={text}
+        title={title}
+        userPlan={userPlan}
+        onApplyMarkdown={onTextChange}
+      />
 
       <div className="editor-container">
         <SimpleMDE

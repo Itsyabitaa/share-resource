@@ -841,6 +841,50 @@ export async function incrementPhotoConversionsUsed(userId: string): Promise<num
   return Number(result[0]?.photo_conversions_used ?? 0)
 }
 
+export async function getKimemTrialUses(userId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT kimem_trial_uses FROM "user" WHERE id = ${userId}
+    `
+    return Number(result[0]?.kimem_trial_uses ?? 0)
+  } catch {
+    return 0
+  }
+}
+
+export async function incrementKimemTrialUses(userId: string): Promise<number> {
+  const result = await sql`
+    UPDATE "user"
+    SET kimem_trial_uses = COALESCE(kimem_trial_uses, 0) + 1,
+        "updatedAt" = NOW()
+    WHERE id = ${userId}
+    RETURNING kimem_trial_uses::int AS kimem_trial_uses
+  `
+  return Number(result[0]?.kimem_trial_uses ?? 0)
+}
+
+export async function getKimemUsesTotal(userId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT kimem_uses_total FROM "user" WHERE id = ${userId}
+    `
+    return Number(result[0]?.kimem_uses_total ?? 0)
+  } catch {
+    return 0
+  }
+}
+
+export async function incrementKimemUsesTotal(userId: string): Promise<number> {
+  const result = await sql`
+    UPDATE "user"
+    SET kimem_uses_total = COALESCE(kimem_uses_total, 0) + 1,
+        "updatedAt" = NOW()
+    WHERE id = ${userId}
+    RETURNING kimem_uses_total::int AS kimem_uses_total
+  `
+  return Number(result[0]?.kimem_uses_total ?? 0)
+}
+
 export async function applyProStorageToUserFiles(userId: string) {
   await sql`
     UPDATE files

@@ -123,6 +123,10 @@ async function setup() {
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'free'`)
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP WITH TIME ZONE`)
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS photo_conversions_used INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS kimem_trial_uses INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS kimem_uses_total INTEGER NOT NULL DEFAULT 0`)
+  await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS openai_api_key TEXT`)
+  await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS groq_api_key TEXT`)
 
   // Apply 30-day retention to legacy signed-in files that were stored permanently.
   await pool.query(`
