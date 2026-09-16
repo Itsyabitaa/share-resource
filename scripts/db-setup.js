@@ -127,6 +127,7 @@ async function setup() {
   await pool.query(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS kimem_uses_total INTEGER NOT NULL DEFAULT 0`)
   await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS openai_api_key TEXT`)
   await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS groq_api_key TEXT`)
+  await pool.query(`ALTER TABLE user_credentials ADD COLUMN IF NOT EXISTS groq_key_display VARCHAR(64)`)
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS platform_groq_keys (

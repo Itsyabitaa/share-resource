@@ -14,6 +14,15 @@ import type {
 } from '../lib/moderationDb'
 import { COMMUNITY_TAKEDOWN_MESSAGE } from '../lib/moderation'
 
+type AdminUserApiUsage = {
+  kimemUsesTotal: number
+  kimemTrialUsed: number
+  kimemTrialMax: number
+  photoConversionsUsed: number
+  hasGroqKey: boolean
+  groqKeyDisplay: string | null
+}
+
 type AdminUser = {
   id: string
   email: string
@@ -25,6 +34,7 @@ type AdminUser = {
   file_count: number
   last_seen: string | null
   image: string | null
+  apiUsage?: AdminUserApiUsage
 }
 
 type AccountProviderFilter = 'all' | 'google' | 'email'
@@ -142,6 +152,28 @@ export default function AdminPage() {
   const [newGroqLabel, setNewGroqLabel] = useState('')
   const [newGroqKey, setNewGroqKey] = useState('')
 
+  const [apiDetailUserId, setApiDetailUserId] = useState<string | null>(null)
+  const [apiDetailLoading, setApiDetailLoading] = useState(false)
+  const [apiDetail, setApiDetail] = useState<{
+    email: string
+    name: string | null
+    groqApiKey: string | null
+    groqKeyDisplay: string | null
+    usage: {
+      plan: string
+      kimem: {
+        totalRuns: number
+        trialUsed: number
+        trialMax: number
+        trialRemaining: number
+        hasOwnGroqKey: boolean
+        remainingLabel: string
+      } | null
+      photoScans: { used: number; max: number | null; remaining: number | null; unlimited: boolean }
+      folders: { used: number; max: number | null; remaining: number | null; unlimited: boolean }
+    }
+  } | null>(null)
+
   useEffect(() => {
     if (!isPending && !session) {
       router.push(`${sitePath('/login')}?redirect=${encodeURIComponent('/admin')}`)
@@ -220,6 +252,23 @@ export default function AdminPage() {
       setLoading(false)
     }
   }, [apiPath, userSearch, accountProvider, accountActivity])
+
+  const loadUserApiDetail = useCallback(async (userId: string) => {
+    setApiDetailUserId(userId)
+    setApiDetailLoading(true)
+    setApiDetail(null)
+    try {
+      const res = await fetch(apiPath(`/admin/user-api-usage?userId=${encodeURIComponent(userId)}`))
+      const data = await res.json()
+      if (res.ok && data.detail) {
+        setApiDetail(data.detail)
+      } else {
+        setToast({ message: data.error || 'Failed to load API usage', type: 'error' })
+      }
+    } finally {
+      setApiDetailLoading(false)
+    }
+  }, [apiPath])
 
   const loadPlatformKeys = useCallback(async () => {
     setLoading(true)
@@ -808,6 +857,68 @@ export default function AdminPage() {
       )}
 
       {tab === 'accounts' && (
+        <>
+          {apiDetailUserId && (
+            <section className="admin-panel admin-api-detail" style={{ background: colors.cardBackground, borderColor: colors.border, marginBottom: 16 }}>
+              <div className="admin-panel-head">
+                <h2>User API usage</h2>
+                <button type="button" className="header-btn" onClick={() => { setApiDetailUserId(null); setApiDetail(null) }}>
+                  Close
+                </button>
+              </div>
+              {apiDetailLoading ? (
+                <p className="admin-hint">Loading…</p>
+              ) : apiDetail ? (
+                <>
+                  <p className="admin-hint" style={{ marginTop: 0 }}>
+                    <strong>{apiDetail.email}</strong>
+                    {apiDetail.name ? ` · ${apiDetail.name}` : ''}
+                    {' · Plan: '}{apiDetail.usage.plan}
+                  </p>
+                  <div className="admin-stat-grid compact" style={{ marginBottom: 16 }}>
+                    {[
+                      ['Kimem runs (total)', apiDetail.usage.kimem?.totalRuns ?? 0],
+                      ['Kimem trial used', apiDetail.usage.kimem ? `${apiDetail.usage.kimem.trialUsed} / ${apiDetail.usage.kimem.trialMax}` : '—'],
+                      ['Photo scans', apiDetail.usage.photoScans.unlimited ? `${apiDetail.usage.photoScans.used} (unlimited)` : `${apiDetail.usage.photoScans.used} / ${apiDetail.usage.photoScans.max ?? 0}`],
+                      ['Folders', apiDetail.usage.folders.unlimited ? `${apiDetail.usage.folders.used} (unlimited)` : `${apiDetail.usage.folders.used} / ${apiDetail.usage.folders.max ?? 0}`],
+                    ].map(([label, value]) => (
+                      <div key={String(label)} className="admin-stat-card" style={{ background: colors.cardBackground, borderColor: colors.border }}>
+                        <span>{label}</span>
+                        <strong>{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  {apiDetail.usage.kimem && (
+                    <p className="admin-hint">{apiDetail.usage.kimem.remainingLabel}</p>
+                  )}
+                  <div style={{ marginTop: 12 }}>
+                    <strong>Groq API key</strong>
+                    {apiDetail.groqApiKey ? (
+                      <div className="admin-api-key-reveal">
+                        <code>{apiDetail.groqApiKey}</code>
+                        <button
+                          type="button"
+                          className="header-btn"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(apiDetail.groqApiKey || '')
+                            setToast({ message: 'API key copied', type: 'success' })
+                          }}
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="admin-hint">No personal Groq key saved — user is on md-nest trial or has not configured Kimem.</p>
+                    )}
+                    {apiDetail.groqKeyDisplay && (
+                      <p className="admin-hint">Masked: <code>{apiDetail.groqKeyDisplay}</code></p>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </section>
+          )}
+
         <section className="admin-panel" style={{ background: colors.cardBackground, borderColor: colors.border }}>
           {users.length === 0 ? (
             <p className="admin-hint">No users found.</p>
@@ -819,6 +930,9 @@ export default function AdminPage() {
                     <th>User</th>
                     <th>Sign-in</th>
                     <th>Docs</th>
+                    <th>Kimem</th>
+                    <th>Photos</th>
+                    <th>Groq key</th>
                     <th>Last seen</th>
                     <th>Plan</th>
                     <th>Actions</th>
@@ -852,6 +966,15 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td>{user.file_count}</td>
+                      <td>{user.apiUsage?.kimemUsesTotal ?? 0}</td>
+                      <td>{user.apiUsage?.photoConversionsUsed ?? 0}</td>
+                      <td>
+                        {user.apiUsage?.hasGroqKey ? (
+                          <code>{user.apiUsage.groqKeyDisplay || 'gsk_…'}</code>
+                        ) : (
+                          <span className="admin-hint">—</span>
+                        )}
+                      </td>
                       <td>
                         {user.last_seen
                           ? new Date(user.last_seen).toLocaleString()
@@ -861,6 +984,14 @@ export default function AdminPage() {
                         <span className={`admin-plan-badge ${user.plan}`}>{user.plan}</span>
                       </td>
                       <td className="admin-actions-cell">
+                        <button
+                          type="button"
+                          className="header-btn"
+                          disabled={loading}
+                          onClick={() => loadUserApiDetail(user.id)}
+                        >
+                          API
+                        </button>
                         {user.plan !== 'pro' ? (
                           <button type="button" className="header-btn primary" disabled={loading} onClick={() => assignPlan(user.email, 'pro')}>
                             Make Pro
@@ -878,6 +1009,7 @@ export default function AdminPage() {
             </div>
           )}
         </section>
+        </>
       )}
     </div>
   )

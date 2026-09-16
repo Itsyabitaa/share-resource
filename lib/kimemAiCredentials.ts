@@ -1,5 +1,6 @@
 import sql from './neonClient'
 import { decryptSafe, encryptSafe } from './encryption'
+import { buildApiKeyDisplay } from './keyDisplay'
 
 function pickStoredKey(row: Record<string, unknown>): string | null {
   const groq = row.groq_api_key as string | null | undefined
@@ -24,6 +25,7 @@ export async function userHasGroqApiKey(userId: string): Promise<boolean> {
 
 export async function saveUserGroqApiKey(userId: string, apiKey: string | null): Promise<void> {
   const encrypted = apiKey ? encryptSafe(apiKey) : null
+  const keyDisplay = apiKey ? buildApiKeyDisplay(apiKey) : null
 
   const existing = await sql`
     SELECT id FROM user_credentials WHERE user_id = ${userId}
@@ -33,6 +35,7 @@ export async function saveUserGroqApiKey(userId: string, apiKey: string | null):
     await sql`
       UPDATE user_credentials
       SET groq_api_key = ${encrypted},
+          groq_key_display = ${keyDisplay},
           openai_api_key = NULL,
           updated_at = NOW()
       WHERE user_id = ${userId}
@@ -41,8 +44,8 @@ export async function saveUserGroqApiKey(userId: string, apiKey: string | null):
   }
 
   await sql`
-    INSERT INTO user_credentials (user_id, groq_api_key, use_custom_credentials)
-    VALUES (${userId}, ${encrypted}, false)
+    INSERT INTO user_credentials (user_id, groq_api_key, groq_key_display, use_custom_credentials)
+    VALUES (${userId}, ${encrypted}, ${keyDisplay}, false)
   `
 }
 
@@ -50,6 +53,7 @@ export async function deleteUserGroqApiKey(userId: string): Promise<void> {
   await sql`
     UPDATE user_credentials
     SET groq_api_key = NULL,
+        groq_key_display = NULL,
         openai_api_key = NULL,
         updated_at = NOW()
     WHERE user_id = ${userId}

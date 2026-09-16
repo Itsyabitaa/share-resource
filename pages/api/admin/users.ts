@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { auth } from '../../../lib/auth'
 import { isAdminAuthorized } from '../../../lib/admin'
 import { getUserPlan, listAdminUsers } from '../../../lib/dbSchema'
+import { getAdminUserApiListItems } from '../../../lib/adminUserApi'
+import { KIMEM_TRIAL_MAX } from '../../../lib/kimemTrial'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -27,11 +29,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const users = await listAdminUsers({ query, provider, activity, limit: 40 })
+    const apiItems = await getAdminUserApiListItems(users.map(u => u.id))
     const withPlans = await Promise.all(
-      users.map(async (user) => ({
-        ...user,
-        plan: await getUserPlan(user.id),
-      }))
+      users.map(async (user) => {
+        const api = apiItems.get(user.id)
+        return {
+          ...user,
+          plan: await getUserPlan(user.id),
+          apiUsage: api || {
+            kimemUsesTotal: 0,
+            kimemTrialUsed: 0,
+            kimemTrialMax: KIMEM_TRIAL_MAX,
+            photoConversionsUsed: 0,
+            hasGroqKey: false,
+            groqKeyDisplay: null,
+          },
+        }
+      })
     )
 
     return res.status(200).json({ users: withPlans })

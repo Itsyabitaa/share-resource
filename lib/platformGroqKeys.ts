@@ -1,6 +1,7 @@
 import sql from './neonClient'
 import { encryptSafe, decryptSafe } from './encryption'
 import { validateGroqApiKey } from './kimemAi'
+import { buildApiKeyDisplay } from './keyDisplay'
 
 const DEFAULT_COOLDOWN_MS = 15 * 60 * 1000
 
@@ -16,12 +17,6 @@ export type PlatformGroqKeyRow = {
   lastError: string | null
   cooldownUntil: string | null
   createdAt: string
-}
-
-function buildKeyDisplay(apiKey: string) {
-  const trimmed = apiKey.trim()
-  if (trimmed.length <= 12) return 'gsk_…'
-  return `${trimmed.slice(0, 7)}…${trimmed.slice(-4)}`
 }
 
 export function getEnvPlatformGroqKey(): string | null {
@@ -100,7 +95,7 @@ export async function addPlatformGroqKey(label: string | null, apiKey: string): 
     VALUES (
       ${label?.trim() || null},
       ${encryptSafe(trimmed)},
-      ${buildKeyDisplay(trimmed)},
+      ${buildApiKeyDisplay(trimmed)},
       ${sortOrder}
     )
     RETURNING
