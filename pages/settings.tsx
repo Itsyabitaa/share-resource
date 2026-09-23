@@ -40,6 +40,14 @@ export default function Settings() {
     const [openAiApiKey, setOpenAiApiKey] = useState('')
     const [savingKimemKey, setSavingKimemKey] = useState(false)
     const [validatingKimemKey, setValidatingKimemKey] = useState(false)
+    const [claudeTokens, setClaudeTokens] = useState<Array<{
+        id: string
+        label: string | null
+        token_display: string
+        created_at: string
+    }>>([])
+    const [newClaudeToken, setNewClaudeToken] = useState<string | null>(null)
+    const [creatingClaudeToken, setCreatingClaudeToken] = useState(false)
 
     useEffect(() => {
         if (!isPending && !session) {
@@ -52,8 +60,64 @@ export default function Settings() {
             loadProfile()
             loadCredentials()
             loadKimemStatus()
+            loadClaudeTokens()
         }
     }, [session])
+
+    const loadClaudeTokens = async () => {
+        try {
+            const response = await fetch(apiPath('/integrations/tokens'))
+            if (response.ok) {
+                const data = await response.json()
+                setClaudeTokens(data.tokens || [])
+            }
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const createClaudeToken = async () => {
+        setCreatingClaudeToken(true)
+        try {
+            const response = await fetch(apiPath('/integrations/tokens'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label: 'Claude' }),
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                setToast({ message: data.error || 'Could not create token', type: 'error' })
+                return
+            }
+            setNewClaudeToken(data.token)
+            await loadClaudeTokens()
+        } catch {
+            setToast({ message: 'Could not create token', type: 'error' })
+        } finally {
+            setCreatingClaudeToken(false)
+        }
+    }
+
+    const revokeClaudeToken = async (id: string) => {
+        const ok = await confirmAction({
+            title: 'Revoke Claude token?',
+            text: 'Claude will no longer be able to share nests with this token.',
+            confirmText: 'Revoke',
+            danger: true,
+        })
+        if (!ok) return
+        const response = await fetch(apiPath('/integrations/tokens'), {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+        })
+        if (response.ok) {
+            setToast({ message: 'Token revoked', type: 'success' })
+            await loadClaudeTokens()
+        } else {
+            setToast({ message: 'Could not revoke token', type: 'error' })
+        }
+    }
 
     const loadKimemStatus = async () => {
         try {
@@ -440,6 +504,70 @@ export default function Settings() {
                             {savingProfile ? 'Saving...' : 'Save Profile'}
                         </button>
                     </form>
+                </div>
+
+                <div
+                    id="claude-share"
+                    style={{
+                        backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+                        padding: '2rem',
+                        borderRadius: '12px',
+                        border: theme === 'dark' ? '1px solid #2a2a2a' : '1px solid #e5e5e5',
+                        marginBottom: '2rem',
+                    }}
+                >
+                    <h2 style={{ color: colors.text, fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+                        Share from Claude
+                    </h2>
+                    <p style={{ color: colors.text, opacity: 0.8, marginTop: 0, lineHeight: 1.5 }}>
+                        Create a token, then add a custom connector in Claude. Shares are public by default so the other person can open the link. Ask Claude to keep it private only when you want that.
+                    </p>
+                    <p style={{ color: colors.text, fontSize: '0.92rem' }}>
+                        Connector URL: <code>{typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : '/api/mcp'}</code>
+                    </p>
+                    <p style={{ color: colors.text, fontSize: '0.92rem' }}>
+                        Header: <code>Authorization</code> = <code>Bearer</code> plus the token below.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={createClaudeToken}
+                        disabled={creatingClaudeToken}
+                        style={{
+                            padding: '0.75rem 1.25rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            fontWeight: 600,
+                            cursor: creatingClaudeToken ? 'not-allowed' : 'pointer',
+                            backgroundColor: theme === 'dark' ? '#ffffff' : '#000000',
+                            color: theme === 'dark' ? '#000000' : '#ffffff',
+                        }}
+                    >
+                        {creatingClaudeToken ? 'Creating…' : 'Create Claude token'}
+                    </button>
+                    {newClaudeToken && (
+                        <p style={{ marginTop: '1rem', wordBreak: 'break-all' }}>
+                            Copy now — shown once: <code>{newClaudeToken}</code>
+                        </p>
+                    )}
+                    {claudeTokens.length > 0 && (
+                        <ul style={{ marginTop: '1.25rem', paddingLeft: '1.1rem' }}>
+                            {claudeTokens.map((token) => (
+                                <li key={token.id} style={{ marginBottom: '0.6rem' }}>
+                                    <code>{token.token_display}</code>
+                                    {' · '}
+                                    {token.label || 'Claude'}
+                                    {' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => revokeClaudeToken(token.id)}
+                                        style={{ marginLeft: 8, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                                    >
+                                        Revoke
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 <div

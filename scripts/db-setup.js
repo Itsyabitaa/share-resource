@@ -255,6 +255,20 @@ async function setup() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_moderation_events_created_at ON moderation_events(created_at DESC)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_user_warnings_user_id ON user_warnings(user_id)')
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS integration_tokens (
+      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+      label TEXT,
+      token_hash TEXT NOT NULL UNIQUE,
+      token_display VARCHAR(48) NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      last_used_at TIMESTAMP WITH TIME ZONE,
+      revoked_at TIMESTAMP WITH TIME ZONE
+    )
+  `)
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_integration_tokens_user_id ON integration_tokens(user_id)')
+
   console.log('Schema is up to date. No tables were dropped.')
   await pool.end()
 }

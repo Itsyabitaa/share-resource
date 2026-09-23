@@ -75,6 +75,18 @@ curl -X POST https://mdnest.vercel.app/api/admin/set-plan \
   -d '{"email":"user@example.com","plan":"pro"}'
 ```
 
+### Share from Claude
+
+1. Sign in and open **Settings → Share from Claude**. Create a token (shown once).
+2. In Claude: **Customize → Connectors → Add custom connector**.
+   - URL: `https://mdnest.vercel.app/api/mcp`
+   - Header: `Authorization: Bearer mdnest_…`
+3. Install `claude-plugin/` (skill + `/mdnest-share`) or just ask Claude to share the markdown with the md-nest connector.
+
+Links are **public by default** so the recipient can open them. Say “keep it private” only when you do not want anyone else to read it.
+
+Run `npm run db:setup` once so the `integration_tokens` table exists.
+
 ## Scripts
 
 - `npm run dev` / `build` / `start`
