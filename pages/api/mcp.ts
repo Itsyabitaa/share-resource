@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { readBearerToken, userIdForIntegrationToken } from '../../lib/integrationTokens'
+import { setMcpUnauthorized, userIdFromMcpRequest } from '../../lib/mcpOauth'
 import { shareMarkdown } from '../../lib/shareMarkdown'
 import { clientKey, rateLimit } from '../../lib/rateLimit'
 
@@ -60,6 +60,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(202).end()
   }
 
+  const userId = await userIdFromMcpRequest(req.headers.authorization)
+  if (!userId) {
+    setMcpUnauthorized(res)
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+
   if (body.method === 'initialize') {
     return res.status(200).json(rpcResult(body.id, {
       protocolVersion: '2025-03-26',
@@ -78,15 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (body.method !== 'tools/call') {
     return res.status(200).json(rpcError(body.id, -32601, `Method not found: ${body.method}`))
-  }
-
-  const token = readBearerToken(req.headers.authorization)
-  const userId = token ? await userIdForIntegrationToken(token) : null
-  if (!userId) {
-    return res.status(200).json(rpcResult(body.id, {
-      content: [{ type: 'text', text: 'md-nest token missing or revoked. Add Authorization: Bearer mdnest_… on the connector.' }],
-      isError: true,
-    }))
   }
 
   if (body.params?.name !== 'share_to_mdnest') {
