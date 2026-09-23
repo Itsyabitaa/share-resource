@@ -217,7 +217,11 @@ export default function AdminPage() {
       params.set('sort', postSort)
       const res = await fetch(apiPath(`/admin/files?${params.toString()}`))
       const data = await res.json()
-      if (res.ok) setPostFiles(data.files || [])
+      if (res.ok) {
+        const files = (data.files || []) as AdminFileRow[]
+        const seen = new Set<string>()
+        setPostFiles(files.filter((f) => (seen.has(f.id) ? false : (seen.add(f.id), true))))
+      }
     } finally {
       setLoading(false)
     }
@@ -455,7 +459,7 @@ export default function AdminPage() {
         {tab === 'posts' && (
           <>
             <div className="admin-toolbar admin-toolbar-wrap admin-toolbar-labeled">
-              <label className="admin-toolbar-field">
+              <label className="admin-toolbar-field admin-toolbar-search">
                 <span className="admin-toolbar-label">Search</span>
                 <input
                   value={postSearch}
@@ -496,9 +500,6 @@ export default function AdminPage() {
                 </select>
               </label>
               <div className="admin-toolbar-field admin-toolbar-submit">
-                <span className="admin-toolbar-label" aria-hidden="true">
-                  &nbsp;
-                </span>
                 <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
                   Apply filters
                 </button>

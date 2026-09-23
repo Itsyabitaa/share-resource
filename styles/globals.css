@@ -1667,15 +1667,26 @@ body.dark .admin-sticky-top {
   line-height: 1.2;
 }
 
+.admin-toolbar-labeled {
+  align-items: center;
+}
+
 .admin-toolbar-labeled .admin-toolbar-field {
-  flex: 1 1 160px;
+  flex: 1 1 180px;
   min-width: 0;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
+.admin-toolbar-labeled .admin-toolbar-field.admin-toolbar-search {
+  flex: 2 1 260px;
+  max-width: 420px;
+}
+
 .admin-toolbar-label {
+  display: none;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1683,22 +1694,33 @@ body.dark .admin-sticky-top {
   opacity: 0.6;
 }
 
-.admin-toolbar-field input,
-.admin-toolbar-field select {
+.admin-toolbar-labeled .admin-toolbar-field input,
+.admin-toolbar-labeled .admin-toolbar-field select {
+  flex: none !important;
   width: 100%;
   min-height: 44px;
+  max-height: 44px;
+  box-sizing: border-box;
 }
 
 .admin-toolbar-submit {
-  align-self: flex-end;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.admin-toolbar-submit .admin-toolbar-label {
+  display: none;
 }
 
 .admin-toolbar-submit .header-btn {
-  width: 100%;
+  width: auto;
+  min-width: 132px;
   min-height: 44px;
+  white-space: nowrap;
 }
 
 .admin-mobile-tip {
+  display: none;
   margin-top: 4px;
 }
 
@@ -1759,10 +1781,23 @@ body.dark .admin-btn-takedown {
     flex: none;
     width: 100%;
     min-width: 0;
+    max-width: none;
+  }
+
+  .admin-toolbar-label {
+    display: block;
   }
 
   .admin-toolbar-submit {
     align-self: stretch;
+  }
+
+  .admin-toolbar-submit .header-btn {
+    width: 100%;
+  }
+
+  .admin-mobile-tip {
+    display: block;
   }
 
   .admin-stat-grid {
