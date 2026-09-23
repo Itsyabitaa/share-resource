@@ -458,7 +458,7 @@ export default function AdminPage() {
 
         {tab === 'posts' && (
           <>
-            <div className="admin-toolbar admin-toolbar-wrap admin-toolbar-labeled">
+            <div className="admin-toolbar admin-toolbar-wrap admin-toolbar-labeled admin-posts-filters">
               <label className="admin-toolbar-field admin-toolbar-search">
                 <span className="admin-toolbar-label">Search</span>
                 <input
