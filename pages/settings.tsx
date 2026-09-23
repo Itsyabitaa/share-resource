@@ -98,6 +98,15 @@ export default function Settings() {
         }
     }
 
+    const copyText = async (value: string, label: string) => {
+        try {
+            await navigator.clipboard.writeText(value)
+            setToast({ message: `${label} copied`, type: 'success' })
+        } catch {
+            setToast({ message: 'Could not copy', type: 'error' })
+        }
+    }
+
     const revokeClaudeToken = async (id: string) => {
         const ok = await confirmAction({
             title: 'Revoke Claude token?',
@@ -523,11 +532,29 @@ export default function Settings() {
                         Create a token, then add a custom connector in Claude. Shares are public by default so the other person can open the link. Ask Claude to keep it private only when you want that.
                     </p>
                     <p style={{ color: colors.text, fontSize: '0.92rem' }}>
-                        Connector URL: <code>{typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : '/api/mcp'}</code>
+                        Click a value to copy it.
                     </p>
-                    <p style={{ color: colors.text, fontSize: '0.92rem' }}>
-                        Header: <code>Authorization</code> = <code>Bearer</code> plus the token below.
-                    </p>
+                    <button
+                        type="button"
+                        onClick={() => copyText(`${window.location.origin}/api/mcp`, 'Connector URL')}
+                        style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            marginBottom: '0.75rem',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '8px',
+                            border: theme === 'dark' ? '1px solid #333' : '1px solid #e5e5e5',
+                            background: theme === 'dark' ? '#111' : '#fafafa',
+                            color: colors.text,
+                            cursor: 'pointer',
+                            font: 'inherit',
+                        }}
+                    >
+                        Connector URL
+                        <br />
+                        <code>{typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : '/api/mcp'}</code>
+                    </button>
                     <button
                         type="button"
                         onClick={createClaudeToken}
@@ -545,9 +572,46 @@ export default function Settings() {
                         {creatingClaudeToken ? 'Creating…' : 'Create Claude token'}
                     </button>
                     {newClaudeToken && (
-                        <p style={{ marginTop: '1rem', wordBreak: 'break-all' }}>
-                            Copy now — shown once: <code>{newClaudeToken}</code>
-                        </p>
+                        <div style={{ marginTop: '1rem', display: 'grid', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => copyText(newClaudeToken, 'Token')}
+                                style={{
+                                    textAlign: 'left',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '8px',
+                                    border: theme === 'dark' ? '1px solid #333' : '1px solid #e5e5e5',
+                                    background: theme === 'dark' ? '#111' : '#fafafa',
+                                    color: colors.text,
+                                    cursor: 'pointer',
+                                    font: 'inherit',
+                                    wordBreak: 'break-all',
+                                }}
+                            >
+                                Token — click to copy
+                                <br />
+                                <code>{newClaudeToken}</code>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => copyText(`Bearer ${newClaudeToken}`, 'Authorization header')}
+                                style={{
+                                    textAlign: 'left',
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '8px',
+                                    border: theme === 'dark' ? '1px solid #333' : '1px solid #e5e5e5',
+                                    background: theme === 'dark' ? '#111' : '#fafafa',
+                                    color: colors.text,
+                                    cursor: 'pointer',
+                                    font: 'inherit',
+                                    wordBreak: 'break-all',
+                                }}
+                            >
+                                Authorization header — click to copy
+                                <br />
+                                <code>{`Bearer ${newClaudeToken}`}</code>
+                            </button>
+                        </div>
                     )}
                     {claudeTokens.length > 0 && (
                         <ul style={{ marginTop: '1.25rem', paddingLeft: '1.1rem' }}>
