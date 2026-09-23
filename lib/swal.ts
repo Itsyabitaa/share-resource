@@ -97,3 +97,52 @@ export async function promptInput(options: {
   if (!result.isConfirmed) return null
   return String(result.value).trim()
 }
+
+export async function promptTextarea(options: {
+  title: string
+  text?: string
+  inputLabel?: string
+  inputValue?: string
+  placeholder?: string
+  confirmText?: string
+  cancelText?: string
+  icon?: 'warning' | 'question' | 'info'
+  danger?: boolean
+  requireNonEmpty?: boolean
+}): Promise<string | null> {
+  const theme = swalTheme()
+  const result = await Swal.fire({
+    ...theme,
+    icon: options.icon ?? (options.danger ? 'warning' : 'question'),
+    title: options.title,
+    text: options.text,
+    input: 'textarea',
+    inputLabel: options.inputLabel,
+    inputValue: options.inputValue ?? '',
+    inputPlaceholder: options.placeholder,
+    inputAttributes: {
+      'aria-label': options.inputLabel ?? options.title,
+      rows: '4',
+    },
+    showCancelButton: true,
+    confirmButtonText: options.confirmText ?? 'Apply',
+    cancelButtonText: options.cancelText ?? 'Cancel',
+    reverseButtons: true,
+    focusCancel: !!options.danger,
+    buttonsStyling: true,
+    customClass: {
+      popup: 'mdnest-swal mdnest-swal-form',
+      confirmButton: options.danger ? 'mdnest-swal-btn-danger' : 'mdnest-swal-btn-confirm',
+      cancelButton: 'mdnest-swal-btn-cancel',
+      input: 'mdnest-swal-textarea',
+    },
+    inputValidator: (value) => {
+      if (options.requireNonEmpty !== false && !value?.trim()) {
+        return 'Please enter a message'
+      }
+      return null
+    },
+  })
+  if (!result.isConfirmed) return null
+  return String(result.value ?? '').trim()
+}

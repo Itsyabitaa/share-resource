@@ -12,8 +12,12 @@ import type {
   AdminFileSort,
   AdminFileStatusFilter,
 } from '../lib/moderationDb'
-import { COMMUNITY_TAKEDOWN_MESSAGE } from '../lib/moderation'
-import { confirmAction } from '../lib/swal'
+import {
+  COMMUNITY_TAKEDOWN_MESSAGE,
+  DEFAULT_WARNING_MESSAGE,
+  type ModerationAction,
+} from '../lib/moderation'
+import { confirmAction, promptTextarea } from '../lib/swal'
 
 type AdminUserApiUsage = {
   kimemUsesTotal: number
@@ -139,7 +143,6 @@ export default function AdminPage() {
   const [postStatus, setPostStatus] = useState<AdminFileStatusFilter>('all')
   const [postSort, setPostSort] = useState<AdminFileSort>('newest')
   const [postFiles, setPostFiles] = useState<AdminFileRow[]>([])
-  const [modReason, setModReason] = useState(COMMUNITY_TAKEDOWN_MESSAGE)
 
   const [userSearch, setUserSearch] = useState('')
   const [accountProvider, setAccountProvider] = useState<AccountProviderFilter>('all')
@@ -294,17 +297,25 @@ export default function AdminPage() {
     if (tab === 'api-keys') loadPlatformKeys()
   }, [isAdmin, tab, loadDashboard, loadPosts, loadViral, loadUsers, loadPlatformKeys])
 
-  const moderateFile = async (fileId: string, action: 'remove' | 'private' | 'warn' | 'restore') => {
+  const defaultModerationMessage = (action: ModerationAction) => {
+    if (action === 'warn') return DEFAULT_WARNING_MESSAGE
+    if (action === 'remove') return COMMUNITY_TAKEDOWN_MESSAGE
+    if (action === 'private') return 'This post was made private by a moderator.'
+    return ''
+  }
+
+  const moderateFile = async (fileId: string, action: ModerationAction, reason: string) => {
     setLoading(true)
     try {
+      const trimmed = reason.trim()
       const res = await fetch(apiPath('/admin/moderate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fileId,
           action,
-          reason: modReason.trim() || COMMUNITY_TAKEDOWN_MESSAGE,
-          warningMessage: modReason.trim() || undefined,
+          reason: trimmed || defaultModerationMessage(action) || COMMUNITY_TAKEDOWN_MESSAGE,
+          warningMessage: action === 'warn' ? trimmed || DEFAULT_WARNING_MESSAGE : undefined,
         }),
       })
       const data = await res.json()
@@ -321,6 +332,61 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const requestModerateFile = async (file: AdminFileRow, action: ModerationAction) => {
+    const title = file.title?.trim() || 'Untitled'
+    const subtitle = title.length > 80 ? `${title.slice(0, 80)}…` : title
+
+    if (action === 'restore') {
+      const ok = await confirmAction({
+        title: 'Restore post',
+        text: `Restore "${subtitle}" to active status?`,
+        confirmText: 'Restore',
+        icon: 'question',
+      })
+      if (!ok) return
+      await moderateFile(file.id, action, '')
+      return
+    }
+
+    const modalCopy =
+      action === 'warn'
+        ? {
+            title: 'Send warning',
+            inputLabel: 'Warning message (shown on post and emailed to owner)',
+            confirmText: 'Send warning',
+            danger: false,
+            icon: 'warning' as const,
+          }
+        : action === 'remove'
+          ? {
+              title: 'Takedown post',
+              inputLabel: 'Message shown to visitors',
+              confirmText: 'Takedown',
+              danger: true,
+              icon: 'warning' as const,
+            }
+          : {
+              title: 'Make post private',
+              inputLabel: 'Note for moderation log (optional)',
+              confirmText: 'Make private',
+              danger: false,
+              icon: 'question' as const,
+            }
+
+    const message = await promptTextarea({
+      title: modalCopy.title,
+      text: `"${subtitle}"`,
+      inputLabel: modalCopy.inputLabel,
+      inputValue: defaultModerationMessage(action),
+      confirmText: modalCopy.confirmText,
+      icon: modalCopy.icon,
+      danger: modalCopy.danger,
+      requireNonEmpty: action !== 'private',
+    })
+    if (message === null) return
+    await moderateFile(file.id, action, message)
   }
 
   const assignPlan = async (targetEmail: string, targetPlan: 'free' | 'pro') => {
@@ -388,51 +454,59 @@ export default function AdminPage() {
 
         {tab === 'posts' && (
           <>
-            <div className="admin-toolbar admin-toolbar-wrap">
-              <input
-                value={postSearch}
-                onChange={(e) => setPostSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && loadPosts()}
-                placeholder="Search by title, author, or owner email"
-                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-              />
-              <select
-                value={postStatus}
-                onChange={(e) => setPostStatus(e.target.value as AdminFileStatusFilter)}
-                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-              >
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="warned">Warned</option>
-                <option value="removed">Removed</option>
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-                <option value="guest">Guest posts</option>
-              </select>
-              <select
-                value={postSort}
-                onChange={(e) => setPostSort(e.target.value as AdminFileSort)}
-                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="viral">Viral score</option>
-                <option value="views">Most views</option>
-                <option value="shares">Most shares</option>
-              </select>
-              <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
-                Apply filters
-              </button>
+            <div className="admin-toolbar admin-toolbar-wrap admin-toolbar-labeled">
+              <label className="admin-toolbar-field">
+                <span className="admin-toolbar-label">Search</span>
+                <input
+                  value={postSearch}
+                  onChange={(e) => setPostSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && loadPosts()}
+                  placeholder="Title, author, or owner email"
+                  style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+                />
+              </label>
+              <label className="admin-toolbar-field">
+                <span className="admin-toolbar-label">Status</span>
+                <select
+                  value={postStatus}
+                  onChange={(e) => setPostStatus(e.target.value as AdminFileStatusFilter)}
+                  style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="warned">Warned</option>
+                  <option value="removed">Removed</option>
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                  <option value="guest">Guest posts</option>
+                </select>
+              </label>
+              <label className="admin-toolbar-field">
+                <span className="admin-toolbar-label">Sort</span>
+                <select
+                  value={postSort}
+                  onChange={(e) => setPostSort(e.target.value as AdminFileSort)}
+                  style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="viral">Viral score</option>
+                  <option value="views">Most views</option>
+                  <option value="shares">Most shares</option>
+                </select>
+              </label>
+              <div className="admin-toolbar-field admin-toolbar-submit">
+                <span className="admin-toolbar-label" aria-hidden="true">
+                  &nbsp;
+                </span>
+                <button type="button" className="header-btn primary" disabled={loading} onClick={loadPosts}>
+                  Apply filters
+                </button>
+              </div>
             </div>
-            <label className="admin-field">
-              <span>Warning / takedown message</span>
-              <textarea
-                value={modReason}
-                onChange={(e) => setModReason(e.target.value)}
-                rows={2}
-                style={{ borderColor: colors.border, background: colors.inputBackground, color: colors.text }}
-              />
-            </label>
+            <p className="admin-hint admin-mobile-tip">
+              Tap Warn, Private, or Takedown on a post to open the message dialog.
+            </p>
           </>
         )}
 
@@ -544,7 +618,7 @@ export default function AdminPage() {
               <AdminFileTable
                 files={viralPosts.slice(0, 5)}
                 sitePath={sitePath}
-                onModerate={moderateFile}
+                onModerate={requestModerateFile}
                 loading={loading}
                 showModeration={false}
               />
@@ -674,7 +748,7 @@ export default function AdminPage() {
           <AdminFileTable
             files={postFiles}
             sitePath={sitePath}
-            onModerate={moderateFile}
+            onModerate={requestModerateFile}
             loading={loading}
           />
         </section>
@@ -686,7 +760,7 @@ export default function AdminPage() {
           <AdminFileTable
             files={viralPosts}
             sitePath={sitePath}
-            onModerate={moderateFile}
+            onModerate={requestModerateFile}
             loading={loading}
           />
         </section>
@@ -1076,7 +1150,7 @@ function AdminFileTable({
 }: {
   files: AdminFileRow[]
   sitePath: (path: string) => string
-  onModerate: (fileId: string, action: 'remove' | 'private' | 'warn' | 'restore') => void
+  onModerate: (file: AdminFileRow, action: ModerationAction) => void
   loading: boolean
   showModeration?: boolean
 }) {
@@ -1086,42 +1160,90 @@ function AdminFileTable({
 
   return (
     <div className="admin-file-table">
-      {files.map((file) => (
-        <div key={file.id} className="admin-file-row">
-          <div className="admin-file-main">
-            <Link href={sitePath(`/file/${file.id}`)} className="admin-file-title">
-              {file.title || 'Untitled'}
-            </Link>
-            <div className="admin-hint">
-              {file.is_public ? 'Public' : 'Private'}
-              {file.user_id ? ' · signed-in' : ' · guest'}
-              {file.user_email ? ` · ${file.user_email}` : ''}
-              {' · '}
-              {file.view_count} views · {file.share_count} shares · {file.like_count} likes
-              {' · score '}{file.viral_score}
-              {file.moderation_status !== 'active' ? ` · ${file.moderation_status}` : ''}
+      {files.map((file) => {
+        const modStatus = file.moderation_status || 'active'
+        const modTone =
+          modStatus === 'removed' ? 'danger' : modStatus === 'warned' ? 'warn' : 'neutral'
+
+        return (
+          <article key={file.id} className="admin-file-row">
+            <div className="admin-file-main">
+              <Link href={sitePath(`/file/${file.id}`)} className="admin-file-title">
+                {file.title || 'Untitled'}
+              </Link>
+              <ul className="admin-file-meta-chips" aria-label="Post details">
+                <li className={`admin-meta-chip ${file.is_public ? 'is-public' : 'is-private'}`}>
+                  {file.is_public ? 'Public' : 'Private'}
+                </li>
+                <li className="admin-meta-chip">{file.user_id ? 'Signed in' : 'Guest'}</li>
+                {modStatus !== 'active' && (
+                  <li className={`admin-meta-chip mod-${modTone}`}>{modStatus}</li>
+                )}
+              </ul>
+              {file.user_email && <p className="admin-file-email">{file.user_email}</p>}
+              <dl className="admin-file-stats">
+                <div>
+                  <dt>Views</dt>
+                  <dd>{file.view_count}</dd>
+                </div>
+                <div>
+                  <dt>Shares</dt>
+                  <dd>{file.share_count}</dd>
+                </div>
+                <div>
+                  <dt>Likes</dt>
+                  <dd>{file.like_count}</dd>
+                </div>
+                <div>
+                  <dt>Score</dt>
+                  <dd>{file.viral_score}</dd>
+                </div>
+              </dl>
             </div>
-          </div>
-          {showModeration && (
-            <div className="admin-file-actions">
-              <button type="button" className="header-btn" disabled={loading} onClick={() => onModerate(file.id, 'warn')}>
-                Warn
-              </button>
-              <button type="button" className="header-btn" disabled={loading} onClick={() => onModerate(file.id, 'private')}>
-                Private
-              </button>
-              <button type="button" className="header-btn" disabled={loading} onClick={() => onModerate(file.id, 'remove')}>
-                Takedown
-              </button>
-              {file.moderation_status !== 'active' && (
-                <button type="button" className="header-btn primary" disabled={loading} onClick={() => onModerate(file.id, 'restore')}>
-                  Restore
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+            {showModeration && (
+              <div className="admin-file-actions-wrap">
+                <p className="admin-file-actions-label">Moderation</p>
+                <div className="admin-file-actions">
+                  <button
+                    type="button"
+                    className="header-btn"
+                    disabled={loading}
+                    onClick={() => onModerate(file, 'warn')}
+                  >
+                    Warn
+                  </button>
+                  <button
+                    type="button"
+                    className="header-btn"
+                    disabled={loading}
+                    onClick={() => onModerate(file, 'private')}
+                  >
+                    Private
+                  </button>
+                  <button
+                    type="button"
+                    className="header-btn admin-btn-takedown"
+                    disabled={loading}
+                    onClick={() => onModerate(file, 'remove')}
+                  >
+                    Takedown
+                  </button>
+                  {modStatus !== 'active' && (
+                    <button
+                      type="button"
+                      className="header-btn primary admin-btn-restore"
+                      disabled={loading}
+                      onClick={() => onModerate(file, 'restore')}
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </article>
+        )
+      })}
     </div>
   )
 }
