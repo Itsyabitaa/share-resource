@@ -94,7 +94,8 @@ export const handleSave = async (
     sitePath?: (path: string) => string
     apiPath?: (path: string) => string
   },
-  isAuthenticated?: boolean
+  isAuthenticated?: boolean,
+  listOnExplore: boolean = false
 ) => {
   const sitePath = paths?.sitePath ?? ((path: string) => path)
   const apiPath = paths?.apiPath ?? ((path: string) => path)
@@ -118,6 +119,7 @@ export const handleSave = async (
         title: title || 'Untitled Document',
         author: showAuthor ? author : undefined,
         isPublic,
+        listOnExplore,
         hashtags,
         folderId
       }),

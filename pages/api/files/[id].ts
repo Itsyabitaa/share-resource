@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PATCH') {
     try {
-      const { title, content, isPublic, hashtags, folderId, author } = req.body
+      const { title, content, isPublic, listOnExplore, hashtags, folderId, author } = req.body
       let cloudinaryUrl = file.cloudinary_url
 
       if (typeof content === 'string') {
@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         title,
         author,
         isPublic,
+        listOnExplore: typeof listOnExplore === 'boolean' ? listOnExplore : undefined,
         hashtags,
         folderId,
         cloudinaryUrl,

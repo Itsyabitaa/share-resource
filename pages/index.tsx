@@ -40,6 +40,7 @@ export default function Home() {
   const [author, setAuthor] = useState('')
   const [showAuthor, setShowAuthor] = useState(false)
   const [isPublic, setIsPublic] = useState(false)
+  const [listOnExplore, setListOnExplore] = useState(false)
   const [hashtags, setHashtags] = useState<string[]>([])
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -164,7 +165,7 @@ export default function Home() {
     await handleSave(text, title, showAuthor, author, isPublic, hashtags, router, targetFolderId, {
       sitePath,
       apiPath,
-    }, !!session?.user)
+    }, !!session?.user, listOnExplore)
   }
 
   return (
@@ -234,12 +235,20 @@ export default function Home() {
             author={author}
             showAuthor={showAuthor}
             isPublic={isPublic}
+            listOnExplore={listOnExplore}
             hashtags={hashtags}
             onTextChange={setText}
             onTitleChange={setTitle}
             onAuthorChange={setAuthor}
             onShowAuthorChange={setShowAuthor}
-            onIsPublicChange={setIsPublic}
+            onIsPublicChange={(next) => {
+              setIsPublic(next)
+              if (!next) setListOnExplore(false)
+            }}
+            onListOnExploreChange={(next) => {
+              setListOnExplore(next)
+              if (next) setIsPublic(true)
+            }}
             onHashtagsChange={setHashtags}
             userPlan={userPlan}
           />

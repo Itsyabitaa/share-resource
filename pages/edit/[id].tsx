@@ -35,6 +35,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       title: file.title,
       author: file.author || '',
       isPublic: !!file.is_public,
+      listOnExplore: !!file.listed_on_explore,
       folderId: file.folder_id || null,
     }
   }
@@ -46,6 +47,7 @@ export default function EditPage({
   title: initialTitle,
   author: initialAuthor,
   isPublic: initialPublic,
+  listOnExplore: initialListOnExplore = false,
   folderId: initialFolderId,
 }: {
   fileId: string
@@ -53,6 +55,7 @@ export default function EditPage({
   title: string
   author: string
   isPublic: boolean
+  listOnExplore?: boolean
   folderId: string | null
 }) {
   const { colors } = useTheme()
@@ -63,6 +66,7 @@ export default function EditPage({
   const [author, setAuthor] = useState(initialAuthor)
   const [showAuthor, setShowAuthor] = useState(!!initialAuthor)
   const [isPublic, setIsPublic] = useState(initialPublic)
+  const [listOnExplore, setListOnExplore] = useState(initialListOnExplore)
   const [hashtags, setHashtags] = useState<string[]>([])
   const [folderId, setFolderId] = useState<string | null>(initialFolderId)
   const [saving, setSaving] = useState(false)
@@ -88,6 +92,7 @@ export default function EditPage({
           content: text,
           author: showAuthor ? author : '',
           isPublic,
+          listOnExplore,
           hashtags,
           folderId,
         }),
@@ -111,12 +116,20 @@ export default function EditPage({
         author={author}
         showAuthor={showAuthor}
         isPublic={isPublic}
+        listOnExplore={listOnExplore}
         hashtags={hashtags}
         onTextChange={setText}
         onTitleChange={setTitle}
         onAuthorChange={setAuthor}
         onShowAuthorChange={setShowAuthor}
-        onIsPublicChange={setIsPublic}
+        onIsPublicChange={(next) => {
+          setIsPublic(next)
+          if (!next) setListOnExplore(false)
+        }}
+        onListOnExploreChange={(next) => {
+          setListOnExplore(next)
+          if (next) setIsPublic(true)
+        }}
         onHashtagsChange={setHashtags}
         userPlan={userPlan}
       />

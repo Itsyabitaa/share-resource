@@ -14,12 +14,14 @@ interface MarkdownEditorProps {
   author: string
   showAuthor: boolean
   isPublic: boolean
+  listOnExplore?: boolean
   hashtags: string[]
   onTextChange: (value: string) => void
   onTitleChange: (value: string) => void
   onAuthorChange: (value: string) => void
   onShowAuthorChange: (checked: boolean) => void
   onIsPublicChange: (checked: boolean) => void
+  onListOnExploreChange?: (checked: boolean) => void
   onHashtagsChange: (hashtags: string[]) => void
   userPlan?: UserPlan | null
 }
@@ -30,12 +32,14 @@ export default function MarkdownEditor({
   author,
   showAuthor,
   isPublic,
+  listOnExplore = false,
   hashtags,
   onTextChange,
   onTitleChange,
   onAuthorChange,
   onShowAuthorChange,
   onIsPublicChange,
+  onListOnExploreChange,
   onHashtagsChange,
   userPlan = null,
 }: MarkdownEditorProps) {
@@ -113,9 +117,19 @@ export default function MarkdownEditor({
           type="button"
           className={`chip${isPublic ? ' is-on' : ''}`}
           aria-pressed={isPublic}
+          title="Anyone with the link can open this nest. It stays off Explore."
           onClick={() => onIsPublicChange(!isPublic)}
         >
           Public
+        </button>
+        <button
+          type="button"
+          className={`chip${listOnExplore ? ' is-on' : ''}`}
+          aria-pressed={listOnExplore}
+          title="Show this nest on the Explore page. Off unless you turn it on."
+          onClick={() => onListOnExploreChange?.(!listOnExplore)}
+        >
+          Explore
         </button>
         <button
           type="button"
@@ -127,6 +141,9 @@ export default function MarkdownEditor({
           {formatStatus === 'done' ? 'Formatted' : formatStatus === 'same' ? 'Already clean' : 'Auto-format'}
         </button>
       </div>
+      <p className="composer-visibility-hint">
+        Public shares a link. Explore lists it only when you turn Explore on.
+      </p>
 
       {showAuthor && (
         <input

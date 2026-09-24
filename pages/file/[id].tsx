@@ -79,6 +79,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
           createdAt: fileData.created_at,
           updatedAt: fileData.updated_at,
           isPublic: false,
+          listedOnExplore: false,
           expiresAt: null,
           isOwner: false,
           initialViewCount: 0,
@@ -105,6 +106,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         createdAt: fileData.created_at,
         updatedAt: fileData.updated_at,
         isPublic: !!fileData.is_public,
+        listedOnExplore: !!fileData.listed_on_explore,
         expiresAt: fileData.expires_at || null,
         isOwner: !!session?.user?.id && session.user.id === fileData.user_id,
         initialViewCount: fileData.view_count ?? 0,
@@ -160,6 +162,7 @@ export default function FilePage(props: {
   createdAt: string
   updatedAt: string
   isPublic: boolean
+  listedOnExplore?: boolean
   expiresAt: string | null
   isOwner: boolean
   initialViewCount: number
@@ -186,6 +189,7 @@ export default function FilePage(props: {
     createdAt,
     updatedAt,
     isPublic,
+    listedOnExplore = false,
     expiresAt,
     isOwner,
     initialViewCount,
@@ -490,6 +494,9 @@ export default function FilePage(props: {
                 </h1>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
                   <span className="header-btn" style={{ cursor: 'default' }}>{isPublic ? 'Public' : 'Private'}</span>
+                  {listedOnExplore && (
+                    <span className="header-btn" style={{ cursor: 'default' }}>On Explore</span>
+                  )}
                   {expiresAt && (
                     <span className="header-btn" style={{ cursor: 'default' }}>
                       Expires {new Date(expiresAt).toLocaleDateString()}

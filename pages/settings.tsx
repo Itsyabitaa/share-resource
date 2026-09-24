@@ -529,10 +529,10 @@ export default function Settings() {
                         Share from Claude
                     </h2>
                     <p style={{ color: colors.text, opacity: 0.8, marginTop: 0, lineHeight: 1.5 }}>
-                        Create a token, then add a custom connector in Claude. Shares are public by default so the other person can open the link. Ask Claude to keep it private only when you want that.
+                        In Claude, add this URL, choose <strong>Sign in now</strong>, then click <strong>Connect</strong> and <strong>Allow Claude</strong>. Shared links are public.
                     </p>
                     <p style={{ color: colors.text, fontSize: '0.92rem' }}>
-                        Click a value to copy it.
+                        Click the URL to copy it.
                     </p>
                     <button
                         type="button"

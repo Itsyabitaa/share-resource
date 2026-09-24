@@ -210,6 +210,8 @@ async function setup() {
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at DESC)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_files_is_public ON files(is_public)')
+  await pool.query(`ALTER TABLE files ADD COLUMN IF NOT EXISTS listed_on_explore BOOLEAN NOT NULL DEFAULT false`)
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_files_listed_on_explore ON files(listed_on_explore)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_files_hashtags ON files USING GIN(hashtags)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
   await pool.query('CREATE INDEX IF NOT EXISTS idx_files_expires_at ON files(expires_at)')

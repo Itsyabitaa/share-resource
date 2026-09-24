@@ -2622,7 +2622,14 @@ body.dark .composer-stage-bottom {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  padding: 4px 0 14px;
+  padding: 4px 0 8px;
+}
+
+.composer-visibility-hint {
+  margin: 0 0 14px;
+  color: var(--composer-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .chip {

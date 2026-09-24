@@ -32,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       title = 'Untitled Document',
       author,
       isPublic = false,
+      listOnExplore = false,
       hashtags = [],
       folderId
     } = req.body
@@ -57,7 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId,
       expiresAt || undefined,
       storageTier,
-      ownedFolderId
+      ownedFolderId,
+      listOnExplore === true
     )
 
     res.status(200).json({

@@ -66,7 +66,19 @@ export async function createTables() {
   }
 }
 
-export async function insertFile(
+let exploreColumnReady: Promise<void> | null = null
+
+export function ensureListedOnExploreColumn() {
+  if (!exploreColumnReady) {
+    exploreColumnReady = sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS listed_on_explore BOOLEAN NOT NULL DEFAULT false`
+      .then(() => undefined)
+      .catch((error) => {
+        exploreColumnReady = null
+        throw error
+      })
+  }
+  return exploreColumnReady
+}
   title: string,
   cloudinaryUrl: string,
   fileType: string,
@@ -77,14 +89,17 @@ export async function insertFile(
   userId?: string,
   expiresAt?: Date,
   storageTier: StorageTier = 'guest',
-  folderId?: string
+  folderId?: string,
+  listOnExplore: boolean = false
 ) {
   try {
+    await ensureListedOnExploreColumn()
     const id = uuidv4()
+    const listed = listOnExplore && isPublic
     const result = await sql`
-      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, hashtags, user_id, expires_at, storage_tier, folder_id)
-      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
-      RETURNING id, title, author, cloudinary_url, created_at, is_public, hashtags, user_id, expires_at, storage_tier, folder_id
+      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, listed_on_explore, hashtags, user_id, expires_at, storage_tier, folder_id)
+      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${listed}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
+      RETURNING id, title, author, cloudinary_url, created_at, is_public, listed_on_explore, hashtags, user_id, expires_at, storage_tier, folder_id
     `
     await recordFileEdit(id, userId || null, title, 'create')
     return result[0]
@@ -104,6 +119,7 @@ export type FileRecord = {
   created_at: string
   updated_at: string
   is_public: boolean
+  listed_on_explore?: boolean
   user_id?: string | null
   expires_at?: string | null
   folder_id?: string | null
@@ -173,6 +189,7 @@ export function canAccessFile(
 
 export async function getFileById(id: string): Promise<FileRecord | undefined> {
   try {
+    await ensureListedOnExploreColumn()
     const result = await sql`
       SELECT 
         id,
@@ -184,6 +201,7 @@ export async function getFileById(id: string): Promise<FileRecord | undefined> {
         created_at::text as created_at,
         updated_at::text as updated_at,
         is_public,
+        COALESCE(listed_on_explore, false) as listed_on_explore,
         user_id,
         expires_at::text as expires_at,
         folder_id,
@@ -221,6 +239,7 @@ export async function getPublicFiles(options: {
   try {
     const { searchTerm, hashtag, sort = 'new', page = 1, limit = 12 } = options
     const offset = Math.max(0, (page - 1) * limit)
+    await ensureListedOnExploreColumn()
 
     let queryText = `
       SELECT 
@@ -246,6 +265,7 @@ export async function getPublicFiles(options: {
         GROUP BY file_id
       ) c ON f.id = c.file_id
       WHERE f.is_public = true
+        AND COALESCE(f.listed_on_explore, false) = true
         AND (f.expires_at IS NULL OR f.expires_at > NOW())
         AND COALESCE(f.moderation_status, 'active') != 'removed'
     `
@@ -293,12 +313,15 @@ export async function getPublicFiles(options: {
 
 export async function getPopularHashtags() {
   try {
+    await ensureListedOnExploreColumn()
     const result = await sql`
       SELECT 
         unnest(hashtags) as hashtag,
         COUNT(*) as count
       FROM files 
-      WHERE is_public = true AND hashtags IS NOT NULL
+      WHERE is_public = true
+        AND COALESCE(listed_on_explore, false) = true
+        AND hashtags IS NOT NULL
       GROUP BY hashtag
       ORDER BY count DESC
       LIMIT 20
@@ -525,18 +548,25 @@ export async function updateOwnedFile(
     title?: string
     author?: string
     isPublic?: boolean
+    listOnExplore?: boolean
     hashtags?: string[]
     folderId?: string | null
     cloudinaryUrl?: string
     fileSize?: number
   }
 ) {
+  await ensureListedOnExploreColumn()
   const current = await sql`SELECT * FROM files WHERE id = ${fileId} AND user_id = ${userId}`
   if (current.length === 0) return null
 
   const title = updates.title ?? current[0].title
   const author = updates.author ?? current[0].author
   const isPublic = updates.isPublic ?? current[0].is_public
+  const listOnExplore = !!isPublic && (
+    updates.listOnExplore === undefined
+      ? !!current[0].listed_on_explore
+      : !!updates.listOnExplore
+  )
   const hashtags = updates.hashtags ?? current[0].hashtags ?? []
   const folderId = updates.folderId === undefined ? current[0].folder_id : updates.folderId
   const cloudinaryUrl = updates.cloudinaryUrl ?? current[0].cloudinary_url
@@ -556,6 +586,7 @@ export async function updateOwnedFile(
       title = ${title},
       author = ${author},
       is_public = ${isPublic},
+      listed_on_explore = ${listOnExplore},
       hashtags = ${hashtags},
       folder_id = ${folderId},
       cloudinary_url = ${cloudinaryUrl},
@@ -567,7 +598,7 @@ export async function updateOwnedFile(
       END
     WHERE id = ${fileId} AND user_id = ${userId}
     RETURNING
-      id, title, author, cloudinary_url, is_public, hashtags, folder_id, user_id,
+      id, title, author, cloudinary_url, is_public, listed_on_explore, hashtags, folder_id, user_id,
       created_at::text as created_at, updated_at::text as updated_at,
       COALESCE(view_count, 0)::int as view_count,
       COALESCE(share_count, 0)::int as share_count,

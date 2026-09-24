@@ -14,7 +14,7 @@ export const config = {
 const SHARE_TOOL = {
   name: 'share_to_mdnest',
   description:
-    'Publish markdown on md-nest and return a link the other person can open. Links are public by default. Set is_public to false only when the user explicitly wants a private copy they alone can open.',
+    'Publish markdown on md-nest and return a link the other person can open. The link is public by default and is not listed on Explore unless list_on_explore is true. Set is_public to false only when the user explicitly wants a private copy they alone can open.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -22,7 +22,11 @@ const SHARE_TOOL = {
       title: { type: 'string', description: 'Optional title. Defaults to the first heading.' },
       is_public: {
         type: 'boolean',
-        description: 'Defaults to true. False means only the token owner can open the nest.',
+        description: 'Defaults to true. False means only the token owner can open the nest. A public link is not listed on Explore.',
+      },
+      list_on_explore: {
+        type: 'boolean',
+        description: 'Defaults to false. Set true only when the user asks to show the nest on the Explore page.',
       },
     },
     required: ['markdown'],
@@ -105,12 +109,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const markdown = typeof args.markdown === 'string' ? args.markdown : ''
   const title = typeof args.title === 'string' ? args.title : undefined
   const isPublic = args.is_public !== false
+  const listOnExplore = args.list_on_explore === true
 
   try {
-    const shared = await shareMarkdown({ userId, content: markdown, title, isPublic })
-    const visibility = shared.isPublic
-      ? 'Anyone with this link can read it.'
-      : 'This nest is private. Only you can open it.'
+    const shared = await shareMarkdown({ userId, content: markdown, title, isPublic, listOnExplore })
+    const visibility = !shared.isPublic
+      ? 'This nest is private. Only you can open it.'
+      : shared.listedOnExplore
+        ? 'Anyone with this link can read it. It is also listed on Explore.'
+        : 'Anyone with this link can read it. It is not listed on Explore.'
     return res.status(200).json(rpcResult(body.id, {
       content: [{
         type: 'text',

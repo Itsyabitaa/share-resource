@@ -24,6 +24,7 @@ export async function shareMarkdown(options: {
   title?: string
   author?: string
   isPublic?: boolean
+  listOnExplore?: boolean
 }) {
   const content = options.content.trim()
   if (!content) {
@@ -31,6 +32,7 @@ export async function shareMarkdown(options: {
   }
 
   const isPublic = options.isPublic !== false
+  const listOnExplore = options.listOnExplore === true
   const title = titleFromMarkdown(content, options.title)
   const userPlan = await getUserPlan(options.userId)
   if (userPlan !== 'pro') {
@@ -49,7 +51,9 @@ export async function shareMarkdown(options: {
     [],
     options.userId,
     expiresAt || undefined,
-    storageTier
+    storageTier,
+    undefined,
+    listOnExplore
   )
 
   return {
@@ -57,6 +61,7 @@ export async function shareMarkdown(options: {
     title: fileData.title as string,
     url: `${publicSiteOrigin()}/file/${fileData.id}`,
     isPublic: !!fileData.is_public,
+    listedOnExplore: !!fileData.listed_on_explore,
     expiresAt: fileData.expires_at,
     storageTier: fileData.storage_tier,
     message,
