@@ -33,6 +33,9 @@ export async function shareMarkdown(options: {
   const isPublic = options.isPublic !== false
   const title = titleFromMarkdown(content, options.title)
   const userPlan = await getUserPlan(options.userId)
+  if (userPlan !== 'pro') {
+    throw new Error('Claude sharing is a Pro feature. Sign in with a Pro account.')
+  }
   const { storageTier, expiresAt, message } = computeFileStorage(userPlan)
   const config = await getCloudinaryConfig(options.userId)
   const uploadResult = await uploadMarkdown(content, config)

@@ -164,6 +164,149 @@ body.dark .app-shell {
   transition: margin-left 0.25s ease;
 }
 
+.claude-announce {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px var(--page-pad) 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #042f2e;
+  background:
+    radial-gradient(420px 80px at 0 0, rgba(255, 255, 255, 0.45), transparent 60%),
+    linear-gradient(110deg, #5eead4, #0f766e 55%, #134e4a);
+  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.22);
+}
+
+.claude-announce-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.claude-announce-copy p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.claude-announce-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(4, 47, 46, 0.14);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.claude-announce-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.claude-announce-try,
+.claude-guide-copy {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.claude-announce-try {
+  background: #042f2e;
+  color: #ecfdf5;
+}
+
+.claude-announce-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #042f2e;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.claude-guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(28, 25, 23, 0.46);
+}
+
+.claude-guide {
+  width: min(560px, 100%);
+  max-height: min(86vh, 720px);
+  overflow: auto;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fffcf7;
+  color: #1c1917;
+  box-shadow: 0 24px 80px rgba(28, 25, 23, 0.28);
+}
+
+.claude-guide h2 {
+  margin: 8px 0 8px;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 2rem;
+}
+
+.claude-guide-lead,
+.claude-guide li {
+  line-height: 1.5;
+}
+
+.claude-guide ol {
+  margin: 0 0 16px;
+  padding-left: 1.2rem;
+}
+
+.claude-guide li + li {
+  margin-top: 8px;
+}
+
+.claude-guide-copy {
+  margin-right: 8px;
+  background: transparent;
+  color: #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.35) !important;
+}
+
+body.dark .claude-guide {
+  background: #1c1917;
+  color: #f5f5f4;
+}
+
+@media (max-width: 720px) {
+  .claude-announce {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .claude-announce-copy {
+    align-items: flex-start;
+  }
+
+  .claude-announce-try {
+    width: 100%;
+  }
+}
+
 .page-shell {
   width: 100%;
   max-width: 880px;

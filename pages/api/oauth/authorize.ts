@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getUser } from '../../../lib/auth'
+import { getUserPlan } from '../../../lib/dbSchema'
 import { createAuthCode, getOauthClient } from '../../../lib/mcpOauth'
 
 function one(value: unknown) {
@@ -36,6 +37,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!user?.id) {
     const back = req.url || '/api/oauth/authorize'
     return res.redirect(302, `/login?redirect=${encodeURIComponent(back)}`)
+  }
+
+  const plan = await getUserPlan(user.id)
+  if (plan !== 'pro') {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    return res.status(403).send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Pro required</title></head>
+<body style="font-family:ui-sans-serif,system-ui,sans-serif;background:#f1eee6;color:#1c1917;margin:0">
+<main style="max-width:440px;margin:12vh auto;padding:28px;background:#fff;border-radius:16px">
+<h1>Pro account required</h1>
+<p>Claude sharing saves notes to your md-nest account. That account needs to be Pro.</p>
+<p><a href="/pricing">See Pro</a></p>
+</main></body></html>`)
   }
 
   if (req.method === 'POST') {
