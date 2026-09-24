@@ -3263,6 +3263,35 @@ body.dark .dropzone-btn-secondary {
   border-left: 2px solid var(--brand);
 }
 
+body.dark .editor-toolbar {
+  background: #f4f1ea !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 12px;
+  opacity: 1;
+}
+
+body.dark .editor-toolbar button,
+body.dark .editor-toolbar a {
+  color: #1c1917 !important;
+}
+
+body.dark .editor-toolbar button:hover,
+body.dark .editor-toolbar button.active,
+body.dark .editor-toolbar a:hover,
+body.dark .editor-toolbar a.active {
+  background: rgba(15, 118, 110, 0.14) !important;
+  color: #0f766e !important;
+}
+
+body.dark .editor-toolbar i.separator {
+  border-left-color: rgba(28, 25, 23, 0.2) !important;
+  border-right-color: rgba(28, 25, 23, 0.2) !important;
+}
+
+body.dark .editor-statusbar {
+  color: #a8a29e;
+}
+
 .composer-stage .editor-statusbar {
   border: none;
   border-top: 1px solid var(--composer-line);
