@@ -156,8 +156,7 @@ export default function PricingPage() {
             Upgrade to Pro
           </h2>
           <p style={{ opacity: 0.85, marginBottom: 20 }}>
-            Unlock permanent storage for all your documents. Existing files on your account
-            will stop expiring as soon as you upgrade.
+            Unlock permanent storage and Share from Claude. Notes Claude publishes are saved to your Pro account.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>

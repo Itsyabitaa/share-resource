@@ -52,6 +52,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       { label: 'Workspace & folders', included: false },
       { label: 'Edit anytime', included: false },
       { label: 'Permanent storage', included: false },
+      { label: 'Share from Claude', included: false },
     ],
   },
   {
@@ -71,6 +72,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       { label: '3 photo → markdown scans', included: true },
       { label: 'Edit anytime', included: true },
       { label: 'Permanent storage', included: false },
+      { label: 'Share from Claude', included: false },
     ],
   },
   {
@@ -91,6 +93,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       { label: 'Unlimited folders', included: true },
       { label: 'Edit anytime', included: true },
       { label: 'Kimem AI (Groq trial + your key)', included: true },
+      { label: 'Share from Claude', included: true },
       { label: 'Priority support', included: true },
     ],
   },
