@@ -79,6 +79,8 @@ export function ensureListedOnExploreColumn() {
   }
   return exploreColumnReady
 }
+
+export async function insertFile(
   title: string,
   cloudinaryUrl: string,
   fileType: string,

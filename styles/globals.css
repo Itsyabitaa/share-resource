@@ -28,6 +28,10 @@ body {
 }
 
 body.light {
+  --header-bg: #f1eee6;
+  --header-line: rgba(120, 113, 108, 0.18);
+  --header-btn-border: rgba(120, 113, 108, 0.22);
+  --header-btn-hover: rgba(120, 113, 108, 0.1);
   --page-bg: #f1eee6;
   --composer-paper: #fffcf7;
   --composer-ink: #1c1917;
@@ -40,6 +44,10 @@ body.light {
 }
 
 body.dark {
+  --header-bg: #1a1816;
+  --header-line: rgba(255, 255, 255, 0.1);
+  --header-btn-border: rgba(255, 255, 255, 0.16);
+  --header-btn-hover: rgba(255, 255, 255, 0.1);
   --page-bg: #121110;
   --composer-paper: #1a1816;
   --composer-ink: #f5f5f4;
@@ -435,19 +443,14 @@ body.dark .claude-guide {
   flex-wrap: wrap;
   gap: 12px;
   padding: 0 16px;
-  border-bottom: 1px solid rgba(120, 113, 108, 0.18);
+  border-bottom: 1px solid var(--header-line, rgba(120, 113, 108, 0.18));
   background: var(--header-bg, #f1eee6);
   box-shadow: 0 1px 0 rgba(120, 113, 108, 0.08);
   transition: left 0.25s ease, width 0.25s ease;
 }
 
-body.light .site-header {
-  --header-bg: #f1eee6;
-}
-
 body.dark .site-header {
-  --header-bg: #121110;
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .header-left,
@@ -498,12 +501,12 @@ body.dark .nav-link.is-active {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid rgba(120, 113, 108, 0.22);
+  border: 1px solid var(--header-btn-border, rgba(120, 113, 108, 0.22));
   background: transparent;
   color: inherit;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .icon-btn {
@@ -521,7 +524,19 @@ body.dark .nav-link.is-active {
 
 .icon-btn:hover,
 .header-btn:hover {
-  background: rgba(120, 113, 108, 0.1);
+  background: var(--header-btn-hover, rgba(120, 113, 108, 0.1));
+}
+
+body.dark .icon-btn,
+body.dark .header-btn {
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5f5f4;
+}
+
+body.dark .icon-btn:hover,
+body.dark .header-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .header-btn.primary {
@@ -2249,9 +2264,8 @@ body.dark .footer-link {
   position: sticky;
   top: var(--header-height);
   z-index: 30;
-  border-bottom: 1px solid rgba(120, 113, 108, 0.18);
-  background: color-mix(in srgb, var(--header-bg, #f7f6f3) 90%, transparent);
-  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--header-line, rgba(120, 113, 108, 0.18));
+  background: var(--header-bg, #f1eee6);
 }
 
 .file-toolbar-inner {
