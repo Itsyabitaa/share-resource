@@ -94,7 +94,7 @@ export default function MarkdownEditor({
 
   return (
     <div className="composer-stage-body">
-      <label htmlFor="document-title" className="sr-only">Title</label>
+      <label className="composer-title-label" htmlFor="document-title">Title</label>
       <input
         id="document-title"
         className="composer-title-input"

@@ -2612,18 +2612,45 @@ body.dark .composer-stage-bottom {
   white-space: nowrap;
 }
 
+.composer-title-label {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--composer-muted);
+}
+
 .composer-title-input {
   width: 100%;
-  border: none;
-  background: transparent;
+  margin-top: 8px;
+  border: 1px solid var(--composer-line);
+  background: rgba(255, 255, 255, 0.45);
   color: inherit;
   font-family: 'Fraunces', Georgia, serif;
-  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  font-size: clamp(1.45rem, 3vw, 2rem);
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
   line-height: 1.2;
   outline: none;
-  padding: 18px 0 6px;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.composer-title-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+}
+
+body.dark .composer-title-input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+body.dark .composer-title-input:focus {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.2);
 }
 
 .composer-title-input::placeholder {
