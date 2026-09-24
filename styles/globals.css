@@ -307,6 +307,111 @@ body.dark .claude-guide {
   }
 }
 
+.site-announce {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px var(--page-pad) 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: #042f2e;
+}
+
+.site-announce.is-bottom {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  margin: 0;
+}
+
+.site-announce strong {
+  display: block;
+}
+
+.site-announce p {
+  margin: 2px 0 0;
+}
+
+.site-announce-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.site-announce-actions button,
+.site-announce-modal button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  background: #042f2e;
+  color: #fff;
+}
+
+.tone-teal { background: linear-gradient(110deg, #5eead4, #0f766e); }
+.tone-amber { background: linear-gradient(110deg, #fde68a, #d97706); }
+.tone-rose { background: linear-gradient(110deg, #fecdd3, #e11d48); color: #4c0519; }
+.tone-ink { background: #1c1917; color: #f5f5f4; }
+
+.site-announce-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(28, 25, 23, 0.5);
+}
+
+.site-announce-modal {
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  padding: 24px;
+  border-radius: 20px;
+  color: #1c1917;
+}
+
+.site-announce-modal h2 {
+  margin: 0 0 8px;
+  font-family: Fraunces, Georgia, serif;
+}
+
+.site-announce-modal ol {
+  margin: 0 0 16px;
+  padding-left: 1.2rem;
+}
+
+.site-announce-modal li + li {
+  margin-top: 8px;
+}
+
+.admin-announce-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.admin-announce-editor .admin-field input,
+.admin-announce-editor .admin-field textarea,
+.admin-announce-editor .admin-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 113, 108, 0.22);
+  font: inherit;
+}
+
+.admin-announce-editor .admin-panel + .admin-panel {
+  margin-top: 16px;
+}
+
 .page-shell {
   width: 100%;
   max-width: 880px;

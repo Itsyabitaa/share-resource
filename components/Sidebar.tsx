@@ -167,7 +167,7 @@ function IconAnalytics({ size = 18 }: { size?: number }) {
   )
 }
 
-type AdminTab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts' | 'api-keys'
+type AdminTab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts' | 'api-keys' | 'announcements'
 
 function IconApiKeys() {
   return (
@@ -186,6 +186,7 @@ const adminNav: { tab: AdminTab; label: string; Icon: typeof IconDashboard }[] =
   { tab: 'activity', label: 'Activity', Icon: IconActivity },
   { tab: 'accounts', label: 'Accounts', Icon: IconUsers },
   { tab: 'api-keys', label: 'Groq keys', Icon: IconApiKeys },
+  { tab: 'announcements', label: 'Announce', Icon: IconApiKeys },
 ]
 
 export default function Sidebar({

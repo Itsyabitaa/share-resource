@@ -18,6 +18,7 @@ import {
   type ModerationAction,
 } from '../lib/moderation'
 import { confirmAction, promptTextarea } from '../lib/swal'
+import AdminAnnouncements from '../components/AdminAnnouncements'
 
 type AdminUserApiUsage = {
   kimemUsesTotal: number
@@ -63,7 +64,7 @@ function isGoogleUser(user: AdminUser) {
   return (user.auth_providers || '').includes('google')
 }
 
-type Tab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts' | 'api-keys'
+type Tab = 'overview' | 'analytics' | 'posts' | 'viral' | 'activity' | 'accounts' | 'api-keys' | 'announcements'
 
 type PlatformGroqKeyAdmin = {
   id: string
@@ -108,6 +109,10 @@ const tabMeta: Record<Tab, { title: string; subtitle: string }> = {
     title: 'Global Groq API keys',
     subtitle: 'Kimem AI trial pool — keys are tried in order; rate-limited keys auto-rotate to the next.',
   },
+  announcements: {
+    title: 'Announcements',
+    subtitle: 'Turn a message on or off, choose a popup or banner, color, place, and audience.',
+  },
 }
 
 function parseTab(value: unknown): Tab {
@@ -117,7 +122,8 @@ function parseTab(value: unknown): Tab {
     value === 'viral' ||
     value === 'activity' ||
     value === 'accounts' ||
-    value === 'api-keys'
+    value === 'api-keys' ||
+    value === 'announcements'
   ) {
     return value
   }
@@ -789,6 +795,10 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+      )}
+
+      {tab === 'announcements' && (
+        <AdminAnnouncements onToast={(message, type) => setToast({ message, type })} />
       )}
 
       {tab === 'api-keys' && (

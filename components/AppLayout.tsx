@@ -6,7 +6,7 @@ import { useSidebar } from '../lib/SidebarContext'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Footer from './Footer'
-import ClaudeShareAnnouncement from './ClaudeShareAnnouncement'
+import SiteAnnouncements from './SiteAnnouncements'
 import { AppPathProvider, getAppBasePath, useAppPaths } from '../lib/appPaths'
 
 interface AppLayoutProps {
@@ -74,7 +74,7 @@ function LayoutInner({ children }: AppLayoutProps) {
       )}
 
       <div className="app-main">
-        <ClaudeShareAnnouncement />
+        <SiteAnnouncements />
         {children}
         <Footer />
       </div>

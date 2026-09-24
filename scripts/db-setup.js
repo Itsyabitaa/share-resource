@@ -269,6 +269,24 @@ async function setup() {
   `)
   await pool.query('CREATE INDEX IF NOT EXISTS idx_integration_tokens_user_id ON integration_tokens(user_id)')
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS site_announcements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      display TEXT NOT NULL DEFAULT 'banner',
+      color TEXT NOT NULL DEFAULT 'teal',
+      placement TEXT NOT NULL DEFAULT 'top',
+      audience TEXT NOT NULL DEFAULT 'all',
+      cta_label TEXT,
+      cta_url TEXT,
+      guide_steps TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
   console.log('Schema is up to date. No tables were dropped.')
   await pool.end()
 }
