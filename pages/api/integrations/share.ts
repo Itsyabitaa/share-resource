@@ -31,10 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const title = typeof req.body?.title === 'string' ? req.body.title : undefined
   const author = typeof req.body?.author === 'string' ? req.body.author : undefined
   const isPublic = req.body?.isPublic !== false && req.body?.is_public !== false
-  const listOnExplore = req.body?.listOnExplore === true || req.body?.list_on_explore === true
 
   try {
-    const shared = await shareMarkdown({ userId, content, title, author, isPublic, listOnExplore })
+    const shared = await shareMarkdown({ userId, content, title, author, isPublic, listOnExplore: false })
     return res.status(200).json(shared)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Share failed'
