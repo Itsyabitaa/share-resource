@@ -1,10 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getUser } from '../../../lib/auth'
 import { getUserPlan } from '../../../lib/dbSchema'
-import { createAuthCode, getOauthClient } from '../../../lib/mcpOauth'
+import { createAuthCode, getOauthClient, isAllowedOauthRedirect } from '../../../lib/mcpOauth'
+import { publicSiteOrigin } from '../../../lib/shareMarkdown'
 
 function one(value: unknown) {
   return typeof value === 'string' ? value : ''
+}
+
+function oauthResult(redirectUri: string, params: Record<string, string>) {
+  const next = new URL(redirectUri)
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) next.searchParams.set(key, value)
+  })
+  next.searchParams.set('iss', publicSiteOrigin())
+  return next.toString()
 }
 
 function esc(value: string) {
@@ -25,12 +35,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const codeChallengeMethod = one(params.code_challenge_method)
 
   if (responseType !== 'code' || !clientId || !redirectUri || !codeChallenge || codeChallengeMethod !== 'S256') {
-    return res.status(400).send('Claude did not send a valid sign-in request.')
+    if (redirectUri && isAllowedOauthRedirect(redirectUri)) {
+      return res.redirect(302, oauthResult(redirectUri, { error: 'invalid_request', state }))
+    }
+    return res.status(400).send('The app did not send a valid sign-in request.')
   }
 
   const client = await getOauthClient(clientId)
   if (!client || !client.redirectUris.includes(redirectUri)) {
-    return res.status(400).send('This Claude app is not registered with md-nest.')
+    if (redirectUri && isAllowedOauthRedirect(redirectUri)) {
+      return res.redirect(302, oauthResult(redirectUri, { error: 'invalid_client', state }))
+    }
+    return res.status(400).send('This app is not registered with md-nest.')
   }
 
   const user = await getUser(req)
@@ -47,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 <body style="font-family:ui-sans-serif,system-ui,sans-serif;background:#f1eee6;color:#1c1917;margin:0">
 <main style="max-width:440px;margin:12vh auto;padding:28px;background:#fff;border-radius:16px">
 <h1>Pro account required</h1>
-<p>Claude sharing saves notes to your md-nest account. That account needs to be Pro.</p>
+<p>Sharing saves notes to your md-nest account. That account needs to be Pro.</p>
 <p><a href="/pricing">See Pro</a></p>
 </main></body></html>`)
   }
@@ -59,10 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       redirectUri,
       codeChallenge,
     })
-    const next = new URL(redirectUri)
-    next.searchParams.set('code', code)
-    if (state) next.searchParams.set('state', state)
-    return res.redirect(302, next.toString())
+    return res.redirect(302, oauthResult(redirectUri, { code, state }))
   }
 
   if (req.method !== 'GET') return res.status(405).end()
@@ -83,7 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connect Claude</title>
+  <title>Connect to md-nest</title>
   <style>
     body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #f1eee6; color: #1c1917; }
     main { max-width: 440px; margin: 12vh auto; padding: 28px; background: #fff; border-radius: 16px; }
@@ -92,9 +105,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 </head>
 <body>
   <main>
-    <h1>Let Claude share nests</h1>
+    <h1>Let ${esc(client.clientName)} share nests</h1>
     <p>Signed in as ${esc(user.email || 'your account')}.</p>
-    <form method="post">${hidden}<button type="submit">Allow Claude</button></form>
+    <form method="post">${hidden}<button type="submit">Allow</button></form>
   </main>
 </body>
 </html>`)

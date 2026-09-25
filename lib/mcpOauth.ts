@@ -45,17 +45,24 @@ export function ensureOauthSchema() {
   return schemaReady
 }
 
+const OAUTH_REDIRECT_HOSTS = new Set([
+  'claude.ai',
+  'www.claude.ai',
+  'claude.com',
+  'www.claude.com',
+  'chatgpt.com',
+  'www.chatgpt.com',
+  'chat.openai.com',
+])
+
 export function isAllowedOauthRedirect(uri: string) {
-  if (
-    uri === 'https://claude.ai/api/mcp/auth_callback' ||
-    uri === 'https://claude.com/api/mcp/auth_callback'
-  ) {
-    return true
-  }
   try {
     const url = new URL(uri)
+    if (url.username || url.password) return false
+    if (url.protocol === 'https:' && OAUTH_REDIRECT_HOSTS.has(url.hostname)) return true
     const loopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-    return url.protocol === 'http:' && loopback && url.pathname === '/callback'
+    const callback = url.pathname === '/callback' || url.pathname.startsWith('/callback/')
+    return url.protocol === 'http:' && loopback && callback
   } catch {
     return false
   }
@@ -217,6 +224,7 @@ export function oauthMetadata() {
       grant_types_supported: ['authorization_code', 'refresh_token'],
       code_challenge_methods_supported: ['S256'],
       token_endpoint_auth_methods_supported: ['none'],
+      authorization_response_iss_parameter_supported: true,
       scopes_supported: ['share', 'offline_access'],
     },
   }
