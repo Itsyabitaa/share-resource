@@ -1,3 +1,5 @@
+import { normalizeMarkdownTables } from '../utils/markdownFormatter'
+
 export type KimemAction = 'create' | 'edit' | 'rephrase' | 'analyze' | 'restructure' | 'chat'
 
 export const GROQ_API_KEYS_URL = 'https://console.groq.com/keys'
@@ -30,6 +32,7 @@ const SYSTEM_PROMPT = `You are Kimem AI, a focused markdown assistant inside md-
 You help users write, edit, analyze, and restructure markdown documents.
 Rules:
 - Prefer clean, portable CommonMark-style markdown (headings, lists, links, code fences when needed).
+- When information is tabular, use one GitHub-flavored markdown table. Include a header row and a separator row of dashes. Every row must have the same number of cells. Do not use HTML tables. Put a blank line before and after the table. Keep each cell on one line.
 - Preserve the author's voice unless they ask for a tone change.
 - Do not invent facts; if information is missing, say so in analysis mode or use placeholders in draft mode.
 - Never wrap markdown output in code fences unless the user asked for a code block inside the document.
@@ -187,7 +190,7 @@ export async function runKimemAi(options: {
       if (!raw) throw new Error('Empty response from Kimem AI')
 
       if (wantsMarkdownOnly) {
-        return { kind: 'markdown', content: stripModelMarkdownFences(raw) }
+        return { kind: 'markdown', content: normalizeMarkdownTables(stripModelMarkdownFences(raw)) }
       }
       return { kind: 'text', content: raw }
     } catch (error) {

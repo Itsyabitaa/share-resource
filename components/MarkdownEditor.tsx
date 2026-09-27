@@ -78,7 +78,7 @@ export default function MarkdownEditor({
     placeholder: 'The page is blank. Begin anywhere…',
     toolbar: [
       'bold', 'italic', 'heading', '|',
-      'quote', 'unordered-list', 'ordered-list', '|',
+      'quote', 'unordered-list', 'ordered-list', 'table', '|',
       'link', 'image', '|',
       'preview', 'side-by-side', 'fullscreen', '|',
       'guide'
@@ -89,6 +89,7 @@ export default function MarkdownEditor({
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
+    previewClass: ['markdown-body'],
     minHeight: '360px'
   }), [])
 

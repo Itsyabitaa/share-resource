@@ -2352,14 +2352,79 @@ body.dark .footer-link {
   margin: 0 0 1em;
 }
 
-.markdown-body img,
-.markdown-body table {
+.markdown-body img {
   max-width: 100%;
 }
 
-.markdown-body table {
-  display: block;
+.md-table-scroll {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  margin: 0 0 1.25em;
+  border: 1px solid rgba(120, 113, 108, 0.22);
+  border-radius: 12px;
+}
+
+.markdown-body table,
+.editor-preview table,
+.editor-preview-side table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.25em;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.md-table-scroll table {
+  margin: 0;
+  min-width: 520px;
+}
+
+.markdown-body th,
+.markdown-body td,
+.editor-preview th,
+.editor-preview td,
+.editor-preview-side th,
+.editor-preview-side td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(120, 113, 108, 0.18);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.markdown-body th,
+.editor-preview th,
+.editor-preview-side th {
+  font-weight: 700;
+  background: rgba(15, 118, 110, 0.1);
+  white-space: nowrap;
+}
+
+.markdown-body tr:last-child td,
+.editor-preview tr:last-child td,
+.editor-preview-side tr:last-child td {
+  border-bottom: none;
+}
+
+body.dark .md-table-scroll {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark .markdown-body th,
+body.dark .markdown-body td,
+body.dark .editor-preview th,
+body.dark .editor-preview td,
+body.dark .editor-preview-side th,
+body.dark .editor-preview-side td {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .markdown-body th,
+body.dark .editor-preview th,
+body.dark .editor-preview-side th {
+  background: rgba(45, 212, 191, 0.14);
 }
 
 .doc-card {

@@ -607,6 +607,11 @@ export default function FilePage(props: {
                     h1: ({ children, ...props }) => <h1 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h1>,
                     h2: ({ children, ...props }) => <h2 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h2>,
                     h3: ({ children, ...props }) => <h3 id={String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')} {...props}>{children}</h3>,
+                    table: ({ children }) => (
+                      <div className="md-table-scroll">
+                        <table>{children}</table>
+                      </div>
+                    ),
                   }}
                 >
                   {content}

@@ -572,22 +572,62 @@ function collectTable(
 }
 
 function toMarkdownTable(rows: string[][]): string[] {
-  const width = Math.max(...rows.map(r => r.length))
-  const norm = rows.map(r => {
-    const copy = [...r]
-    while (copy.length < width) copy.push('')
-    return copy
-  })
+  return alignMarkdownTable(rows)
+}
 
-  const header = norm[0]
-  const body = norm.slice(1)
-  const sep = header.map(() => '---')
+function alignMarkdownTable(rows: string[][]): string[] {
+  const width = Math.max(...rows.map(r => r.length), 1)
+  const norm = rows.map(r => {
+    const copy = r.map(cell => cell.replace(/\\\|/g, '|').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim())
+    while (copy.length < width) copy.push('')
+    return copy.slice(0, width)
+  })
+  const widths = Array.from({ length: width }, (_, col) =>
+    Math.max(3, ...norm.map(row => row[col].length))
+  )
+  const formatRow = (cells: string[]) =>
+    `| ${cells.map((cell, col) => cell.padEnd(widths[col], ' ')).join(' | ')} |`
+  const separator = `| ${widths.map(size => '-'.repeat(size)).join(' | ')} |`
 
   return [
-    `| ${header.join(' | ')} |`,
-    `| ${sep.join(' | ')} |`,
-    ...body.map(r => `| ${r.join(' | ')} |`),
+    formatRow(norm[0]),
+    separator,
+    ...norm.slice(1).map(formatRow),
   ]
+}
+
+export function normalizeMarkdownTables(text: string): string {
+  if (!text?.trim()) return text
+  const lines = text.split('\n')
+  const out: string[] = []
+  let i = 0
+  let inFence = false
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim()
+    if (MD_FENCE.test(trimmed)) {
+      inFence = !inFence
+      out.push(lines[i])
+      i++
+      continue
+    }
+
+    if (!inFence && looksLikeTableRow(trimmed)) {
+      const table = collectTable(lines, i)
+      if (table.rows.length >= 2) {
+        if (out.length > 0 && out[out.length - 1].trim()) out.push('')
+        out.push(...alignMarkdownTable(table.rows))
+        out.push('')
+        i = table.nextIndex
+        continue
+      }
+    }
+
+    out.push(lines[i])
+    i++
+  }
+
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 function formatInlineAcrossLines(lines: string[], opts: FormatterOptions): string[] {
