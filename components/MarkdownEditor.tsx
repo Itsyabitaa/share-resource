@@ -89,7 +89,7 @@ export default function MarkdownEditor({
       singleLineBreaks: false,
       codeSyntaxHighlighting: true,
     },
-    previewClass: ['markdown-body'],
+    previewClass: 'editor-preview',
     minHeight: '360px'
   }), [])
 
@@ -178,6 +178,9 @@ export default function MarkdownEditor({
             value={text}
             onChange={handleTextChange}
             options={mdeOptions}
+            getMdeInstance={(instance) => {
+              instance.codemirror.setOption('viewportMargin', Infinity)
+            }}
           />
         </div>
       </div>

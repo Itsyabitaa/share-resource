@@ -39,7 +39,7 @@ export default function Home() {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [showAuthor, setShowAuthor] = useState(false)
-  const [isPublic, setIsPublic] = useState(false)
+  const [isPublic, setIsPublic] = useState(true)
   const [listOnExplore, setListOnExplore] = useState(false)
   const [hashtags, setHashtags] = useState<string[]>([])
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')

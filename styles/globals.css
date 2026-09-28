@@ -3325,22 +3325,42 @@ body.dark .dropzone-btn-secondary {
 
 .composer-stage .CodeMirror {
   border: none !important;
-  background: transparent !important;
+  background: var(--composer-paper, #fffcf7) !important;
   color: inherit;
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 1.05rem;
-  line-height: 1.7;
+  line-height: 1.55;
   min-height: 240px !important;
   height: auto !important;
-  padding-top: 8px;
-  padding-bottom: 4px;
+  padding: 0;
   box-shadow: none !important;
 }
 
 .composer-stage .CodeMirror-scroll {
   min-height: 240px;
+  height: auto !important;
+  overflow-x: auto;
+  overflow-y: hidden !important;
   margin-bottom: 0;
-  padding-bottom: 8px;
+  padding-bottom: 0;
+}
+
+.composer-stage .CodeMirror-lines {
+  padding: 12px 0 16px;
+}
+
+.composer-stage .CodeMirror pre.CodeMirror-line,
+.composer-stage .CodeMirror pre.CodeMirror-line-like {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: transparent;
+  margin: 0;
+  padding: 0 4px;
+  border-radius: 0;
+}
+
+.composer-stage .CodeMirror textarea {
+  opacity: 0 !important;
 }
 
 .composer-stage .EasyMDEContainer .editor-wrapper {
