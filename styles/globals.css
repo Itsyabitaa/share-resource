@@ -3346,7 +3346,7 @@ body.dark .dropzone-btn-secondary {
 }
 
 .composer-stage .CodeMirror-lines {
-  padding: 12px 0 16px;
+  padding: 16px 18px 20px;
 }
 
 .composer-stage .CodeMirror pre.CodeMirror-line,
@@ -3415,9 +3415,12 @@ body.dark .editor-statusbar {
 }
 
 .composer-stage .editor-preview,
+.composer-stage .editor-preview-full,
 .composer-stage .editor-preview-side {
   background: var(--composer-paper);
   color: inherit;
+  box-sizing: border-box;
+  padding: 16px 18px 20px;
 }
 
 .auth-card {
