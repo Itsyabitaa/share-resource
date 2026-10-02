@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "md-nest": {
+      "url": "https://mdnest.vercel.app/api/mcp"
+    }
+  }
+}

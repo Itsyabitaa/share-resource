@@ -1,0 +1,9 @@
+{
+  "name": "md-nest",
+  "displayName": "md-nest",
+  "version": "0.1.0",
+  "description": "Share markdown from Cursor to md-nest so someone else can open a link.",
+  "homepage": "https://mdnest.vercel.app",
+  "repository": "https://github.com/Itsyabitaa/share-resource",
+  "keywords": ["markdown", "share", "md-nest"]
+}
