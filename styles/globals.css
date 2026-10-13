@@ -3414,13 +3414,49 @@ body.dark .editor-statusbar {
   background: rgba(120, 113, 108, 0.03);
 }
 
-.composer-stage .editor-preview,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  margin: 1.15em 0 0.4em;
+}
+
+.markdown-body h1 { font-size: 1.8rem; }
+.markdown-body h2 { font-size: 1.4rem; }
+.markdown-body h3 { font-size: 1.15rem; }
+
+.composer-stage .editor-preview-full .markdown-body,
+.composer-stage .editor-preview-side .markdown-body {
+  color: inherit;
+}
+
+.composer-stage .editor-preview-full .markdown-body h1,
+.composer-stage .editor-preview-full .markdown-body h2,
+.composer-stage .editor-preview-full .markdown-body h3,
+.composer-stage .editor-preview-side .markdown-body h1,
+.composer-stage .editor-preview-side .markdown-body h2,
+.composer-stage .editor-preview-side .markdown-body h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  border: none;
+  color: inherit;
+}
+
+.composer-stage .editor-preview-full .markdown-body pre,
+.composer-stage .editor-preview-side .markdown-body pre {
+  background: rgba(120, 113, 108, 0.1);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
 .composer-stage .editor-preview-full,
 .composer-stage .editor-preview-side {
   background: var(--composer-paper);
   color: inherit;
   box-sizing: border-box;
-  padding: 16px 18px 20px;
+  padding: 28px;
 }
 
 .auth-card {

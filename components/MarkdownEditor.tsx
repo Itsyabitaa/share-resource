@@ -3,6 +3,8 @@ import dynamic from 'next/dynamic'
 import { useSession } from '../lib/auth-client'
 import { formatToMarkdown } from '../utils/markdownFormatter'
 import KimemAiPanel from './KimemAiPanel'
+import MarkdownDocument from './MarkdownDocument'
+import { renderToStaticMarkup } from 'react-dom/server'
 import type { UserPlan } from '../lib/storagePolicy'
 
 const SimpleMDE = dynamic(() => import('react-simplemde-editor'), { ssr: false })
@@ -90,6 +92,7 @@ export default function MarkdownEditor({
       codeSyntaxHighlighting: true,
     },
     previewClass: 'editor-preview',
+    previewRender: (plainText: string) => renderToStaticMarkup(<MarkdownDocument markdown={plainText} />),
     minHeight: '360px'
   }), [])
 
