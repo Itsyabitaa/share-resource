@@ -4104,3 +4104,212 @@ body.dark .mdnest-swal-textarea {
   background: #1c1917 !important;
   color: #f5f5f4 !important;
 }
+
+.is-print-only,
+.print-mark {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 16mm 18mm;
+
+    @top-left {
+      content: "md-nest";
+      font-family: "DM Sans", Helvetica, sans-serif;
+      font-size: 9pt;
+      font-weight: 700;
+      color: #0f766e;
+    }
+
+    @top-right {
+      content: string(nestrecord);
+      font-family: "DM Sans", Helvetica, sans-serif;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #0f766e;
+    }
+
+    @bottom-left {
+      content: "mdnest.vercel.app";
+      font-family: "DM Sans", Helvetica, sans-serif;
+      font-size: 8pt;
+      color: #78716c;
+    }
+
+    @bottom-right {
+      content: counter(page) "  /  " counter(pages);
+      font-family: "DM Sans", Helvetica, sans-serif;
+      font-size: 8pt;
+      color: #78716c;
+    }
+  }
+
+  html,
+  body,
+  body.light,
+  body.dark,
+  .app-shell,
+  .app-main,
+  .file-page {
+    background: #fff !important;
+    color: #1c1917 !important;
+    box-shadow: none !important;
+  }
+
+  .site-header,
+  .workspace-sidebar,
+  .sidebar-backdrop,
+  .footer,
+  .file-toolbar,
+  .paper-tabs,
+  .paper-rail,
+  .paper-sheet,
+  .paper-flags a,
+  .site-announce,
+  .site-announce-backdrop,
+  .claude-announce,
+  .header-drawer,
+  .moderation-notice {
+    display: none !important;
+  }
+
+  .paper-flags span:not(:first-child) {
+    display: none !important;
+  }
+
+  .paper-meta span:nth-last-child(2)::after {
+    content: none;
+  }
+
+  .app-main,
+  .app-shell.sidebar-open .app-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+  }
+
+  .file-layout {
+    display: block !important;
+    max-width: none !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .paper-mast {
+    margin: 0 0 14pt;
+  }
+
+  .paper-flags {
+    margin-bottom: 6pt;
+    color: #0f766e !important;
+  }
+
+  .paper-flags span:first-child {
+    string-set: nestrecord content();
+  }
+
+  .paper-title {
+    color: #1c1917 !important;
+    font-size: 22pt !important;
+    margin-bottom: 6pt;
+  }
+
+  .paper-meta {
+    color: #57534e !important;
+    font-size: 9pt;
+    margin-bottom: 0;
+  }
+
+  .paper-meta span:last-child {
+    display: none;
+  }
+
+  .doc-card,
+  .is-print-only {
+    display: block !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .markdown-body,
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4,
+  .markdown-body p,
+  .markdown-body li,
+  .markdown-body td,
+  .markdown-body th,
+  .markdown-body blockquote {
+    color: #1c1917 !important;
+  }
+
+  .markdown-body {
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .markdown-body p,
+  .markdown-body li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .markdown-body a {
+    color: #0f766e !important;
+    text-decoration: none;
+  }
+
+  .markdown-body pre,
+  .markdown-body code {
+    background: #f5f5f4 !important;
+    color: #1c1917 !important;
+    border: none !important;
+  }
+
+  .markdown-body table,
+  .markdown-body tr,
+  .markdown-body img,
+  .markdown-body pre {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-mark {
+    display: block;
+    position: fixed;
+    top: 46%;
+    left: 0;
+    right: 0;
+    z-index: 0;
+    text-align: center;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 52pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: rgba(15, 118, 110, 0.1);
+    transform: rotate(-28deg);
+    pointer-events: none;
+  }
+
+  .paper-mast,
+  .doc-card {
+    position: relative;
+    z-index: 1;
+  }
+}

@@ -434,6 +434,7 @@ export default function FilePage(props: {
 
   return (
     <div className="file-page">
+      <div className="print-mark" aria-hidden="true">md-nest</div>
       {moderationStatus === 'warned' && moderationMessage && (
         <div className="moderation-notice warned">
           <strong>Community guidelines warning:</strong> {moderationMessage}
@@ -545,11 +546,10 @@ export default function FilePage(props: {
             </div>
           </header>
 
-          {activeTab === 'document' ? (
-            <div className="doc-card">
-              <MarkdownDocument markdown={content} omitMatchingTitle={title} />
-            </div>
-          ) : (
+          <div className={`doc-card${activeTab === 'document' ? '' : ' is-print-only'}`}>
+            <MarkdownDocument markdown={content} omitMatchingTitle={title} />
+          </div>
+          {activeTab === 'comments' && (
             <div className="paper-sheet">
               <div style={{ marginBottom: 32 }}>
                 <h3 style={{
