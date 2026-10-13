@@ -205,8 +205,12 @@ export default function FilePage(props: {
   const router = useRouter()
   const { data: session } = useSession()
   const { apiPath, sitePath } = useAppPaths()
-  const headings = extractHeadings(content)
+  const headings = extractHeadings(content).filter((heading, index) => {
+    if (index !== 0 || heading.level !== 1) return true
+    return heading.text.trim().toLowerCase() !== title.trim().toLowerCase()
+  })
   const daysLeft = daysUntilExpiry(expiresAt)
+  const recordNo = fileId.replace(/-/g, '').slice(0, 8).toUpperCase()
 
   const [likeCount, setLikeCount] = useState(0)
   const [commentCount, setCommentCount] = useState(0)
@@ -438,74 +442,58 @@ export default function FilePage(props: {
       <div className="file-toolbar">
         <div className="file-toolbar-inner">
           <div className="file-toolbar-left">
-            <button
-              onClick={() => router.push(sitePath('/'))}
-              className="header-btn"
-              type="button"
-            >
-              ← Files
+            <button className="text-action" type="button" onClick={() => router.push(sitePath('/'))}>
+              Files
             </button>
-
-            <span className="header-btn" style={{ cursor: 'default', opacity: 0.8 }}>
-              {fileType.toUpperCase()}
-            </span>
+            <span className="file-kicker">{fileType.toUpperCase()}</span>
+            <div className="file-metrics">
+              <span>{viewCount} {viewCount === 1 ? 'view' : 'views'}</span>
+              <button className="text-action" type="button" onClick={() => setActiveTab('comments')}>
+                {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+              </button>
+              <button className="text-action" type="button" onClick={handleLike}>
+                {userHasLiked ? 'Liked' : 'Like'} {likeCount}
+              </button>
+            </div>
           </div>
 
           <div className="file-toolbar-right">
-            <button
-              onClick={handleLike}
-              className="header-btn"
-              type="button"
-              style={{ color: userHasLiked ? '#ef4444' : undefined }}
-            >
-              {userHasLiked ? '♥' : '♡'} {likeCount}
+            <button className="text-action" type="button" onClick={handleCopyLink}>
+              {copied ? 'Link copied' : 'Copy link'}
             </button>
-            <span className="header-btn" style={{ cursor: 'default' }}>
-              👁 {viewCount}
-            </span>
-            <span className="header-btn" style={{ cursor: 'default' }}>
-              🔗 {shareCount}
-            </span>
-            <span className="header-btn" style={{ cursor: 'default' }}>
-              💬 {commentCount}
-            </span>
-            <button
-              onClick={handleCopyLink}
-              className={`header-btn${copied ? ' primary' : ''}`}
-              type="button"
-            >
-              {copied ? 'Copied' : 'Copy link'}
+            <button className="text-action" type="button" onClick={handleCopyMarkdown}>
+              {copiedMd ? 'Markdown copied' : 'Copy markdown'}
             </button>
-            <button className="header-btn" type="button" onClick={handleCopyMarkdown}>
-              {copiedMd ? 'Copied md' : 'Copy md'}
-            </button>
-            <button className="header-btn" type="button" onClick={handleDownload}>
+            <button className="text-action" type="button" onClick={handleDownload}>
               Download
+            </button>
+            <button className="text-action" type="button" onClick={() => window.print()}>
+              Print
             </button>
             {isOwner && (
               <button
-                className={`header-btn${pdfAllowed ? ' primary' : ''}`}
+                className={`text-action${pdfAllowed ? ' is-on' : ''}`}
                 type="button"
                 onClick={togglePdfExport}
                 title="Turn PDF download on or off for people who open this link"
               >
-                {pdfAllowed ? 'PDF on' : 'PDF off'}
-              </button>
-            )}
-            {canDownloadPdf && (
-              <button className="header-btn" type="button" onClick={handleExportPdf} disabled={pdfBusy}>
-                {pdfBusy ? 'Preparing PDF' : 'Export PDF'}
+                {pdfAllowed ? 'PDF sharing on' : 'PDF sharing off'}
               </button>
             )}
             {isOwner && (
-              <>
-                <button className="header-btn" type="button" onClick={() => router.push(sitePath(`/edit/${fileId}`))}>
-                  Edit
-                </button>
-                <button className="header-btn" type="button" onClick={handleDeleteFile}>
-                  Delete
-                </button>
-              </>
+              <button className="text-action" type="button" onClick={() => router.push(sitePath(`/edit/${fileId}`))}>
+                Edit
+              </button>
+            )}
+            {isOwner && (
+              <button className="text-action is-danger" type="button" onClick={handleDeleteFile}>
+                Delete
+              </button>
+            )}
+            {canDownloadPdf && (
+              <button className="doc-primary" type="button" onClick={handleExportPdf} disabled={pdfBusy}>
+                {pdfBusy ? 'Preparing' : 'Export PDF'}
+              </button>
             )}
           </div>
         </div>
@@ -513,143 +501,56 @@ export default function FilePage(props: {
 
       <div className="file-layout">
         <div>
-          <div style={{
-            marginBottom: 32,
-            padding: '32px',
-            backgroundColor: colors.background,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <h1 style={{
-                  fontSize: 'clamp(1.4rem, 4vw, 2rem)',
-                  fontWeight: '700',
-                  color: colors.text,
-                  marginBottom: '12px',
-                  lineHeight: '1.3',
-                  overflowWrap: 'anywhere'
-                }}>
-                  {title}
-                </h1>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: 13 }}>
-                  <span className="header-btn" style={{ cursor: 'default' }}>{isPublic ? 'Public' : 'Private'}</span>
-                  {listedOnExplore && (
-                    <span className="header-btn" style={{ cursor: 'default' }}>On Explore</span>
-                  )}
-                  {expiresAt && (
-                    <span className="header-btn" style={{ cursor: 'default' }}>
-                      Expires {new Date(expiresAt).toLocaleDateString()}
-                      {daysLeft !== null && daysLeft <= 7 ? ` (${daysLeft}d left)` : ''}
-                    </span>
-                  )}
-                  {isOwner && expiresAt && (
-                    <Link href={sitePath('/pricing')} className="header-btn primary">
-                      Upgrade to Pro
-                    </Link>
-                  )}
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '20px',
-                  alignItems: 'center',
-                  fontSize: '14px',
-                  color: colors.secondary,
-                  marginBottom: '20px'
-                }}>
-                  {author && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '18px' }}>👤</span>
-                      <span style={{ fontWeight: '500' }}>{author}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '18px' }}>📅</span>
-                    <span>Created {formatWhen(createdAt)}</span>
-                  </div>
-                  {updatedAt !== createdAt && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '18px' }}>✏️</span>
-                      <span>Updated {formatWhen(updatedAt)}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '18px' }}>👁</span>
-                    <span>{viewCount} {viewCount === 1 ? 'view' : 'views'}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '18px' }}>🔗</span>
-                    <span>{shareCount} {shareCount === 1 ? 'share' : 'shares'}</span>
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  alignItems: 'center'
-                }}>
-                  <button
-                    onClick={() => setActiveTab('document')}
-                    style={{
-                      padding: '10px 20px',
-                      fontSize: '15px',
-                      backgroundColor: activeTab === 'document' ? colors.primary : 'transparent',
-                      color: activeTab === 'document' ? colors.buttonText : colors.text,
-                      border: `2px solid ${activeTab === 'document' ? colors.primary : colors.border}`,
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    📄 Document
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('comments')}
-                    style={{
-                      padding: '10px 20px',
-                      fontSize: '15px',
-                      backgroundColor: activeTab === 'comments' ? colors.primary : 'transparent',
-                      color: activeTab === 'comments' ? colors.buttonText : colors.text,
-                      border: `2px solid ${activeTab === 'comments' ? colors.primary : colors.border}`,
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    💬 Comments ({commentCount})
-                  </button>
-                </div>
-              </div>
+          <header className="paper-mast">
+            <div className="paper-flags">
+              <span>File {recordNo}</span>
+              <span>{isPublic ? 'Public' : 'Private'}</span>
+              {listedOnExplore && <span>On Explore</span>}
+              {expiresAt && (
+                <span>
+                  Expires {new Date(expiresAt).toLocaleDateString()}
+                  {daysLeft !== null && daysLeft <= 7 ? ` · ${daysLeft}d left` : ''}
+                </span>
+              )}
+              {isOwner && expiresAt && (
+                <Link href={sitePath('/pricing')}>Keep this nest</Link>
+              )}
             </div>
-          </div>
+            <h1 className="paper-title">{title}</h1>
+            <p className="paper-meta">
+              {author && <span>{author}</span>}
+              <span>Created {formatWhen(createdAt)}</span>
+              {updatedAt !== createdAt && <span>Revised {formatWhen(updatedAt)}</span>}
+              <span>{shareCount} {shareCount === 1 ? 'copy' : 'copies'}</span>
+            </p>
+            <div className="paper-tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                className={activeTab === 'document' ? 'is-active' : ''}
+                aria-selected={activeTab === 'document'}
+                onClick={() => setActiveTab('document')}
+              >
+                Document
+              </button>
+              <button
+                type="button"
+                role="tab"
+                className={activeTab === 'comments' ? 'is-active' : ''}
+                aria-selected={activeTab === 'comments'}
+                onClick={() => setActiveTab('comments')}
+              >
+                Comments<em>{commentCount}</em>
+              </button>
+            </div>
+          </header>
 
           {activeTab === 'document' ? (
-            <div
-              className="doc-card"
-              style={{
-                backgroundColor: colors.cardBackground,
-                border: `1px solid ${colors.border}`,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                minHeight: '320px'
-              }}
-            >
-              <MarkdownDocument markdown={content} />
+            <div className="doc-card">
+              <MarkdownDocument markdown={content} omitMatchingTitle={title} />
             </div>
           ) : (
-            <div style={{
-              backgroundColor: colors.background,
-              border: `1px solid ${colors.border}`,
-              borderRadius: '16px',
-              padding: '32px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-            }}>
+            <div className="paper-sheet">
               <div style={{ marginBottom: 32 }}>
                 <h3 style={{
                   fontSize: '18px',
@@ -701,33 +602,11 @@ export default function FilePage(props: {
                     )}
 
                     <button
+                      className="doc-primary"
                       type="submit"
                       disabled={isSubmitting || !newComment.trim() || !session}
-                      style={{
-                        padding: '12px 32px',
-                        fontSize: '15px',
-                        backgroundColor: colors.primary,
-                        color: '#000000',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: isSubmitting || !newComment.trim() || !session ? 'not-allowed' : 'pointer',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease',
-                        opacity: isSubmitting || !newComment.trim() || !session ? 0.5 : 1,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isSubmitting && newComment.trim() && session) {
-                          e.currentTarget.style.transform = 'translateY(-2px)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
-                      }}
                     >
-                      {isSubmitting ? '✍️ Posting...' : '📤 Post Comment'}
+                      {isSubmitting ? 'Posting' : 'Post comment'}
                     </button>
                   </div>
                 </form>
@@ -744,21 +623,9 @@ export default function FilePage(props: {
                 </h3>
 
                 {comments.length === 0 ? (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '60px 20px',
-                    color: colors.secondary,
-                    border: `2px dashed ${colors.border}`,
-                    borderRadius: '12px'
-                  }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>💭</div>
-                    <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>
-                      No comments yet
-                    </div>
-                    <div style={{ fontSize: '14px', opacity: 0.7 }}>
-                      Be the first to share your thoughts!
-                    </div>
-                  </div>
+                  <p style={{ color: colors.secondary, fontSize: 14, margin: 0 }}>
+                    No comments yet.
+                  </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {comments.map((comment) => (
@@ -795,8 +662,7 @@ export default function FilePage(props: {
                             alignItems: 'center',
                             gap: '8px'
                           }}>
-                            <span style={{ fontSize: '16px' }}>👤</span>
-                            <span>{comment.author_name || 'User'} • {new Date(comment.created_at).toLocaleString('en-US', {
+                            <span>{comment.author_name || 'User'} · {new Date(comment.created_at).toLocaleString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               hour: '2-digit',
@@ -805,29 +671,8 @@ export default function FilePage(props: {
                           </div>
 
                           {session?.user?.id && session.user.id === comment.user_id && (
-                            <button
-                              onClick={() => handleDeleteComment(comment.id)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '13px',
-                                backgroundColor: 'transparent',
-                                color: '#ef4444',
-                                border: `1px solid #ef4444`,
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                fontWeight: '500'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#ef4444'
-                                e.currentTarget.style.color = '#fff'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent'
-                                e.currentTarget.style.color = '#ef4444'
-                              }}
-                            >
-                              🗑️ Delete
+                            <button className="text-action is-danger" type="button" onClick={() => handleDeleteComment(comment.id)}>
+                              Delete
                             </button>
                           )}
                         </div>
@@ -851,292 +696,52 @@ export default function FilePage(props: {
           )}
         </div>
 
-        <div style={{
-          position: 'sticky',
-          top: '120px',
-          height: 'fit-content'
-        }}>
-          <div style={{
-            backgroundColor: colors.background,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '24px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-          }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: '700',
-              color: colors.text,
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              📋 Document Details
-            </h3>
-
-            {headings.length > 0 && (
-              <nav style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, opacity: 0.7 }}>On this page</div>
+        <aside className="paper-rail">
+          {headings.length > 0 && (
+            <section>
+              <h2>Contents</h2>
+              <nav className="paper-contents">
                 {headings.map(heading => (
-                  <div key={heading.id} style={{ paddingLeft: (heading.level - 1) * 12, marginBottom: 6, fontSize: 14 }}>
-                    <a href={`#${heading.id}`} style={{ color: colors.link }}>{heading.text}</a>
-                  </div>
+                  <a key={heading.id} href={`#${heading.id}`} style={{ paddingLeft: (heading.level - 1) * 10 }}>
+                    {heading.text}
+                  </a>
                 ))}
               </nav>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingBottom: '12px',
-                borderBottom: `1px solid ${colors.border}`
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Type</span>
-                <span style={{ fontWeight: '600', fontSize: '14px' }}>{fileType.toUpperCase()}</span>
-              </div>
-
-              {author && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingBottom: '12px',
-                  borderBottom: `1px solid ${colors.border}`
-                }}>
-                  <span style={{ color: colors.secondary, fontSize: '14px' }}>Author</span>
-                  <span style={{ fontWeight: '600', fontSize: '14px' }}>{author}</span>
-                </div>
-              )}
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingBottom: '12px',
-                borderBottom: `1px solid ${colors.border}`
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Views</span>
-                <span style={{ fontWeight: '600', fontSize: '14px' }}>{viewCount}</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingBottom: '12px',
-                borderBottom: `1px solid ${colors.border}`
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Link copies</span>
-                <span style={{ fontWeight: '600', fontSize: '14px' }}>{shareCount}</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingBottom: '12px',
-                borderBottom: `1px solid ${colors.border}`
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Created</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', textAlign: 'right' }}>{formatWhen(createdAt)}</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingBottom: '12px',
-                borderBottom: `1px solid ${colors.border}`
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Last updated</span>
-                <span style={{ fontWeight: '600', fontSize: '14px', textAlign: 'right' }}>{formatWhen(updatedAt)}</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ color: colors.secondary, fontSize: '14px' }}>Likes</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '18px' }}>{userHasLiked ? '❤️' : '🤍'}</span>
-                  <span style={{ fontWeight: '600', fontSize: '14px' }}>{likeCount}</span>
-                </div>
-              </div>
-            </div>
-
-            {(docStats?.timeline?.length ?? 0) > 0 && (
-              <div className="doc-timeline" style={{ marginTop: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, opacity: 0.7 }}>Timeline</div>
-                <ol className="doc-timeline-list">
-                  {docStats!.timeline.map((entry) => (
-                    <li key={entry.id} className="doc-timeline-item">
-                      <span className="doc-timeline-dot" aria-hidden />
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{entry.label}</div>
-                        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>{formatWhen(entry.at)}</div>
-                        {entry.title && entry.kind !== 'create' && (
-                          <div style={{ fontSize: 12, opacity: 0.55, marginTop: 2 }}>{entry.title}</div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            <button
-              onClick={handleLike}
-              style={{
-                width: '100%',
-                padding: '14px',
-                fontSize: '15px',
-                backgroundColor: userHasLiked ? '#ef4444' : colors.background,
-                color: userHasLiked ? '#fff' : colors.text,
-                border: `2px solid ${userHasLiked ? '#ef4444' : colors.primary}`,
-                borderRadius: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                marginTop: '24px',
-                fontWeight: '600',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                if (!userHasLiked) {
-                  e.currentTarget.style.backgroundColor = colors.primary
-                  e.currentTarget.style.color = '#000'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!userHasLiked) {
-                  e.currentTarget.style.backgroundColor = colors.background
-                  e.currentTarget.style.color = colors.text
-                }
-              }}
-            >
-              {userHasLiked ? '❤️ Liked' : '🤍 Like this Document'}
-            </button>
-          </div>
-
-          <div style={{
-            backgroundColor: colors.background,
-            border: `1px solid ${colors.border}`,
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
-          }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: '700',
-              color: colors.text,
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              ⚡ Quick Actions
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                onClick={() => window.print()}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.2s ease',
-                  fontWeight: '500'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.border
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.background
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <span>🖨️ Print Document</span>
-                <span>⌘P</span>
-              </button>
-
-              <button
-                onClick={handleCopyLink}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.2s ease',
-                  fontWeight: '500'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.border
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.background
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <span>🔗 Copy Link</span>
-                <span>⌘C</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('comments')}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  fontSize: '14px',
-                  backgroundColor: colors.background,
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.2s ease',
-                  fontWeight: '500'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.border
-                  e.currentTarget.style.transform = 'translateX(4px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.background
-                  e.currentTarget.style.transform = 'translateX(0)'
-                }}
-              >
-                <span>💬 View Comments</span>
-                <span>({commentCount})</span>
-              </button>
-            </div>
-          </div>
-        </div>
+            </section>
+          )}
+          <section>
+            <h2>Record</h2>
+            <dl className="paper-record">
+              <div><dt>File</dt><dd>{recordNo}</dd></div>
+              <div><dt>Type</dt><dd>{fileType.toUpperCase()}</dd></div>
+              {author && <div><dt>Author</dt><dd>{author}</dd></div>}
+              <div><dt>Views</dt><dd>{viewCount}</dd></div>
+              <div><dt>Copies</dt><dd>{shareCount}</dd></div>
+              <div><dt>Likes</dt><dd>{likeCount}</dd></div>
+              <div><dt>Created</dt><dd>{formatWhen(createdAt)}</dd></div>
+              <div><dt>Revised</dt><dd>{formatWhen(updatedAt)}</dd></div>
+            </dl>
+          </section>
+          {(docStats?.timeline?.length ?? 0) > 0 && (
+            <section className="doc-timeline">
+              <h2>Timeline</h2>
+              <ol className="doc-timeline-list">
+                {docStats!.timeline.map((entry) => (
+                  <li key={entry.id} className="doc-timeline-item">
+                    <span className="doc-timeline-dot" aria-hidden />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.label}</div>
+                      <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>{formatWhen(entry.at)}</div>
+                      {entry.title && entry.kind !== 'create' && (
+                        <div style={{ fontSize: 12, opacity: 0.55, marginTop: 2 }}>{entry.title}</div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </aside>
       </div>
     </div>
   )

@@ -114,7 +114,7 @@ export default function Header({ onResetCreate }: HeaderProps = {}) {
         {session?.user ? (
           <div style={{ position: 'relative' }}>
             <button
-              className="header-btn"
+              className="account-trigger"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               type="button"
               aria-expanded={showProfileMenu}

@@ -6,7 +6,14 @@ function headingId(children: React.ReactNode) {
   return String(children).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
-export default function MarkdownDocument({ markdown }: { markdown: string }) {
+export default function MarkdownDocument({ markdown, omitMatchingTitle }: { markdown: string; omitMatchingTitle?: string }) {
+  const source = omitMatchingTitle
+    ? markdown.replace(/^\uFEFF?\s*#\s+([^\n]+)\n?/, (full, text) => {
+        const plain = String(text).replace(/[#*`]/g, '').trim().toLowerCase()
+        return plain === omitMatchingTitle.trim().toLowerCase() ? '' : full
+      })
+    : markdown
+
   return (
     <div className="markdown-body">
       <ReactMarkdown
@@ -23,7 +30,7 @@ export default function MarkdownDocument({ markdown }: { markdown: string }) {
           ),
         }}
       >
-        {markdown}
+        {source}
       </ReactMarkdown>
     </div>
   )
