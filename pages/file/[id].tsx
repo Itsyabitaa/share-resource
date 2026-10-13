@@ -316,7 +316,7 @@ export default function FilePage(props: {
     setPdfBusy(true)
     try {
       const { downloadMarkdownPdf } = await import('../../utils/markdownPdf')
-      downloadMarkdownPdf(title, content)
+      downloadMarkdownPdf({ title, markdown: content, fileId })
     } finally {
       setPdfBusy(false)
     }
