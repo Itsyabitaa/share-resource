@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf'
+import { GState, jsPDF } from 'jspdf'
 
 type PdfDoc = jsPDF
 
@@ -101,7 +101,7 @@ export function downloadMarkdownPdf(options: { title: string; markdown: string; 
       doc.rect(0, 0, pageWidth, 7, 'F')
 
       doc.saveGraphicsState()
-      doc.setGState(new doc.GState({ opacity: 0.055 }))
+      doc.setGState(new GState({ opacity: 0.055 }))
       doc.setTextColor(...TEAL)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
@@ -112,7 +112,7 @@ export function downloadMarkdownPdf(options: { title: string; markdown: string; 
           doc.text('md-nest', markX, markY, { angle: 28 })
         }
       }
-      doc.setGState(new doc.GState({ opacity: 0.09 }))
+      doc.setGState(new GState({ opacity: 0.09 }))
       doc.setFontSize(54)
       doc.text('md-nest', pageWidth / 2, pageHeight / 2 + 8, { align: 'center', angle: 28 })
       doc.restoreGraphicsState()
