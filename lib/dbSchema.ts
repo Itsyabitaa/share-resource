@@ -80,6 +80,20 @@ export function ensureListedOnExploreColumn() {
   return exploreColumnReady
 }
 
+let pdfColumnReady: Promise<void> | null = null
+
+export function ensureAllowPdfColumn() {
+  if (!pdfColumnReady) {
+    pdfColumnReady = sql`ALTER TABLE files ADD COLUMN IF NOT EXISTS allow_pdf_export BOOLEAN NOT NULL DEFAULT false`
+      .then(() => undefined)
+      .catch((error) => {
+        pdfColumnReady = null
+        throw error
+      })
+  }
+  return pdfColumnReady
+}
+
 export async function insertFile(
   title: string,
   cloudinaryUrl: string,
@@ -92,15 +106,17 @@ export async function insertFile(
   expiresAt?: Date,
   storageTier: StorageTier = 'guest',
   folderId?: string,
-  listOnExplore: boolean = false
+  listOnExplore: boolean = false,
+  allowPdfExport: boolean = false
 ) {
   try {
     await ensureListedOnExploreColumn()
+    await ensureAllowPdfColumn()
     const id = uuidv4()
     const listed = listOnExplore && isPublic
     const result = await sql`
-      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, listed_on_explore, hashtags, user_id, expires_at, storage_tier, folder_id)
-      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${listed}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
+      INSERT INTO files (id, title, author, cloudinary_url, file_type, file_size, is_public, listed_on_explore, allow_pdf_export, hashtags, user_id, expires_at, storage_tier, folder_id)
+      VALUES (${id}, ${title}, ${author}, ${cloudinaryUrl}, ${fileType}, ${fileSize}, ${isPublic}, ${listed}, ${allowPdfExport}, ${hashtags}, ${userId || null}, ${expiresAt || null}, ${storageTier}, ${folderId || null})
       RETURNING id, title, author, cloudinary_url, created_at, is_public, listed_on_explore, hashtags, user_id, expires_at, storage_tier, folder_id
     `
     await recordFileEdit(id, userId || null, title, 'create')
@@ -122,6 +138,7 @@ export type FileRecord = {
   updated_at: string
   is_public: boolean
   listed_on_explore?: boolean
+  allow_pdf_export?: boolean
   user_id?: string | null
   expires_at?: string | null
   folder_id?: string | null
@@ -192,6 +209,7 @@ export function canAccessFile(
 export async function getFileById(id: string): Promise<FileRecord | undefined> {
   try {
     await ensureListedOnExploreColumn()
+    await ensureAllowPdfColumn()
     const result = await sql`
       SELECT 
         id,
@@ -204,6 +222,7 @@ export async function getFileById(id: string): Promise<FileRecord | undefined> {
         updated_at::text as updated_at,
         is_public,
         COALESCE(listed_on_explore, false) as listed_on_explore,
+        COALESCE(allow_pdf_export, false) as allow_pdf_export,
         user_id,
         expires_at::text as expires_at,
         folder_id,
@@ -551,6 +570,7 @@ export async function updateOwnedFile(
     author?: string
     isPublic?: boolean
     listOnExplore?: boolean
+    allowPdfExport?: boolean
     hashtags?: string[]
     folderId?: string | null
     cloudinaryUrl?: string
@@ -558,6 +578,7 @@ export async function updateOwnedFile(
   }
 ) {
   await ensureListedOnExploreColumn()
+  await ensureAllowPdfColumn()
   const current = await sql`SELECT * FROM files WHERE id = ${fileId} AND user_id = ${userId}`
   if (current.length === 0) return null
 
@@ -569,6 +590,9 @@ export async function updateOwnedFile(
       ? !!current[0].listed_on_explore
       : !!updates.listOnExplore
   )
+  const allowPdfExport = updates.allowPdfExport === undefined
+    ? !!current[0].allow_pdf_export
+    : !!updates.allowPdfExport
   const hashtags = updates.hashtags ?? current[0].hashtags ?? []
   const folderId = updates.folderId === undefined ? current[0].folder_id : updates.folderId
   const cloudinaryUrl = updates.cloudinaryUrl ?? current[0].cloudinary_url
@@ -589,6 +613,7 @@ export async function updateOwnedFile(
       author = ${author},
       is_public = ${isPublic},
       listed_on_explore = ${listOnExplore},
+      allow_pdf_export = ${allowPdfExport},
       hashtags = ${hashtags},
       folder_id = ${folderId},
       cloudinary_url = ${cloudinaryUrl},

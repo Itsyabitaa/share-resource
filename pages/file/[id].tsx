@@ -107,6 +107,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         updatedAt: fileData.updated_at,
         isPublic: !!fileData.is_public,
         listedOnExplore: !!fileData.listed_on_explore,
+        allowPdfExport: !!fileData.allow_pdf_export,
         expiresAt: fileData.expires_at || null,
         isOwner: !!session?.user?.id && session.user.id === fileData.user_id,
         initialViewCount: fileData.view_count ?? 0,
@@ -163,6 +164,7 @@ export default function FilePage(props: {
   updatedAt: string
   isPublic: boolean
   listedOnExplore?: boolean
+  allowPdfExport?: boolean
   expiresAt: string | null
   isOwner: boolean
   initialViewCount: number
@@ -190,6 +192,7 @@ export default function FilePage(props: {
     updatedAt,
     isPublic,
     listedOnExplore = false,
+    allowPdfExport = false,
     expiresAt,
     isOwner,
     initialViewCount,
@@ -217,6 +220,9 @@ export default function FilePage(props: {
   const [activeTab, setActiveTab] = useState<'document' | 'comments'>('document')
   const [viewCount, setViewCount] = useState(initialViewCount)
   const [shareCount, setShareCount] = useState(initialShareCount)
+  const [pdfAllowed, setPdfAllowed] = useState(allowPdfExport)
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const canDownloadPdf = !!props.isGuestPost || pdfAllowed
   const [docStats, setDocStats] = useState<DocStats | null>(null)
 
   useEffect(() => {
@@ -305,6 +311,28 @@ export default function FilePage(props: {
     link.download = `${title || 'document'}.md`
     link.click()
     URL.revokeObjectURL(url)
+  }
+
+  const handleExportPdf = async () => {
+    if (!canDownloadPdf || pdfBusy) return
+    setPdfBusy(true)
+    try {
+      const { downloadMarkdownPdf } = await import('../../utils/markdownPdf')
+      downloadMarkdownPdf(title, content)
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+
+  const togglePdfExport = async () => {
+    const next = !pdfAllowed
+    setPdfAllowed(next)
+    const res = await fetch(apiPath(`/files/${fileId}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allowPdfExport: next }),
+    })
+    if (!res.ok) setPdfAllowed(!next)
   }
 
   const handleDeleteFile = async () => {
@@ -456,6 +484,21 @@ export default function FilePage(props: {
             <button className="header-btn" type="button" onClick={handleDownload}>
               Download
             </button>
+            {isOwner && (
+              <button
+                className={`header-btn${pdfAllowed ? ' primary' : ''}`}
+                type="button"
+                onClick={togglePdfExport}
+                title="Turn PDF download on or off for people who open this link"
+              >
+                {pdfAllowed ? 'PDF on' : 'PDF off'}
+              </button>
+            )}
+            {canDownloadPdf && (
+              <button className="header-btn" type="button" onClick={handleExportPdf} disabled={pdfBusy}>
+                {pdfBusy ? 'Preparing PDF' : 'Export PDF'}
+              </button>
+            )}
             {isOwner && (
               <>
                 <button className="header-btn" type="button" onClick={() => router.push(sitePath(`/edit/${fileId}`))}>
