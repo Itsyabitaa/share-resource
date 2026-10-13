@@ -224,6 +224,7 @@ export default function FilePage(props: {
   const [shareCount, setShareCount] = useState(initialShareCount)
   const [pdfAllowed, setPdfAllowed] = useState(allowPdfExport)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [menu, setMenu] = useState<'download' | 'manage' | null>(null)
   const canDownloadPdf = !!props.isGuestPost || pdfAllowed
   const [docStats, setDocStats] = useState<DocStats | null>(null)
 
@@ -462,39 +463,110 @@ export default function FilePage(props: {
             <button className="text-action" type="button" onClick={handleCopyLink}>
               {copied ? 'Link copied' : 'Copy link'}
             </button>
-            <button className="text-action" type="button" onClick={handleCopyMarkdown}>
-              {copiedMd ? 'Markdown copied' : 'Copy markdown'}
-            </button>
-            <button className="text-action" type="button" onClick={handleDownload}>
-              Download
-            </button>
-            <button className="text-action" type="button" onClick={() => window.print()}>
-              Print
-            </button>
-            {isOwner && (
+            <div className="tool-menu">
               <button
-                className={`text-action${pdfAllowed ? ' is-on' : ''}`}
+                className={`text-action${menu === 'download' ? ' is-on' : ''}`}
                 type="button"
-                onClick={togglePdfExport}
-                title="Turn PDF download on or off for people who open this link"
+                aria-expanded={menu === 'download'}
+                onClick={() => setMenu(menu === 'download' ? null : 'download')}
               >
-                {pdfAllowed ? 'PDF sharing on' : 'PDF sharing off'}
+                Download
               </button>
-            )}
+              {menu === 'download' && (
+                <>
+                  <button className="tool-menu-backdrop" type="button" aria-label="Close" onClick={() => setMenu(null)} />
+                  <div className="tool-menu-panel" role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        handleDownload()
+                        setMenu(null)
+                      }}
+                    >
+                      Markdown file
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        handleCopyMarkdown()
+                        setMenu(null)
+                      }}
+                    >
+                      {copiedMd ? 'Markdown copied' : 'Copy markdown'}
+                    </button>
+                    {canDownloadPdf && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={pdfBusy}
+                        onClick={() => {
+                          handleExportPdf()
+                          setMenu(null)
+                        }}
+                      >
+                        {pdfBusy ? 'Preparing PDF' : 'Export PDF'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenu(null)
+                        window.print()
+                      }}
+                    >
+                      Print
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             {isOwner && (
-              <button className="text-action" type="button" onClick={() => router.push(sitePath(`/edit/${fileId}`))}>
-                Edit
-              </button>
-            )}
-            {isOwner && (
-              <button className="text-action is-danger" type="button" onClick={handleDeleteFile}>
-                Delete
-              </button>
-            )}
-            {canDownloadPdf && (
-              <button className="doc-primary" type="button" onClick={handleExportPdf} disabled={pdfBusy}>
-                {pdfBusy ? 'Preparing' : 'Export PDF'}
-              </button>
+              <div className="tool-menu">
+                <button
+                  className={`text-action${menu === 'manage' ? ' is-on' : ''}`}
+                  type="button"
+                  aria-expanded={menu === 'manage'}
+                  onClick={() => setMenu(menu === 'manage' ? null : 'manage')}
+                >
+                  Edit
+                </button>
+                {menu === 'manage' && (
+                  <>
+                    <button className="tool-menu-backdrop" type="button" aria-label="Close" onClick={() => setMenu(null)} />
+                    <div className="tool-menu-panel" role="menu">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => router.push(sitePath(`/edit/${fileId}`))}
+                      >
+                        Edit document
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={togglePdfExport}
+                        title="Turn PDF download on or off for people who open this link"
+                      >
+                        {pdfAllowed ? 'PDF sharing on' : 'PDF sharing off'}
+                      </button>
+                      <button
+                        className="is-danger"
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenu(null)
+                          handleDeleteFile()
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>

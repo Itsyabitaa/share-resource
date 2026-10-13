@@ -2398,6 +2398,66 @@ body.dark .footer-link {
   cursor: wait;
 }
 
+.tool-menu {
+  position: relative;
+}
+
+.tool-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.tool-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 41;
+  min-width: 168px;
+  padding: 6px;
+  display: grid;
+  background: var(--composer-paper, #fffcf7);
+  border: 1px solid var(--composer-line, rgba(28, 25, 23, 0.12));
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(28, 25, 23, 0.12);
+}
+
+.tool-menu-panel button {
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--composer-ink, #1c1917);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.tool-menu-panel button:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.tool-menu-panel button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.tool-menu-panel button.is-danger {
+  color: #b91c1c;
+}
+
+body.dark .tool-menu-panel {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .tool-menu-panel button.is-danger {
+  color: #fca5a5;
+}
+
 .file-kicker {
   font-size: 0.68rem;
   font-weight: 600;
