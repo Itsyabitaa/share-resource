@@ -2706,7 +2706,7 @@ body.dark .text-action.is-danger:hover {
 .md-table-frame.is-wide {
   border: 1px solid rgba(15, 118, 110, 0.28);
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   background: var(--composer-paper, #fffcf7);
   box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.04);
 }
@@ -2776,11 +2776,47 @@ body.dark .text-action.is-danger:hover {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 12px;
+  bottom: 0;
   width: 28px;
   z-index: 3;
   pointer-events: none;
   background: linear-gradient(to left, var(--composer-paper, #fffcf7), transparent);
+}
+
+.md-table-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  height: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--composer-paper, #fffcf7);
+  border-top: 1px solid rgba(15, 118, 110, 0.22);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(87, 83, 78, 0.72) rgba(120, 113, 108, 0.14);
+}
+
+.md-table-dock[hidden] {
+  display: none !important;
+}
+
+.md-table-dock > div {
+  height: 1px;
+}
+
+.md-table-dock::-webkit-scrollbar {
+  height: 12px;
+}
+
+.md-table-dock::-webkit-scrollbar-track {
+  background: rgba(120, 113, 108, 0.14);
+}
+
+.md-table-dock::-webkit-scrollbar-thumb {
+  background: rgba(87, 83, 78, 0.72);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .md-table-frame.is-wide th:first-child,
@@ -2821,6 +2857,12 @@ body.dark .text-action.is-danger:hover {
 .md-table-frame.is-wide .md-table-scroll {
   border: none;
   border-radius: 0;
+  scrollbar-width: none;
+}
+
+.md-table-frame.is-wide .md-table-scroll::-webkit-scrollbar {
+  display: none;
+  height: 0;
 }
 
 .md-table-scroll:focus-visible {
@@ -2911,6 +2953,12 @@ body.dark .md-table-frame.is-wide th:first-child {
   box-shadow: 8px 0 10px -8px rgba(0, 0, 0, 0.7);
 }
 
+body.dark .md-table-dock {
+  background: var(--composer-paper, #1a1816);
+  border-top-color: rgba(45, 212, 191, 0.28);
+  scrollbar-color: rgba(168, 162, 158, 0.8) rgba(255, 255, 255, 0.08);
+}
+
 body.dark .md-table-scroll {
   border-color: rgba(255, 255, 255, 0.12);
   scrollbar-color: rgba(168, 162, 158, 0.8) rgba(255, 255, 255, 0.08);
@@ -2942,7 +2990,7 @@ body.dark .editor-preview-side th {
 .doc-card {
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   padding: 36px 40px 48px;
   border-radius: 2px;
   background: var(--composer-paper, #fffcf7);
@@ -4524,6 +4572,7 @@ body.dark .mdnest-swal-textarea {
   }
 
   .md-table-bar,
+  .md-table-dock,
   .md-table-viewport::before,
   .md-table-viewport::after {
     display: none !important;

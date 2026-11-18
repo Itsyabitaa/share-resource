@@ -19,20 +19,45 @@ function tableEdges(el: HTMLDivElement) {
 
 function WideTable({ children }: { children: React.ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const dockRef = useRef<HTMLDivElement>(null)
+  const syncing = useRef(false)
   const [edges, setEdges] = useState({ wide: false, left: false, right: false })
+  const [track, setTrack] = useState(0)
 
   useEffect(() => {
     const el = scrollerRef.current
-    if (!el) return
-    const measure = () => setEdges(tableEdges(el))
-    measure()
-    el.addEventListener('scroll', measure, { passive: true })
-    const observer = new ResizeObserver(measure)
+    const dock = dockRef.current
+    if (!el || !dock) return
+
+    const applyEdges = () => {
+      setEdges(tableEdges(el))
+      setTrack(current => current === el.scrollWidth ? current : el.scrollWidth)
+    }
+    const fromTable = () => {
+      if (syncing.current) return
+      syncing.current = true
+      dock.scrollLeft = el.scrollLeft
+      syncing.current = false
+      applyEdges()
+    }
+    const fromDock = () => {
+      if (syncing.current) return
+      syncing.current = true
+      el.scrollLeft = dock.scrollLeft
+      syncing.current = false
+      applyEdges()
+    }
+
+    applyEdges()
+    el.addEventListener('scroll', fromTable, { passive: true })
+    dock.addEventListener('scroll', fromDock, { passive: true })
+    const observer = new ResizeObserver(applyEdges)
     observer.observe(el)
     const table = el.querySelector('table')
     if (table) observer.observe(table)
     return () => {
-      el.removeEventListener('scroll', measure)
+      el.removeEventListener('scroll', fromTable)
+      dock.removeEventListener('scroll', fromDock)
       observer.disconnect()
     }
   }, [children])
@@ -74,6 +99,9 @@ function WideTable({ children }: { children: React.ReactNode }) {
         >
           <table>{children}</table>
         </div>
+      </div>
+      <div className="md-table-dock" ref={dockRef} hidden={!edges.wide} aria-hidden="true">
+        <div style={{ width: track }} />
       </div>
     </div>
   )
