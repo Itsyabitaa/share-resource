@@ -2696,6 +2696,111 @@ body.dark .text-action.is-danger:hover {
   max-width: 100%;
 }
 
+.md-table-frame {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 1.25em;
+}
+
+.md-table-frame.is-wide {
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--composer-paper, #fffcf7);
+  box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.04);
+}
+
+.md-table-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 1px solid rgba(15, 118, 110, 0.16);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.md-table-bar[hidden] {
+  display: none !important;
+}
+
+.md-table-bar span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.md-table-nudge {
+  display: flex;
+  gap: 4px;
+}
+
+.md-table-nudge button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 113, 108, 0.28);
+  background: var(--composer-paper, #fffcf7);
+  color: var(--composer-ink, #1c1917);
+  cursor: pointer;
+}
+
+.md-table-nudge button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.md-table-nudge button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.md-table-nudge button:not(:disabled):hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.md-table-viewport {
+  position: relative;
+  min-width: 0;
+}
+
+.md-table-frame.can-right .md-table-viewport::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 12px;
+  width: 28px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(to left, var(--composer-paper, #fffcf7), transparent);
+}
+
+.md-table-frame.is-wide th:first-child,
+.md-table-frame.is-wide td:first-child {
+  position: sticky;
+  left: 0;
+}
+
+.md-table-frame.is-wide td:first-child {
+  z-index: 1;
+  background: var(--composer-paper, #fffcf7);
+  box-shadow: 8px 0 10px -8px rgba(28, 25, 23, 0.45);
+}
+
+.md-table-frame.is-wide th:first-child {
+  z-index: 2;
+  background: color-mix(in srgb, var(--composer-paper, #fffcf7) 86%, var(--brand));
+  box-shadow: 8px 0 10px -8px rgba(28, 25, 23, 0.45);
+}
+
 .md-table-scroll {
   display: block;
   width: 100%;
@@ -2706,11 +2811,21 @@ body.dark .text-action.is-danger:hover {
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  margin: 0 0 1.25em;
+  margin: 0;
   border: 1px solid rgba(120, 113, 108, 0.22);
   border-radius: 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(87, 83, 78, 0.72) rgba(120, 113, 108, 0.14);
+}
+
+.md-table-frame.is-wide .md-table-scroll {
+  border: none;
+  border-radius: 0;
+}
+
+.md-table-scroll:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 
 .md-table-scroll::-webkit-scrollbar {
@@ -2769,6 +2884,31 @@ body.dark .text-action.is-danger:hover {
 .editor-preview tr:last-child td,
 .editor-preview-side tr:last-child td {
   border-bottom: none;
+}
+
+body.dark .md-table-frame.is-wide {
+  border-color: rgba(45, 212, 191, 0.35);
+  box-shadow: none;
+}
+
+body.dark .md-table-bar {
+  border-bottom-color: rgba(45, 212, 191, 0.2);
+  background: rgba(45, 212, 191, 0.1);
+}
+
+body.dark .md-table-bar span {
+  color: #5eead4;
+}
+
+body.dark .md-table-nudge button {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: #1c1917;
+  color: #f5f5f4;
+}
+
+body.dark .md-table-frame.is-wide td:first-child,
+body.dark .md-table-frame.is-wide th:first-child {
+  box-shadow: 8px 0 10px -8px rgba(0, 0, 0, 0.7);
 }
 
 body.dark .md-table-scroll {
@@ -4381,6 +4521,27 @@ body.dark .mdnest-swal-textarea {
   .markdown-body pre {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .md-table-bar,
+  .md-table-viewport::before,
+  .md-table-viewport::after {
+    display: none !important;
+  }
+
+  .md-table-frame,
+  .md-table-frame.is-wide {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .md-table-frame.is-wide th:first-child,
+  .md-table-frame.is-wide td:first-child {
+    position: static !important;
+    box-shadow: none !important;
   }
 
   .md-table-scroll {
